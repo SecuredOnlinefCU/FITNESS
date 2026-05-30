@@ -20,7 +20,7 @@ const ADMIN_PAGES = [
 ];
 
 const SHARED_PAGES = [
-  '/dashboard', '/dashboard/messages',
+  '/dashboard/messages',
 ];
 
 const ALL_PROTECTED_PAGES = [...COACH_PAGES, ...CLIENT_PAGES, ...ADMIN_PAGES, ...SHARED_PAGES];

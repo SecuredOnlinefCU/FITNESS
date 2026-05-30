@@ -8,6 +8,7 @@ import { asyncHandler } from "../../common/utils/async-handler";
 import { requireAuth, AuthenticatedRequest, requireRole } from "../../common/middleware/auth";
 import { HttpError } from "../../common/errors/http-error";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./auth.tokens";
+import { sendWelcomeEmail } from "../email/email.service";
 
 export const authRouter = Router();
 const sha = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
@@ -61,6 +62,7 @@ authRouter.post(
     const refresh = signRefreshToken(payload);
     await prisma.refreshSession.create({ data: { userId: user.id, tokenHash: sha(refresh) } });
 
+    sendWelcomeEmail(user.email, user.firstName || "").catch(() => {});
     res.status(201).json({
       user: { id: user.id, email: user.email, role: payload.role, firstName: user.firstName, lastName: user.lastName },
       accessToken: signAccessToken(payload),

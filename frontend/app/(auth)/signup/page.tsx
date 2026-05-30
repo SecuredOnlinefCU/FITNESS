@@ -85,7 +85,7 @@ export default function SignupPage() {
                 name="firstName"
                 type="text"
                 autoComplete="given-name"
-                placeholder="John"
+                placeholder="First name"
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
@@ -99,7 +99,7 @@ export default function SignupPage() {
                 name="lastName"
                 type="text"
                 autoComplete="family-name"
-                placeholder="Doe"
+                placeholder="Last name"
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
