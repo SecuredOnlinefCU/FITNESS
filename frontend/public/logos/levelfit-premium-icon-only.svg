@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img" aria-labelledby="title desc">
+<title id="title">levelFit icon-only logo</title>
+<desc id="desc">A premium geometric fitness technology mark combining a level-step foundation, upward performance arrow, and circuit nodes.</desc>
+
+<defs>
+  <linearGradient id="levelFitGradient" x1="14" y1="86" x2="86" y2="14" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FF5A1F"/>
+    <stop offset="0.52" stop-color="#FF7A00"/>
+    <stop offset="1" stop-color="#00C2FF"/>
+  </linearGradient>
+</defs>
+
+
+<g id="levelfit-premium-mark" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Level-step foundation / abstract L -->
+  <path d="M20 76 H38 V58 H56 V40 H72" stroke="#0B1020" stroke-width="10"/>
+  <!-- Fast upward performance stroke / abstract F arrow -->
+  <path d="M28 70 L44 54 L56 62 L80 28" stroke="url(#levelFitGradient)" stroke-width="11"/>
+  <path d="M80 28 H62 M80 28 V46" stroke="url(#levelFitGradient)" stroke-width="11"/>
+  <!-- Technology/data cue: compact circuit nodes -->
+  <path d="M22 31 H39 L48 22" stroke="#00C2FF" stroke-width="5" opacity="0.95"/>
+  <circle cx="22" cy="31" r="4.5" fill="#00C2FF" stroke="none"/>
+  <circle cx="48" cy="22" r="4.5" fill="#00C2FF" stroke="none"/>
+  <!-- Power/muscle curve: subtle strength arc -->
+  <path d="M24 45 C34 34 49 31 60 38" stroke="#FF5A1F" stroke-width="5" opacity="0.95"/>
+</g>
+
+</svg>

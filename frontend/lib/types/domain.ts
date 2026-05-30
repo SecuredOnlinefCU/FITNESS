@@ -1,0 +1,15 @@
+export type ID = string; export type ISODate = string; export type ApiList<T> = { items: T[] };
+export type RoleName = 'super_admin' | 'coach' | 'assistant_coach' | 'client';
+export type MessageDeliveryStatus = 'queued' | 'connecting' | 'sent' | 'delivered' | 'read' | 'failed';
+export type Message = { id: ID; threadId: ID; senderUserId: ID; messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'VOICE' | 'SYSTEM'; bodyText?: string | null; mediaAssetId?: string | null; createdAt?: ISODate; deliveryStatus?: MessageDeliveryStatus };
+export type Thread = { id: ID; coachUserId: ID; clientUserId: ID; status?: string; messages?: Message[] };
+export type MediaAsset = { id: ID; ownerUserId: ID; assetType: 'FEED_IMAGE' | 'FEED_VIDEO' | 'TASK_VIDEO' | 'PROGRESS_PHOTO' | 'EXERCISE_VIDEO' | 'VOICE_NOTE' | 'CHAT_MEDIA'; storageKey?: string; blobUrl?: string | null; mimeType?: string | null; privacyScope?: 'PRIVATE' | 'PROGRAM' | 'PUBLIC'; uploadStatus?: string };
+export type Notification = { id: ID; userId: ID; type: string; title: string; body?: string | null; openedAt?: ISODate | null; createdAt?: ISODate };
+export type Program = { id: ID; coachUserId: ID; name: string; description?: string | null };
+export type Task = { id: ID; coachUserId: ID; title: string; description?: string | null; taskType: string };
+export type CoachingPackage = { id: ID; coachUserId: ID; title: string; priceCents: number; currency: string; billingType: 'ONE_TIME' | 'RECURRING'; interval?: 'MONTH' | 'YEAR' | null };
+export type MetricEntry = { id: ID; clientUserId: ID; metricType: string; value: number; unit?: string | null; recordedAt?: ISODate };
+export type MealLog = { id: ID; clientUserId: ID; mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK' | 'OTHER'; title?: string | null; calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null };
+export type Exercise = { id: ID; coachUserId?: ID | null; name: string; instructions?: string | null };
+export type Workout = { id: ID; coachUserId: ID; title: string; description?: string | null; programId?: ID | null };
+export type IntegrationProvider = 'APPLE_HEALTH' | 'HEALTH_CONNECT' | 'FITBIT' | 'GARMIN' | 'OURA' | 'MYFITNESSPAL' | 'CRONOMETER';

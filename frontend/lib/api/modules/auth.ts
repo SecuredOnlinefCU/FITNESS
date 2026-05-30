@@ -1,0 +1,3 @@
+import { apiFetch } from '@/lib/api/client';
+import type { AuthSession, UserRole } from '@/lib/types/auth';
+export const authApi = { signup(input: { email: string; password: string; role: Exclude<UserRole, 'super_admin'>; displayName: string }) { return apiFetch<AuthSession>('/api/auth/signup', { method: 'POST', auth: false, body: JSON.stringify(input) }); }, login(input: { email: string; password: string }) { return apiFetch<AuthSession>('/api/auth/login', { method: 'POST', auth: false, body: JSON.stringify(input) }); }, refresh(refreshToken: string) { return apiFetch<{ accessToken: string; refreshToken: string }>('/api/auth/refresh', { method: 'POST', auth: false, body: JSON.stringify({ refreshToken }) }); }, me<T = any>() { return apiFetch<T>('/api/auth/me'); } };

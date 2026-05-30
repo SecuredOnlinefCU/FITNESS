@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 260" role="img" aria-labelledby="title desc">
+<title id="title">levelFit stacked logo</title>
+<desc id="desc">Premium stacked levelFit logo with icon above wordmark.</desc>
+
+<defs>
+  <linearGradient id="wordGradient" x1="0" y1="0" x2="90" y2="0" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FF5A1F"/>
+    <stop offset="1" stop-color="#00C2FF"/>
+  </linearGradient>
+</defs>
+
+<g transform="translate(80 20)">
+<defs>
+  <linearGradient id="levelFitGradient" x1="14" y1="86" x2="86" y2="14" gradientUnits="userSpaceOnUse">
+    <stop offset="0" stop-color="#FF5A1F"/>
+    <stop offset="0.52" stop-color="#FF7A00"/>
+    <stop offset="1" stop-color="#00C2FF"/>
+  </linearGradient>
+</defs>
+
+<g id="levelfit-premium-mark" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Level-step foundation / abstract L -->
+  <path d="M20 76 H38 V58 H56 V40 H72" stroke="#0B1020" stroke-width="10"/>
+  <!-- Fast upward performance stroke / abstract F arrow -->
+  <path d="M28 70 L44 54 L56 62 L80 28" stroke="url(#levelFitGradient)" stroke-width="11"/>
+  <path d="M80 28 H62 M80 28 V46" stroke="url(#levelFitGradient)" stroke-width="11"/>
+  <!-- Technology/data cue: compact circuit nodes -->
+  <path d="M22 31 H39 L48 22" stroke="#00C2FF" stroke-width="5" opacity="0.95"/>
+  <circle cx="22" cy="31" r="4.5" fill="#00C2FF" stroke="none"/>
+  <circle cx="48" cy="22" r="4.5" fill="#00C2FF" stroke="none"/>
+  <!-- Power/muscle curve: subtle strength arc -->
+  <path d="M24 45 C34 34 49 31 60 38" stroke="#FF5A1F" stroke-width="5" opacity="0.95"/>
+</g>
+</g>
+<g transform="translate(50 168)">
+<text x="0" y="0" font-family="Montserrat, Inter, Arial, sans-serif" font-size="40" font-weight="850" letter-spacing="-1.7" fill="#0B1020">level<tspan fill="#FF5A1F">Fit</tspan></text>
+<rect x="4" y="13" width="82" height="4" rx="2" fill="url(#wordGradient)"/>
+<text x="-2" y="39" font-family="Inter, Arial, sans-serif" font-size="9.5" font-weight="750" letter-spacing="2" fill="#64748B">TRAIN · TRACK · TRANSFORM</text>
+</g>
+</svg>

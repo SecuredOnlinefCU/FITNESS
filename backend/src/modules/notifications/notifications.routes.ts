@@ -1,0 +1,8 @@
+
+import {Router} from 'express'; import {prisma} from '../../lib/prisma'; import {requireAuth,AuthenticatedRequest,requireRole} from '../../common/middleware/auth'; import {asyncHandler} from '../../common/utils/async-handler';
+export const notificationsRouter=Router(); notificationsRouter.use(requireAuth);
+notificationsRouter.post('/devices',asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.deviceToken.upsert({where:{token:req.body.token},update:{userId:req.user!.sub,...req.body,revokedAt:null},create:{userId:req.user!.sub,...req.body}}))));
+notificationsRouter.post('/preferences',asyncHandler(async(req:AuthenticatedRequest,res)=>res.json(await prisma.notificationPreference.upsert({where:{userId_type:{userId:req.user!.sub,type:req.body.type}},update:req.body,create:{userId:req.user!.sub,...req.body}}))));
+notificationsRouter.get('/',asyncHandler(async(req:AuthenticatedRequest,res)=>res.json({items:await prisma.notification.findMany({where:{userId:req.user!.sub},orderBy:{createdAt:'desc'}})})));
+notificationsRouter.post('/:notificationId/open',asyncHandler(async(req:AuthenticatedRequest,res)=>res.json(await prisma.notification.update({where:{id:req.params.notificationId},data:{openedAt:new Date(),deliveryStatus:'OPENED'}}))));
+notificationsRouter.post('/admin/broadcast',requireRole(['super_admin','coach','assistant_coach']),asyncHandler(async(req,res)=>{const items=[]; for(const userId of req.body.userIds) items.push(await prisma.notification.create({data:{userId,type:req.body.type,title:req.body.title,body:req.body.body,payloadJson:req.body.payloadJson||{}}})); res.status(201).json({count:items.length,items});}));

@@ -1,0 +1,1 @@
+import {PrismaClient,RoleName} from '@prisma/client'; const prisma=new PrismaClient(); async function main(){for(const name of [RoleName.super_admin,RoleName.coach,RoleName.assistant_coach,RoleName.client]) await prisma.role.upsert({where:{name},update:{},create:{name}}); console.log('Roles seeded');} main().finally(()=>prisma.$disconnect());

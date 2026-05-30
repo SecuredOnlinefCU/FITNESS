@@ -1,0 +1,11 @@
+
+import {Router} from 'express'; import {prisma} from '../../lib/prisma'; import {requireAuth,AuthenticatedRequest,requireRole} from '../../common/middleware/auth'; import {asyncHandler} from '../../common/utils/async-handler';
+export const progressRouter=Router(); progressRouter.use(requireAuth);
+progressRouter.post('/photos',asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.progressPhoto.create({data:{clientUserId:req.body.clientUserId||req.user!.sub,...req.body}}))));
+progressRouter.get('/photos',asyncHandler(async(req:AuthenticatedRequest,res)=>res.json({items:await prisma.progressPhoto.findMany({where:{clientUserId:(req.query.clientUserId as string)||req.user!.sub},include:{coachNotes:true},orderBy:{capturedAt:'desc'}})})));
+progressRouter.get('/photos/compare',asyncHandler(async(req,res)=>{const before=await prisma.progressPhoto.findUnique({where:{id:req.query.beforePhotoId as string}}); const after=await prisma.progressPhoto.findUnique({where:{id:req.query.afterPhotoId as string}}); res.json({before,after});}));
+progressRouter.post('/metrics',asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.metricEntry.create({data:{clientUserId:req.body.clientUserId||req.user!.sub,...req.body}}))));
+progressRouter.get('/metrics',asyncHandler(async(req:AuthenticatedRequest,res)=>res.json({items:await prisma.metricEntry.findMany({where:{clientUserId:(req.query.clientUserId as string)||req.user!.sub},orderBy:{recordedAt:'desc'}})})));
+progressRouter.post('/checkin-forms',requireRole(['coach','assistant_coach']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.checkinForm.create({data:{coachUserId:req.user!.sub,...req.body}}))));
+progressRouter.post('/checkins',requireRole(['client']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.checkinSubmission.create({data:{clientUserId:req.user!.sub,...req.body}}))));
+progressRouter.get('/checkins',asyncHandler(async(req:AuthenticatedRequest,res)=>res.json({items:await prisma.checkinSubmission.findMany({where:{clientUserId:(req.query.clientUserId as string)||req.user!.sub},include:{form:true,coachNotes:true}})})));

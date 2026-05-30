@@ -1,0 +1,66 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+
+:root {
+  --ink-950: #05060a;
+  --ink-900: #080a07;
+  --ink-800: #11140f;
+  --line: #20241d;
+  --bone: #f4f5ef;
+  --bone-mute: #b7bba8;
+  --bone-fade: #8a907c;
+  --signal: #d7ff2f;
+  --pulse: #ef4444;
+  --energy: #f97316;
+  --flow: #38bdf8;
+
+  --background: var(--ink-950);
+  --foreground: var(--bone);
+  --card: var(--ink-900);
+  --card-foreground: var(--bone);
+  --muted: var(--ink-800);
+  --muted-foreground: var(--bone-fade);
+  --primary: var(--signal);
+  --primary-foreground: var(--ink-950);
+  --secondary: var(--flow);
+  --secondary-foreground: var(--ink-950);
+  --accent: var(--energy);
+  --accent-foreground: var(--ink-950);
+  --destructive: var(--pulse);
+  --destructive-foreground: var(--bone);
+  --border: var(--line);
+  --radius: 1rem;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, system-ui, sans-serif;
+}
+
+@layer utilities {
+  .bg-grid-white {
+    background-image:
+      linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

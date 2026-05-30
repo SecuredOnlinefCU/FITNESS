@@ -1,0 +1,10 @@
+
+import {Router} from 'express'; import {prisma} from '../../lib/prisma'; import {requireAuth,AuthenticatedRequest,requireRole} from '../../common/middleware/auth'; import {asyncHandler} from '../../common/utils/async-handler';
+export const trainingRouter=Router(); trainingRouter.use(requireAuth);
+trainingRouter.get('/exercises',asyncHandler(async(_req,res)=>res.json({items:await prisma.exercise.findMany({take:100})})));
+trainingRouter.post('/exercises',requireRole(['coach','assistant_coach']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.exercise.create({data:{coachUserId:req.user!.sub,...req.body}}))));
+trainingRouter.post('/workouts',requireRole(['coach','assistant_coach']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.workout.create({data:{coachUserId:req.user!.sub,title:req.body.title,description:req.body.description,programId:req.body.programId,exercises:req.body.exercises?{create:req.body.exercises}:undefined},include:{exercises:true}}))));
+trainingRouter.post('/assignments',requireRole(['coach','assistant_coach']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.workoutAssignment.create({data:{...req.body,assignedByUserId:req.user!.sub}}))));
+trainingRouter.post('/assignments/:assignmentId/start',requireRole(['client']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.workoutSession.create({data:{assignmentId:req.params.assignmentId,clientUserId:req.user!.sub,offlineCreated:Boolean(req.body?.offlineCreated)}}))));
+trainingRouter.post('/sessions/:sessionId/sets',requireRole(['client']),asyncHandler(async(req,res)=>res.status(201).json(await prisma.setLog.create({data:{sessionId:req.params.sessionId,...req.body}}))));
+trainingRouter.get('/history',requireRole(['client']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.json({items:await prisma.workoutSession.findMany({where:{clientUserId:req.user!.sub},include:{sets:true,assignment:true},orderBy:{startedAt:'desc'}})})));

@@ -1,0 +1,25 @@
+import { AlertTriangle, RefreshCcw } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+
+export function ErrorState({ message = 'Something went wrong.', onRetry }: { message?: string; onRetry?: () => void }) {
+  return (
+    <Card className="border-red-200 bg-red-50">
+      <CardContent className="flex flex-col gap-4 p-5 md:flex-row md:items-center md:justify-between">
+        <div className="flex gap-3">
+          <AlertTriangle className="h-6 w-6 shrink-0 text-red-600" />
+          <div>
+            <h2 className="font-black">Unable to load this section</h2>
+            <p className="text-sm text-slate-600">{message}</p>
+          </div>
+        </div>
+        {onRetry ? (
+          <Button variant="secondary" onClick={onRetry}>
+            <RefreshCcw className="mr-2 h-4 w-4" />
+            Retry
+          </Button>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
+}
