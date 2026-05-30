@@ -19,12 +19,12 @@ export function CoachActionRecommendationList({ items = [], onCompleted }: { ite
             <div key={item.id} className="flex items-start justify-between gap-4 rounded-2xl border border-border p-4">
               <div>
                 <p className="font-black">{item.title}</p>
-                <p className="text-sm text-slate-500">{item.body}</p>
-                <p className="mt-1 text-xs font-bold text-slate-400">{item.recommendationType} • Priority {item.priority}</p>
+                <p className="text-sm text-muted-foreground">{item.body}</p>
+                <p className="mt-1 text-xs font-bold text-muted-foreground">{item.recommendationType} • Priority {item.priority}</p>
               </div>
               <Button variant="secondary" onClick={() => complete(item.id)}>Done</Button>
             </div>
-          )) : <p className="text-sm text-slate-500">No open recommendations.</p>}
+          )) : <p className="text-sm text-muted-foreground">No open recommendations.</p>}
         </div>
       </CardContent>
     </Card>

@@ -9,7 +9,7 @@ export function ActionCard({ title, description, href, label }: { title: string;
         <CardContent className="flex items-center justify-between gap-4 p-5">
           <div>
             <h3 className="font-bold">{title}</h3>
-            <p className="mt-1 text-sm text-slate-500">{description}</p>
+            <p className="mt-1 text-sm text-muted-foreground">{description}</p>
           </div>
           <div className="flex shrink-0 items-center gap-2 rounded-full bg-muted px-3 py-2 text-xs font-bold text-primary">
             {label}

@@ -40,8 +40,8 @@ export function LevelFitLogo({ size = 32, className, showWordmark = true }: Leve
     <span className={twMerge('inline-flex items-center gap-2.5', className)}>
       <LevelFitMark size={size} />
       {showWordmark && (
-        <span className="whitespace-nowrap text-[15px] font-semibold leading-none tracking-tight text-[#f4f5ef]">
-          level<span style={{ color: '#FF5A1F' }}>Fit</span>
+        <span className="whitespace-nowrap text-[15px] font-semibold leading-none tracking-tight text-bone">
+          level<span className="text-energy">Fit</span>
         </span>
       )}
     </span>

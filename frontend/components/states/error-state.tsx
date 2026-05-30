@@ -10,7 +10,7 @@ export function ErrorState({ message = 'Something went wrong.', onRetry }: { mes
           <AlertTriangle className="h-6 w-6 shrink-0 text-red-600" />
           <div>
             <h2 className="font-black">Unable to load this section</h2>
-            <p className="text-sm text-slate-600">{message}</p>
+            <p className="text-sm text-muted-foreground">{message}</p>
           </div>
         </div>
         {onRetry ? (

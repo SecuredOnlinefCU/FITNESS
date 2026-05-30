@@ -4,7 +4,7 @@ export function CoachStatCard({ label, value, trend }: { label: string; value: s
   return (
     <Card>
       <CardContent className="p-5">
-        <p className="text-sm text-slate-500">{label}</p>
+        <p className="text-sm text-muted-foreground">{label}</p>
         <p className="mt-2 text-3xl font-black tracking-tight">{value}</p>
         {trend ? <p className="mt-1 text-xs font-semibold text-primary">{trend}</p> : null}
       </CardContent>

@@ -17,7 +17,7 @@ export default function AdminWebhooksPage() {
           loader={() => adminExtendedApi.webhookEvents()}
           emptyTitle="No webhook events"
           emptyDescription="Stripe webhook events will appear after provider setup."
-          renderItem={(item) => <pre className='overflow-auto text-xs text-slate-600'>{JSON.stringify(item, null, 2)}</pre>}
+          renderItem={(item) => <pre className='overflow-auto text-xs text-muted-foreground'>{JSON.stringify(item, null, 2)}</pre>}
         />
       </DashboardShell>
     </ProtectedRoute>

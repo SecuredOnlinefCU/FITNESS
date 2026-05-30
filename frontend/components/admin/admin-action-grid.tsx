@@ -23,7 +23,7 @@ export function AdminActionGrid() {
                 <div className="rounded-2xl bg-muted p-3 text-primary"><Icon className="h-5 w-5" /></div>
                 <div>
                   <h2 className="font-black">{action.title}</h2>
-                  <p className="mt-1 text-sm text-slate-500">{action.description}</p>
+                  <p className="mt-1 text-sm text-muted-foreground">{action.description}</p>
                 </div>
               </CardContent>
             </Card>

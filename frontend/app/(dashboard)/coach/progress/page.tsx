@@ -9,9 +9,9 @@ export default function CoachProgressPage() {
       <DashboardShell>
         <CoachPageHeader title="Progress review" subtitle="Review photos, metrics, and client check-ins." />
         <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardContent><h2 className="font-bold">Metric trends</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Progress photos</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Check-ins</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Metric trends</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Progress photos</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Check-ins</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
         </div>
       </DashboardShell>
     </ProtectedRoute>

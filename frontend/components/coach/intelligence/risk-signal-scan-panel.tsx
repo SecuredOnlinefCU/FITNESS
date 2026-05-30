@@ -20,7 +20,7 @@ export function RiskSignalScanPanel({ onScanned }: { onScanned?: () => void }) {
           <div className="rounded-2xl bg-muted p-3 text-primary"><ShieldAlert className="h-5 w-5" /></div>
           <div>
             <h2 className="text-xl font-black">Risk signal scans</h2>
-            <p className="text-sm text-slate-500">Detect low adherence, stalled progress, and payment/access risk.</p>
+            <p className="text-sm text-muted-foreground">Detect low adherence, stalled progress, and payment/access risk.</p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2">

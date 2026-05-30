@@ -17,7 +17,7 @@ export default function AdminDeliveryLogsPage() {
           loader={() => adminExtendedApi.deliveryLogs()}
           emptyTitle="No delivery logs"
           emptyDescription="Email/push attempts will appear after notifications send."
-          renderItem={(item) => <pre className='overflow-auto text-xs text-slate-600'>{JSON.stringify(item, null, 2)}</pre>}
+          renderItem={(item) => <pre className='overflow-auto text-xs text-muted-foreground'>{JSON.stringify(item, null, 2)}</pre>}
         />
       </DashboardShell>
     </ProtectedRoute>

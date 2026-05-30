@@ -18,8 +18,8 @@ export function ClientRiskFlagCard({ flag, onResolved }: { flag: any; onResolved
           <AlertTriangle className="mt-1 h-5 w-5 text-primary" />
           <div>
             <p className="font-black">{flag.title}</p>
-            <p className="text-sm text-slate-500">{flag.body}</p>
-            <p className="mt-1 text-xs font-bold text-slate-400">{flag.flagType} • {flag.severity}</p>
+            <p className="text-sm text-muted-foreground">{flag.body}</p>
+            <p className="mt-1 text-xs font-bold text-muted-foreground">{flag.flagType} • {flag.severity}</p>
           </div>
         </div>
         <Button variant="secondary" onClick={resolve}>Resolve</Button>

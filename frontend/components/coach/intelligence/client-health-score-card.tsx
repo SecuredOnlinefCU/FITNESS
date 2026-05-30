@@ -8,15 +8,15 @@ export function ClientHealthScoreCard({ item }: { item: any }) {
       <CardContent className="p-5">
         <div className="flex justify-between gap-4">
           <div>
-            <p className="text-sm text-slate-500">Client</p>
+            <p className="text-sm text-muted-foreground">Client</p>
             <p className="font-black">{item.clientUserId}</p>
           </div>
           <div className="text-right">
             <p className={`text-4xl font-black ${color}`}>{item.score}</p>
-            <p className="text-xs font-bold text-slate-500">{item.healthStatus}</p>
+            <p className="text-xs font-bold text-muted-foreground">{item.healthStatus}</p>
           </div>
         </div>
-        <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-slate-500 md:grid-cols-4">
+        <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-muted-foreground md:grid-cols-4">
           <div className="rounded-2xl bg-muted p-3"><p className="font-black text-foreground">{item.adherenceScore}</p><p>Adherence</p></div>
           <div className="rounded-2xl bg-muted p-3"><p className="font-black text-foreground">{item.progressScore}</p><p>Progress</p></div>
           <div className="rounded-2xl bg-muted p-3"><p className="font-black text-foreground">{item.engagementScore}</p><p>Engagement</p></div>

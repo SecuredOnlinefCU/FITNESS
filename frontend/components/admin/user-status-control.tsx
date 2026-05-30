@@ -27,7 +27,7 @@ export function UserStatusControl({ userId, currentStatus = 'active' }: { userId
         <option value="disabled">Disabled</option>
       </Select>
       <Button onClick={save}>Save</Button>
-      {message ? <p className="text-xs text-slate-500">{message}</p> : null}
+      {message ? <p className="text-xs text-muted-foreground">{message}</p> : null}
     </div>
   );
 }

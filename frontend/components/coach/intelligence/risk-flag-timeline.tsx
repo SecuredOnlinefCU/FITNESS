@@ -9,10 +9,10 @@ export function RiskFlagTimeline({ items = [] }: { items?: any[] }) {
           {items.length ? items.map((item) => (
             <div key={item.id} className="rounded-2xl border border-border p-4">
               <p className="font-black">{item.title}</p>
-              <p className="text-sm text-slate-500">{item.body}</p>
-              <p className="mt-1 text-xs text-slate-400">{item.eventType} • {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}</p>
+              <p className="text-sm text-muted-foreground">{item.body}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{item.eventType} • {item.createdAt ? new Date(item.createdAt).toLocaleString() : ''}</p>
             </div>
-          )) : <p className="text-sm text-slate-500">No timeline events yet.</p>}
+          )) : <p className="text-sm text-muted-foreground">No timeline events yet.</p>}
         </div>
       </CardContent>
     </Card>

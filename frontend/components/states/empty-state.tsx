@@ -18,7 +18,7 @@ export function EmptyState({
     <Card>
       <CardContent className="p-6 text-center">
         <h2 className="text-xl font-black">{title}</h2>
-        <p className="mx-auto mt-2 max-w-md text-sm text-slate-500">{description}</p>
+        <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
         {actionHref && actionLabel ? (
           <Link href={actionHref} className="mt-5 inline-flex">
             <Button>

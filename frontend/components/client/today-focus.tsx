@@ -14,7 +14,7 @@ export function TodayFocus() {
         <div className="mb-4 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-black">Today’s focus</h2>
-            <p className="text-sm text-slate-500">The next best actions for your plan.</p>
+            <p className="text-sm text-muted-foreground">The next best actions for your plan.</p>
           </div>
         </div>
         <div className="space-y-3">
@@ -25,7 +25,7 @@ export function TodayFocus() {
                 <div className="rounded-2xl bg-muted p-3 text-primary"><Icon className="h-5 w-5" /></div>
                 <div>
                   <p className="font-bold">{item.title}</p>
-                  <p className="text-sm text-slate-500">{item.detail}</p>
+                  <p className="text-sm text-muted-foreground">{item.detail}</p>
                 </div>
               </div>
             );

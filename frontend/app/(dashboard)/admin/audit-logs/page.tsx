@@ -17,7 +17,7 @@ export default function AdminAuditLogsPage() {
           loader={() => adminExtendedApi.auditLogs()}
           emptyTitle="No audit logs"
           emptyDescription="Admin mutations will create audit entries."
-          renderItem={(item) => <pre className='overflow-auto text-xs text-slate-600'>{JSON.stringify(item, null, 2)}</pre>}
+          renderItem={(item) => <pre className='overflow-auto text-xs text-muted-foreground'>{JSON.stringify(item, null, 2)}</pre>}
         />
       </DashboardShell>
     </ProtectedRoute>

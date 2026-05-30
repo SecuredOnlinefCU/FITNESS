@@ -16,7 +16,7 @@ export function WebSocketStatusPill({ status }: { status: RealtimeConnectionStat
       status === 'open' ? 'bg-emerald-100 text-emerald-700' :
       status === 'connecting' ? 'bg-yellow-100 text-yellow-700' :
       status === 'error' ? 'bg-red-100 text-red-700' :
-      'bg-slate-100 text-slate-600'
+      'bg-muted text-muted-foreground'
     )}>
       {labels[status]}
     </span>

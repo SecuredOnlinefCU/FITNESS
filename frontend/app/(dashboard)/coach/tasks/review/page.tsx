@@ -9,9 +9,9 @@ export default function CoachTasksReviewPage() {
       <DashboardShell>
         <CoachPageHeader title="Task review" subtitle="Review client submissions and send feedback." />
         <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardContent><h2 className="font-bold">Pending submissions</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Video reviews</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Feedback history</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Pending submissions</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Video reviews</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Feedback history</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
         </div>
       </DashboardShell>
     </ProtectedRoute>

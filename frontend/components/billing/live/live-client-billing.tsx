@@ -63,11 +63,11 @@ export function LiveClientBilling() {
               {result.data.payments.map((payment: any) => (
                 <div key={payment.id} className="rounded-2xl border border-border p-4 text-sm">
                   <p className="font-bold">{payment.status}</p>
-                  <p className="text-slate-500">{payment.currency?.toUpperCase()} {(payment.amountCents / 100).toFixed(2)}</p>
+                  <p className="text-muted-foreground">{payment.currency?.toUpperCase()} {(payment.amountCents / 100).toFixed(2)}</p>
                 </div>
               ))}
             </div>
-          ) : <p className="mt-2 text-sm text-slate-500">No payment history yet.</p>}
+          ) : <p className="mt-2 text-sm text-muted-foreground">No payment history yet.</p>}
         </CardContent>
       </Card>
     </div>

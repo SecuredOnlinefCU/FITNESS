@@ -9,9 +9,9 @@ export default function CoachNutritionPage() {
       <DashboardShell>
         <CoachPageHeader title="Nutrition planning" subtitle="Create meal plans, macro goals, and review logs." />
         <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardContent><h2 className="font-bold">Meal plans</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Macro targets</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Meal log review</h2><p className="mt-1 text-sm text-slate-500">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Meal plans</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Macro targets</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card><CardContent><h2 className="font-bold">Meal log review</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
         </div>
       </DashboardShell>
     </ProtectedRoute>

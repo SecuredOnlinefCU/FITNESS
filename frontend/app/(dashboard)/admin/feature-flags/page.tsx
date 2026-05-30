@@ -17,7 +17,7 @@ export default function AdminFeatureFlagsPage() {
           loader={() => adminExtendedApi.featureFlags()}
           emptyTitle="No feature flags"
           emptyDescription="Feature flags will appear when configured."
-          renderItem={(item) => <pre className='overflow-auto text-xs text-slate-600'>{JSON.stringify(item, null, 2)}</pre>}
+          renderItem={(item) => <pre className='overflow-auto text-xs text-muted-foreground'>{JSON.stringify(item, null, 2)}</pre>}
         />
       </DashboardShell>
     </ProtectedRoute>

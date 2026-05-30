@@ -29,12 +29,12 @@ export function AdminListShell({ title, description, loader, renderItem, emptyTi
       <CardContent className="p-5">
         <div className="mb-4">
           <h2 className="text-xl font-black">{title}</h2>
-          <p className="text-sm text-slate-500">{description}</p>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
         <div className="space-y-3">
           {items.map((item, index) => (
             <div key={item.id || index} className="rounded-2xl border border-border p-4">
-              {renderItem ? renderItem(item) : <pre className="overflow-auto text-xs text-slate-600">{JSON.stringify(item, null, 2)}</pre>}
+              {renderItem ? renderItem(item) : <pre className="overflow-auto text-xs text-muted-foreground">{JSON.stringify(item, null, 2)}</pre>}
             </div>
           ))}
         </div>

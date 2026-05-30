@@ -26,10 +26,10 @@ export function WorkoutBuilderShell() {
       <CardContent className="space-y-4 p-5">
         <div>
           <h2 className="text-xl font-black">Workout builder</h2>
-          <p className="text-sm text-slate-500">Create reusable workouts and assign them to clients.</p>
+          <p className="text-sm text-muted-foreground">Create reusable workouts and assign them to clients.</p>
         </div>
         <Input placeholder="Workout title" value={title} onChange={(event) => setTitle(event.target.value)} />
-        {status ? <p className="text-sm text-slate-500">{status}</p> : null}
+        {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
         <Button onClick={createWorkout} disabled={!title}>Create workout</Button>
       </CardContent>
     </Card>

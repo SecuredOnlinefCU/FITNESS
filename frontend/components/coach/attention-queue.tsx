@@ -13,7 +13,7 @@ export function AttentionQueue() {
     <Card>
       <CardContent className="p-5">
         <h2 className="text-xl font-black">Attention queue</h2>
-        <p className="mb-4 text-sm text-slate-500">The highest-signal items that need coach action.</p>
+        <p className="mb-4 text-sm text-muted-foreground">The highest-signal items that need coach action.</p>
         <div className="space-y-3">
           {items.map((item) => {
             const Icon = item.icon;
@@ -22,7 +22,7 @@ export function AttentionQueue() {
                 <div className="rounded-2xl bg-muted p-3 text-primary"><Icon className="h-5 w-5" /></div>
                 <div className="min-w-0 flex-1">
                   <p className="font-bold">{item.title}</p>
-                  <p className="text-sm text-slate-500">{item.detail}</p>
+                  <p className="text-sm text-muted-foreground">{item.detail}</p>
                 </div>
                 <p className="text-2xl font-black">{item.count}</p>
               </div>

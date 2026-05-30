@@ -17,7 +17,7 @@ export default function AdminUsersPage() {
           loader={() => adminExtendedApi.users()}
           emptyTitle="No users found"
           emptyDescription="User records will appear after accounts are created."
-          renderItem={(item) => <div className='space-y-3'><pre className='overflow-auto text-xs text-slate-600'>{JSON.stringify(item, null, 2)}</pre>{item.id ? <UserStatusControl userId={item.id} currentStatus={item.status || 'active'} /> : null}</div>}
+          renderItem={(item) => <div className='space-y-3'><pre className='overflow-auto text-xs text-muted-foreground'>{JSON.stringify(item, null, 2)}</pre>{item.id ? <UserStatusControl userId={item.id} currentStatus={item.status || 'active'} /> : null}</div>}
         />
       </DashboardShell>
     </ProtectedRoute>

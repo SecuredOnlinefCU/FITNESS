@@ -35,7 +35,7 @@ export function PackageBuilderShell() {
       <CardContent className="space-y-4 p-5">
         <div>
           <h2 className="text-xl font-black">Coaching package</h2>
-          <p className="text-sm text-slate-500">Create checkout-ready offers for clients.</p>
+          <p className="text-sm text-muted-foreground">Create checkout-ready offers for clients.</p>
         </div>
         <Input placeholder="Package title" value={title} onChange={(event) => setTitle(event.target.value)} />
         <Input placeholder="Price in USD" value={price} onChange={(event) => setPrice(event.target.value)} />
@@ -43,7 +43,7 @@ export function PackageBuilderShell() {
           <option value="RECURRING">Monthly recurring</option>
           <option value="ONE_TIME">One-time</option>
         </Select>
-        {status ? <p className="text-sm text-slate-500">{status}</p> : null}
+        {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
         <Button onClick={createPackage} disabled={!title || !price}>Create package</Button>
       </CardContent>
     </Card>

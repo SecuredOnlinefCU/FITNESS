@@ -16,7 +16,7 @@ export function OptimisticMessageComposer({ onSend, status }: { onSend: (bodyTex
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-white p-3 shadow-sm">
+    <div className="rounded-2xl border border-border bg-card p-3 shadow-sm">
       <div className="flex gap-2">
         <Button variant="secondary" type="button" aria-label="Attach media">
           <Paperclip className="h-4 w-4" />
@@ -31,7 +31,7 @@ export function OptimisticMessageComposer({ onSend, status }: { onSend: (bodyTex
           <Send className="h-4 w-4" />
         </Button>
       </div>
-      {status ? <p className="mt-2 text-xs text-slate-500">{status}</p> : null}
+      {status ? <p className="mt-2 text-xs text-muted-foreground">{status}</p> : null}
     </div>
   );
 }

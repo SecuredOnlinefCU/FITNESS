@@ -27,7 +27,7 @@ export function NextBestActionList({ items = [], onComplete }: { items?: any[]; 
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
                   <p className="font-black">{item.title}</p>
-                  <p className="text-sm text-slate-500">{item.body}</p>
+                  <p className="text-sm text-muted-foreground">{item.body}</p>
                 </div>
                 <div className="flex gap-2">
                   {item.actionHref ? <Link href={item.actionHref}><Button variant="secondary">Open <ArrowRight className="ml-2 h-4 w-4" /></Button></Link> : null}
