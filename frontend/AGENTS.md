@@ -79,3 +79,44 @@ graph TD
 - All states: default, hover, focus-visible, active, disabled (submit button during API call), loading (submit spinner text), empty (form pristine), error (inline alert with role="alert"), success (forgot-password sent state)
 - Accessible: proper `<label>` associations, `aria-required`, `aria-describedby`, `role="alert"` on errors, semantic heading hierarchy, keyboard-complete forms
 - Brand: Signal-green CTAs, Ink-950 backgrounds, Bone-foreground text, Pulse error styling
+
+### 2026-05-30 — Playwright E2E test suite (71 tests)
+
+**Goal:** Comprehensive end-to-end testing of all production functions - auth pages, landing page, protected routes, API endpoints, responsive design, WCAG touch targets.
+
+**Approach:** Playwright test runner with Chromium, organized by feature (landing, auth, pages, API, responsive). Tests run against live Vercel frontend + Railway backend.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `playwright.config.ts` | Playwright config targeting production URLs, 3 projects (chromium, firefox, mobile) |
+| Added | `e2e/landing.spec.ts` | 8 tests: page load, nav, CTA buttons, pricing, FAQ, meta tags, no console errors |
+| Added | `e2e/auth.spec.ts` | 7 tests: login page, form validation, signup page, forgot-password, protected redirect, logout link |
+| Added | `e2e/pages.spec.ts` | 37 tests: all 35 protected pages redirect to /login when unauthenticated, HTTP status checks |
+| Added | `e2e/api.spec.ts` | 11 tests: health, auth endpoints, CORS, rate limiting, all module endpoints return 401 without auth |
+| Added | `e2e/responsive.spec.ts` | 8 tests: 3 viewports (desktop/tablet/mobile), protected redirect, WCAG touch targets (44x44) |
+
+### Architecture
+
+```
+frontend/e2e/
+├── api.spec.ts          # Backend API health + endpoints (11 tests)
+├── auth.spec.ts         # Auth page rendering + redirects (7 tests)
+├── landing.spec.ts      # Landing page sections + meta (8 tests)
+├── pages.spec.ts        # All dashboard pages redirect (37 tests)
+├── responsive.spec.ts   # Viewport + WCAG (8 tests)
+└── playwright.config.ts # Production URL targets + 3 browser projects
+```
+
+### Test Results
+- ✅ **71 passed, 0 failed** — running against production (Vercel + Railway)
+- API tests: health 200, auth 401/400, CORS present, rate limiting works
+- Auth tests: all 3 auth pages render (200), login form validation works
+- Protected pages: all 35 dashboard pages redirect to /login when unauthenticated
+- Responsive: works at 1920x1080, 768x1024, 375x667
+- WCAG: nav touch targets ≥ 44x44px
+- Console: no JS errors on landing page
+- Coverage: Verified all backend modules return 401 without auth (training, programs, feed, messaging, tasks)
+
+### Status: Complete

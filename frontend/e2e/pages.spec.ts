@@ -25,26 +25,15 @@ const SHARED_PAGES = [
 
 const ALL_PROTECTED_PAGES = [...COACH_PAGES, ...CLIENT_PAGES, ...ADMIN_PAGES, ...SHARED_PAGES];
 
+const REDIRECT_TIMEOUT = 20000;
+
 test.describe('Protected Pages — Auth Redirect', () => {
   for (const path of ALL_PROTECTED_PAGES) {
     test(`unauthenticated user is redirected from ${path}`, async ({ page }) => {
       await page.goto(path);
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(1500);
-
-      const currentUrl = page.url();
-      const redirected = currentUrl.includes('/login');
+      await page.waitForURL(/\/login/, { timeout: REDIRECT_TIMEOUT });
       const hasAuthForm = (await page.locator('input[type="email"]').count()) > 0;
-
-      if (redirected || hasAuthForm) {
-        expect(true).toBeTruthy();
-      } else {
-        const status = page.locator('body');
-        const text = await status.textContent();
-        const isLoadingState = text?.includes('Loading');
-        const is404 = text?.includes('404') || text?.includes('could not be found');
-        expect(isLoadingState || is404).toBeTruthy();
-      }
+      expect(hasAuthForm).toBeTruthy();
     });
   }
 });
@@ -78,11 +67,8 @@ test.describe('Protected Pages — HTTP Status', () => {
 test.describe('Dashboard Shell', () => {
   test('shared messages page shows auth state', async ({ page }) => {
     await page.goto('/dashboard/messages');
-    await page.waitForLoadState('networkidle');
-    await page.waitForTimeout(1000);
-
-    const currentUrl = page.url();
-    const redirected = currentUrl.includes('/login');
-    expect(redirected || currentUrl.includes('/dashboard/messages')).toBeTruthy();
+    await page.waitForURL(/\/login/, { timeout: REDIRECT_TIMEOUT });
+    const hasAuthForm = (await page.locator('input[type="email"]').count()) > 0;
+    expect(hasAuthForm).toBeTruthy();
   });
 });

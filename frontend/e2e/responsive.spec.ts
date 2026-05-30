@@ -25,10 +25,9 @@ test.describe('Responsive Design', () => {
     test(`protected page redirects to login at ${vp.name}`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/coach/home');
-      await page.waitForLoadState('networkidle');
-      await page.waitForTimeout(1500);
-      const currentUrl = page.url();
-      expect(currentUrl.includes('/login') || currentUrl.includes('/coach/home')).toBeTruthy();
+      await page.waitForURL(/\/login/, { timeout: 20000 });
+      const hasAuthForm = (await page.locator('input[type="email"]').count()) > 0;
+      expect(hasAuthForm).toBeTruthy();
     });
   }
 });

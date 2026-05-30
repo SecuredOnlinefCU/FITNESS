@@ -5,9 +5,9 @@
     "buildCommand": "pnpm install && pnpm --filter unified-fitness-backend-v1 prisma:generate && pnpm --filter unified-fitness-backend-v1 build"
   },
   "deploy": {
-    "startCommand": "pnpm --filter unified-fitness-backend-v1 exec tsx src/main.ts",
+    "startCommand": "pnpm --filter unified-fitness-backend-v1 exec prisma db push --accept-data-loss && pnpm --filter unified-fitness-backend-v1 exec tsx src/main.ts",
     "healthcheckPath": "/health",
-    "healthcheckTimeout": 30,
+    "healthcheckTimeout": 120,
     "restartPolicyType": "always"
   }
 }

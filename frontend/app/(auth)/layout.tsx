@@ -1,29 +1,46 @@
-import Link from 'next/link';
 import Image from 'next/image';
 import { LevelFitLogo } from '@/components/levelfitness/logo';
 
+const taglines = [
+  'train with purpose',
+  'every rep every set',
+  'stronger every single day',
+  'progress over perfection',
+];
+
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="relative flex min-h-dvh flex-col items-center justify-center overflow-hidden bg-background px-4">
-      <Image
-        src="/images/auth-hero.png"
-        alt=""
-        fill
-        className="object-cover opacity-30"
-        sizes="100vw"
-        priority
-        aria-hidden="true"
-      />
-      <div className="pointer-events-none absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/60" />
-      <div className="pointer-events-none absolute left-1/2 top-1/3 h-[600px] w-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/10 blur-[120px]" />
-      <div className="pointer-events-none absolute bottom-0 right-0 h-[400px] w-[400px] rounded-full bg-flow/10 blur-[100px]" />
-      <div className="relative mb-10">
-        <Link href="/" aria-label="Go to homepage">
-          <LevelFitLogo size={40} />
-        </Link>
+    <div className="flex min-h-dvh">
+      <div className="relative hidden w-1/2 md:block">
+        <Image
+          src="/images/auth-hero.png"
+          alt=""
+          fill
+          className="object-cover"
+          sizes="50vw"
+          priority
+          aria-hidden="true"
+        />
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-ink-950/60 via-ink-950/30 to-ink-950/80" />
+        <div className="pointer-events-none absolute left-1/2 top-1/3 h-[500px] w-[500px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-primary/15 blur-[120px]" />
+        <div className="relative flex h-full flex-col justify-between p-10">
+          <LevelFitLogo size={36} />
+          <div className="pb-16">
+            {taglines.map((line) => (
+              <p key={line} className="text-3xl font-black uppercase leading-tight tracking-tight text-bone">
+                {line}
+              </p>
+            ))}
+          </div>
+        </div>
       </div>
-      <div className="relative">{children}</div>
-      <p className="relative mt-10 text-xs text-muted-foreground">&copy; 2026 LevelFITness. All rights reserved.</p>
+      <div className="flex w-full flex-col items-center justify-center bg-background px-4 md:w-1/2">
+        <div className="mb-10 md:hidden">
+          <LevelFitLogo size={36} />
+        </div>
+        {children}
+        <p className="relative mt-10 text-xs text-muted-foreground">&copy; 2026 LevelFITness. All rights reserved.</p>
+      </div>
     </div>
   );
 }

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
@@ -28,6 +29,16 @@ export default function Hero() {
       </div>
 
       <div className="absolute inset-0 bg-gradient-to-r from-ink-950 via-ink-950/80 to-transparent" />
+
+      <Image
+        src="/images/coach-hero.png"
+        alt=""
+        fill
+        className="object-cover object-right opacity-40 md:opacity-60"
+        sizes="100vw"
+        priority
+        aria-hidden="true"
+      />
 
       <div className="relative z-10 mx-auto w-full max-w-7xl px-6">
         <div className="max-w-2xl">
