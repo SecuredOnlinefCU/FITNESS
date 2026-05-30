@@ -23,6 +23,7 @@ export default function SignupPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [role, setRole] = useState<'client' | 'coach'>('client');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -43,7 +44,7 @@ export default function SignupPage() {
     setError('');
     setLoading(true);
     try {
-      await signUp({ email, password, confirmPassword, role: 'client', firstName, lastName });
+      await signUp({ email, password, confirmPassword, role, firstName, lastName });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not create your account.');
     } finally {
@@ -105,6 +106,16 @@ export default function SignupPage() {
                 required
                 className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
               />
+            </div>
+          </div>
+
+          <div>
+            <label htmlFor="signup-role" className="mb-1.5 block text-sm font-bold text-foreground">I am a\u2026</label>
+            <div className="grid grid-cols-2 gap-3">
+              <button type="button" role="tab" id="signup-role" aria-selected={role === 'client'} onClick={() => setRole('client')}
+                className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors ${role === 'client' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Client</button>
+              <button type="button" role="tab" aria-selected={role === 'coach'} onClick={() => setRole('coach')}
+                className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors ${role === 'coach' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Coach</button>
             </div>
           </div>
 
