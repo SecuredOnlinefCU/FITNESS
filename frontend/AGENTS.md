@@ -120,3 +120,39 @@ frontend/e2e/
 - Coverage: Verified all backend modules return 401 without auth (training, programs, feed, messaging, tasks)
 
 ### Status: Complete
+
+### 2026-05-30 — Dashboard sidebar + layout
+
+**Goal:** Add navigation between all 35 dashboard pages (client/coach/admin). Previously there was no way to move between sections without typing URLs.
+
+**Approach:** Added `(dashboard)/layout.tsx` with a `DashboardSidebar` component providing role-based navigation links (12 client, 14 coach, 7 admin), active link highlighting via `usePathname()`, mobile hamburger with slide-out overlay, and sign-out button.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `app/(dashboard)/layout.tsx` | Left sidebar + content area layout with mobile padding |
+| Added | `components/dashboard/dashboard-sidebar.tsx` | Role-based nav links, active state, mobile toggle, sign out |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    APP[app/] --> ROOT[layout.tsx]
+    APP --> DASH[\(dashboard\) layout.tsx]
+    DASH --> SIDEBAR[DashboardSidebar]
+    SIDEBAR --> CLIENT[clientLinks: 12 items]
+    SIDEBAR --> COACH[coachLinks: 14 items]
+    SIDEBAR --> ADMIN[adminLinks: 7 items]
+    DASH --> PAGES[35 dashboard pages as children]
+    ROOT --> AUTH[AuthProvider]
+    SIDEBAR --> AUTH
+```
+
+### Status: Complete
+- Build: ✅ `next build` — 43 pages compiled
+- Client sidebar: Today, Home, Workouts, Recovery, Progress, Nutrition, Program, Feed, Tasks, Messages, Billing, Notifications
+- Coach sidebar: Command center, Client dossiers, Recovery, Intelligence, Risk signals, Workouts, Programs, Tasks, Progress, Nutrition, Feed, Packages, Client health, Messages
+- Admin sidebar: Dashboard, Users, Reports, Audit logs, Delivery logs, Feature flags, Webhooks
+- Mobile: hamburger button (fixed top-left), slide-out overlay with backdrop blur
+- Active link: highlighted with `bg-primary/10 text-primary`

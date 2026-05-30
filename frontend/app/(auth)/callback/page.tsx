@@ -42,7 +42,11 @@ function CallbackHandler() {
         window.close();
       })();
     } else {
-      setTimeout(() => router.push('/dashboard'), 500);
+      authApi.me().then((me: any) => {
+        const role = me?.roles?.[0]?.role?.name || me?.role || 'client';
+        const home = role === 'coach' ? '/coach/home' : role === 'admin' ? '/admin' : '/client/home';
+        router.push(home);
+      }).catch(() => router.push('/client/home'));
     }
   }, [router, searchParams]);
 

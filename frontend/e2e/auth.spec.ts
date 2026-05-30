@@ -74,4 +74,30 @@ test.describe('Authentication Flow', () => {
     const loginLinks = page.locator('a').filter({ hasText: /sign ?in|log ?in/i });
     expect(await loginLinks.count()).toBeGreaterThanOrEqual(1);
   });
+
+  test('real signup via browser form', async ({ page }) => {
+    const email = `e2e-${Date.now()}@test.com`;
+    const password = 'TestPass123!';
+
+    await page.goto('/signup');
+    await page.waitForLoadState('networkidle');
+
+    const firstNameInput = page.locator('input[name="firstName"]');
+    const lastNameInput = page.locator('input[name="lastName"]');
+    const emailInput = page.locator('input[type="email"], input[name="email"]');
+    const passwordInput = page.locator('input[type="password"]').first();
+    const confirmInput = page.locator('input[type="password"]').nth(1);
+
+    await expect(firstNameInput).toBeVisible();
+    await firstNameInput.fill('E2E');
+    await lastNameInput.fill('Test');
+    await emailInput.fill(email);
+    await passwordInput.fill(password);
+    await confirmInput.fill(password);
+
+    await page.locator('button[type="submit"]').click();
+
+    await page.waitForURL(/\/dashboard/, { timeout: 30000 });
+    expect(page.url()).toContain('/dashboard');
+  });
 });

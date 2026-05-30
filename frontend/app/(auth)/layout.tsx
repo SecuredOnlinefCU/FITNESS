@@ -26,8 +26,11 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <div className="relative flex h-full flex-col justify-between p-10">
           <LevelFitLogo size={36} />
           <div className="pb-16">
-            {taglines.map((line) => (
-              <p key={line} className="text-3xl font-black uppercase leading-tight tracking-tight text-bone">
+            {taglines.map((line, i) => (
+              <p
+                key={line}
+                className={`text-3xl font-black uppercase leading-tight tracking-tight ${i === 0 ? 'bg-gradient-to-r from-signal to-flow bg-clip-text text-transparent' : 'text-bone'}`}
+              >
                 {line}
               </p>
             ))}

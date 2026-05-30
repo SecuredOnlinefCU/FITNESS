@@ -49,14 +49,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const session = await authApi.login({ email, password });
     setTokens(session.accessToken, session.refreshToken);
     setUser(session.user);
-    router.push('/dashboard');
+    router.push(getHomePath(session.user.role));
   }
 
   async function signUp(input: SignUpInput) {
     const session = await authApi.signup(input);
     setTokens(session.accessToken, session.refreshToken);
     setUser(session.user);
-    router.push('/dashboard');
+    router.push('/client/home');
   }
 
   function signOut() {
@@ -76,6 +76,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+function getHomePath(role: string): string {
+  switch (role) {
+    case 'coach': return '/coach/home';
+    case 'admin': return '/admin';
+    default: return '/client/home';
+  }
 }
 
 export function useAuth() {
