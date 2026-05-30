@@ -4,8 +4,6 @@ import { useState, type FormEvent } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/components/auth/auth-provider';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 
 export default function LoginPage() {
   const { signIn } = useAuth();
@@ -21,27 +19,24 @@ export default function LoginPage() {
     setLoading(true);
     try { await signIn(email, password); }
     catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Invalid email or password. Please try again.';
-      setError(message);
+      setError(err instanceof Error ? err.message : 'Invalid email or password.');
     } finally { setLoading(false); }
   }
 
   return (
-    <Card className="w-full max-w-sm">
-      <CardContent className="p-8">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">Log in</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Welcome back — let&apos;s pick up where you left off.</p>
+    <div className="w-full max-w-sm">
+      <div className="rounded-3xl border border-border bg-card p-8">
+        <h1 className="text-2xl font-black tracking-tight">Log in</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Welcome back — pick up where you left off.</p>
 
         <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>
           {error && (
-            <div role="alert" className="rounded-xl border border-pulse/30 bg-pulse/10 px-4 py-3 text-sm text-pulse">
-              {error}
-            </div>
+            <div role="alert" className="rounded-2xl border border-pulse/20 bg-pulse/10 px-4 py-3 text-sm text-pulse">{error}</div>
           )}
 
           <div>
-            <label htmlFor="login-email" className="mb-1.5 block text-sm font-medium text-foreground">Email</label>
-            <Input
+            <label htmlFor="login-email" className="mb-1.5 block text-sm font-bold text-foreground">Email</label>
+            <input
               id="login-email"
               name="email"
               type="email"
@@ -50,19 +45,16 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              aria-required="true"
-              aria-describedby={error && !email ? 'login-error' : undefined}
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
 
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <label htmlFor="login-password" className="text-sm font-medium text-foreground">Password</label>
-              <Link href="/forgot-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-                Forgot password?
-              </Link>
+              <label htmlFor="login-password" className="text-sm font-bold text-foreground">Password</label>
+              <Link href="/forgot-password" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Forgot?</Link>
             </div>
-            <Input
+            <input
               id="login-password"
               name="password"
               type="password"
@@ -71,21 +63,18 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              aria-required="true"
-              aria-describedby={error && !password ? 'login-error' : undefined}
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
 
-          <Button type="submit" disabled={loading} className="w-full">
-            {loading ? 'Logging in\u2026' : 'Log in'}
-          </Button>
+          <Button type="submit" disabled={loading} className="w-full">{loading ? 'Logging in\u2026' : 'Log in'}</Button>
         </form>
 
         <p className="mt-6 text-center text-sm text-muted-foreground">
-          Don&apos;t have an account?{' '}
-          <Link href="/signup" className="font-medium text-foreground hover:text-signal transition-colors">Sign up</Link>
+          No account?{' '}
+          <Link href="/signup" className="font-bold text-foreground transition-colors hover:text-primary">Sign up</Link>
         </p>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
