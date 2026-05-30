@@ -7,6 +7,12 @@ import { Watch, Moon, Heart, Footprints, Activity, TrendingUp, Sparkles } from '
 export default function ClientRecoveryPage() {
   return (
     <ProtectedRoute roles={['client', 'super_admin']}>
+      <div className="relative">
+        <div className="pointer-events-none fixed inset-0 -z-10" aria-hidden="true">
+          <div className="absolute left-0 top-1/3 h-[500px] w-[500px] opacity-[0.05]">
+            <img src="/images/auth-hero.png" alt="" className="h-full w-full object-cover" />
+          </div>
+        </div>
       <DashboardShell>
         <ClientPageHeader title="Recovery" subtitle="Your readiness, sleep, and recovery signals — intelligently tracked." />
 
@@ -114,6 +120,7 @@ export default function ClientRecoveryPage() {
           </Card>
         </div>
       </DashboardShell>
+      </div>
     </ProtectedRoute>
   );
 }

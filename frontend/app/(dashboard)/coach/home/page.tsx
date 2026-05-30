@@ -3,12 +3,17 @@ import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { CoachPageHeader } from '@/components/coach/coach-page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Users, MessageSquare, AlertTriangle, Activity, Bell, Eye, ArrowRight, ShieldCheck } from 'lucide-react';
+import Image from 'next/image';
 
 export default function CoachHomePage() {
   return (
     <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
-      <DashboardShell>
-        <CoachPageHeader title="Command center" subtitle="Executive overview of your coaching business — clients, risks, messages, and actions." />
+      <div className="relative">
+        <div className="pointer-events-none fixed right-0 top-0 -z-10 h-[600px] w-[500px]" aria-hidden="true">
+          <Image src="/images/coach-hero.png" alt="" fill className="object-cover opacity-[0.06]" sizes="500px" />
+        </div>
+        <DashboardShell>
+          <CoachPageHeader title="Command center" subtitle="Executive overview of your coaching business — clients, risks, messages, and actions." />
 
         <div className="grid gap-4 md:grid-cols-5">
           <Card>
@@ -103,6 +108,7 @@ export default function CoachHomePage() {
           </div>
         </div>
       </DashboardShell>
+      </div>
     </ProtectedRoute>
   );
 }

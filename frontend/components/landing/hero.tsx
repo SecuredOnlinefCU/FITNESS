@@ -1,13 +1,24 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import dynamic from 'next/dynamic';
 import { ArrowRight } from 'lucide-react';
+import { levelFitnessBrand } from '@/lib/brand/levelfitness';
 
 const HologramCanvas = dynamic(() => import('@/components/3d/hologram-canvas'), { ssr: false });
 
+const phrases = levelFitnessBrand.taglines;
+
 export default function Hero() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => setIndex((prev) => (prev + 1) % phrases.length), 3000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden">
       <div className="absolute inset-0">
@@ -32,8 +43,19 @@ export default function Hero() {
 
             <h1 className="text-5xl font-bold tracking-tight md:text-7xl leading-[1.05]">
               Level up your fitness,{' '}
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-signal via-energy to-flow">
-                one day at a time
+              <span className="relative inline-block min-w-[4ch]">
+                <AnimatePresence mode="wait">
+                  <motion.span
+                    key={phrases[index]}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -20 }}
+                    transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                    className="text-transparent bg-clip-text bg-gradient-to-r from-signal via-energy to-flow"
+                  >
+                    {phrases[index]}
+                  </motion.span>
+                </AnimatePresence>
               </span>
             </h1>
 

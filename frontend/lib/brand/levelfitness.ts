@@ -1,7 +1,7 @@
 export const levelFitnessBrand = {
   name: 'LevelFITness',
   shortName: 'LevelFIT',
-  tagline: 'Level up your fitness, one day at a time.',
+  taglines: ['stronger every single day', 'every rep every set', 'raise the bar daily', 'progress over perfection'],
   tone: {
     primary: 'clear',
     secondary: 'motivating',
