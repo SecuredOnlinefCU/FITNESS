@@ -45,3 +45,37 @@ graph TD
 - Build: ✅ `next build` — all 39 pages compiled successfully
 - Token coverage: All shadcn-style semantic classes (`text-primary`, `bg-muted`, `border-border`, `bg-card`, `text-foreground`, `text-muted-foreground`, `bg-destructive`, etc.) now resolve correctly
 - Remaining: `text-slate-300` (1 file) and `text-slate-200` edge cases not caught; `bg-white` with special chars not all captured
+
+### 2026-05-30 — Auth pages: /login, /signup, /forgot-password
+
+**Goal:** Build the three missing auth pages matching the brand design system and e2e test expectations.
+
+**Approach:** Shared `(auth)` route group layout (centered card, logo, bg-grid-white backdrop) with individual client-component pages using `useAuth()` context. Each page handles default, loading, error, and success (forgot-password) states.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `app/(auth)/layout.tsx` | Centered full-screen shell with LevelFitLogo and bg-grid-white pattern |
+| Added | `app/(auth)/login/page.tsx` | Email + password form with inline validation, loading state, error alert |
+| Added | `app/(auth)/signup/page.tsx` | Name + email + password registration form with 8-char validation |
+| Added | `app/(auth)/forgot-password/page.tsx` | Email form with success state (check your email) and back link |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    APP[app/] --> ROOT[layout.tsx]
+    APP --> AUTH[\(auth\) layout.tsx]
+    APP --> LANDING_PAGE[page.tsx]
+    APP --> DASHBOARD[\(dashboard\)/]
+    AUTH --> LOGIN[login/page.tsx]
+    AUTH --> SIGNUP[signup/page.tsx]
+    AUTH --> FORGOT[forgot-password/page.tsx]
+```
+
+### Status: Complete
+- Build: ✅ `next build` — 42 static pages compiled successfully (3 new auth pages)
+- All states: default, hover, focus-visible, active, disabled (submit button during API call), loading (submit spinner text), empty (form pristine), error (inline alert with role="alert"), success (forgot-password sent state)
+- Accessible: proper `<label>` associations, `aria-required`, `aria-describedby`, `role="alert"` on errors, semantic heading hierarchy, keyboard-complete forms
+- Brand: Signal-green CTAs, Ink-950 backgrounds, Bone-foreground text, Pulse error styling

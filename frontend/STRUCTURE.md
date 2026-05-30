@@ -48,7 +48,12 @@ frontend/
 ├── app/                        # Next.js App Router pages
 │   ├── page.tsx                # Landing page (assembles all sections)
 │   ├── layout.tsx              # Root layout with AuthProvider
-│   ├── (auth)/                 # Auth pages (login/signup route group)
+│   ├── (auth)/                 # Auth pages (login, signup, forgot-password)
+│   │   ├── layout.tsx          # Shared auth layout (centered card + logo)
+│   │   ├── login/page.tsx      # Email + password sign-in form
+│   │   ├── signup/page.tsx     # Name + email + password registration
+│   │   └── forgot-password/    # Email form + success state
+│   │       └── page.tsx
 │   └── (dashboard)/            # Dashboard pages
 │       ├── admin/              # Admin pages (6 routes)
 │       ├── client/             # Client pages (11 routes)

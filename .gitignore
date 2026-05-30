@@ -38,3 +38,8 @@ levelfitness_messaging_notifications_ui_module/
 levelfitness_real_data_loading_states_ui_layer/
 unified_fitness_backend_v1/
 scripts/
+Z-Image/
+playwright-report/
+test-results/
+frontend/playwright-report/
+frontend/test-results/

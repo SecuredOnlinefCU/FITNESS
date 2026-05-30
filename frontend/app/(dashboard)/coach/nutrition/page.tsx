@@ -2,16 +2,48 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { CoachPageHeader } from '@/components/coach/coach-page-header';
 import { Card, CardContent } from '@/components/ui/card';
+import { Apple, Target, ClipboardList, Utensils } from 'lucide-react';
 
 export default function CoachNutritionPage() {
   return (
     <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
       <DashboardShell>
-        <CoachPageHeader title="Nutrition planning" subtitle="Create meal plans, macro goals, and review logs." />
+        <CoachPageHeader title="Nutrition planning" subtitle="Create meal plans, set macro targets, and review client meal logs." />
+
         <div className="grid gap-4 md:grid-cols-3">
-          <Card><CardContent><h2 className="font-bold">Meal plans</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Macro targets</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
-          <Card><CardContent><h2 className="font-bold">Meal log review</h2><p className="mt-1 text-sm text-muted-foreground">This section is ready for API-driven data.</p></CardContent></Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-muted p-3 text-primary"><Utensils className="h-5 w-5" /></div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Meal plans</p>
+                  <p className="text-2xl font-black">0</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-muted p-3 text-primary"><Target className="h-5 w-5" /></div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Macro targets</p>
+                  <p className="text-2xl font-black">0</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-5">
+              <div className="flex items-center gap-3">
+                <div className="rounded-2xl bg-muted p-3 text-primary"><ClipboardList className="h-5 w-5" /></div>
+                <div>
+                  <p className="text-sm text-muted-foreground">Meal log review</p>
+                  <p className="text-2xl font-black">0</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </DashboardShell>
     </ProtectedRoute>
