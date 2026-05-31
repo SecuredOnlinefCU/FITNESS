@@ -1,58 +1,43 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark">
-  <meta name="supported-color-schemes" content="dark">
-</head>
-<body style="margin:0;padding:0;background-color:#05060a;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#05060a;padding:40px 16px">
-    <tr>
-      <td align="center">
-        <table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px">
-          <tr>
-            <td align="center" style="padding:0 0 32px">
-              {{logo}}
-            </td>
-          </tr>
-          <tr>
-            <td style="background-color:#080a07;border-radius:16px;border:1px solid #20241d;padding:0">
-              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
-                <tr>
-                  <td style="padding:40px 36px 24px;text-align:center">
-                    <span style="font-size:48px;line-height:1">🎉</span>
-                    <h1 style="color:#f4f5ef;font-size:26px;font-weight:800;margin:20px 0 6px;letter-spacing:-0.5px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">You're invited</h1>
-                    <p style="color:#8a907c;font-size:15px;line-height:1.7;margin:0 0 4px">{{inviterName}} has invited you to join <strong style="color:#f4f5ef">LevelFit</strong>.</p>
-                    <p style="color:#8a907c;font-size:15px;line-height:1.7;margin:0 0 28px">Accept the invite to connect and start working together.</p>
-                    <a href="{{acceptUrl}}" style="display:inline-block;background-color:#d7ff2f;color:#05060a;font-size:15px;font-weight:700;padding:14px 44px;border-radius:12px;text-decoration:none;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">Accept invite</a>
-                  </td>
-                </tr>
-                <tr>
-                  <td style="padding:0 36px 32px">
-                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#11140f;border-radius:12px;padding:20px 24px">
-                      <tr>
-                        <td>
-                          <p style="color:#b7bba8;font-size:13px;line-height:1.6;margin:0;text-align:center;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-                            💡 With LevelFit you'll get personalized training programs, progress tracking, and direct messaging with your coach.
-                          </p>
-                        </td>
-                      </tr>
-                    </table>
-                  </td>
-                </tr>
-              </table>
-            </td>
-          </tr>
-          <tr>
-            <td style="padding:24px 0 0;text-align:center">
-              <p style="color:#52525b;font-size:12px;margin:0 0 6px;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">LevelFit — Intelligent coaching for serious athletes</p>
-              <p style="color:#3f3f46;font-size:11px;margin:0;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">You received this because {{inviterName}} invited you to LevelFit.</p>
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark">
+<meta name="supported-color-schemes" content="dark">
+<title>You're invited to LevelFit</title></head>
+<body style="margin:0;padding:0;background:#05060a;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#f4f5ef;-webkit-font-smoothing:antialiased">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#05060a;padding:40px 20px">
+<tr><td align="center">
+<table role="presentation" width="520" cellpadding="0" cellspacing="0" style="max-width:520px;background:#080a07;border-radius:16px;border:1px solid #20241d;overflow:hidden">
+<tr><td style="padding:48px 40px 32px;text-align:center">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="56" height="56" fill="none" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M20 76 H38 V58 H56 V40 H72" stroke="#f4f5ef" stroke-width="10"/>
+  <path d="M28 70 L44 54 L56 62 L80 28" stroke="url(#iGrad)" stroke-width="11"/>
+  <path d="M80 28 H62 M80 28 V46" stroke="url(#iGrad)" stroke-width="11"/>
+  <path d="M22 31 H39 L48 22" stroke="#38bdf8" stroke-width="5" opacity="0.95"/>
+  <circle cx="22" cy="31" r="4.5" fill="#38bdf8"/>
+  <circle cx="48" cy="22" r="4.5" fill="#38bdf8"/>
+  <path d="M24 45 C34 34 49 31 60 38" stroke="#f97316" stroke-width="5" opacity="0.95"/>
+  <defs><linearGradient id="iGrad" x1="14" y1="86" x2="86" y2="14"><stop offset="0" stop-color="#f97316"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
+</svg>
+<h1 style="color:#f4f5ef;font-size:24px;font-weight:800;margin:20px 0 6px;letter-spacing:-0.5px">You&rsquo;re invited</h1>
+<p style="color:#8a907c;font-size:14px;margin:0">{{inviterName}} invited you to LevelFit</p>
+</td></tr>
+<tr><td style="padding:0 40px 32px">
+<p style="margin:0 0 20px;color:#f4f5ef">Hi there,</p>
+<p style="margin:0 0 16px;color:#b7bba8"><strong style="color:#f4f5ef">{{inviterName}}</strong> has invited you to join their coaching program on <strong style="color:#f4f5ef">LevelFit</strong>.</p>
+<p style="margin:0 0 24px;color:#b7bba8">LevelFit is an intelligent coaching platform built for serious athletes &mdash; track workouts, nutrition, recovery, and body metrics, all with direct access to your coach.</p>
+<table role="presentation" cellpadding="0" cellspacing="0">
+<tr><td align="center" style="border-radius:12px;background:#d7ff2f;padding:0">
+<a href="{{acceptUrl}}" style="display:inline-block;padding:14px 40px;font-size:15px;font-weight:700;color:#05060a;text-decoration:none;border-radius:12px">Accept invite</a>
+</td></tr>
+</table>
+<p style="margin:24px 0 0;color:#52525b;font-size:13px">This invite expires in {{expiresInDays}} days.</p>
+</td></tr>
+<tr><td style="padding:24px 40px;background:#05060a;border-top:1px solid #20241d">
+<p style="color:#52525b;font-size:12px;margin:0;text-align:center">LevelFit &mdash; Intelligent coaching for serious athletes</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
 </body>
 </html>

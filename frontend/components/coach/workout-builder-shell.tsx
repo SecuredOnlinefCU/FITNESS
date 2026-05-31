@@ -153,11 +153,11 @@ export function WorkoutBuilderShell() {
       if (editId) {
         await trainingApi.updateWorkout(editId, body);
         setStatus('Workout updated!');
+        setTimeout(() => router.push('/coach/workouts'), 1500);
       } else {
         const workout = await trainingApi.createWorkout(body);
-        setStatus(`Workout "${workout.title}" created!`);
+        setTimeout(() => router.push(`/coach/workouts?assign=${workout.id}`), 800);
       }
-      setTimeout(() => router.push('/coach/workouts'), 1500);
     } catch (err: unknown) {
       setStatus(err instanceof Error ? err.message : 'Failed to save workout.');
     } finally {

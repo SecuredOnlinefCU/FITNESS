@@ -1,5 +1,24 @@
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import nodemailer from "nodemailer";
 import { env } from "../../config/env";
+
+const templates: Record<string, string> = {};
+
+function loadTemplates(): void {
+  const dir = join(__dirname, "templates");
+  for (const name of ["welcome", "invite", "forgot-password", "payment-receipt"]) {
+    templates[name] = readFileSync(join(dir, `${name}.html`), "utf-8");
+  }
+}
+
+function fill(template: string, vars: Record<string, string>): string {
+  let html = template;
+  for (const [key, val] of Object.entries(vars)) {
+    html = html.replace(new RegExp(`\\{\\{${key}\\}\\}`, "g"), val);
+  }
+  return html;
+}
 
 function getTransporter() {
   if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) return null;
@@ -11,72 +30,30 @@ function getTransporter() {
   });
 }
 
-function welcomeHtml(firstName: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-<body style="margin:0;padding:0;background:#0a0a0b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0b;padding:40px 20px">
-<tr><td align="center">
-<table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #222;overflow:hidden">
-<tr><td style="padding:40px 32px 32px;text-align:center">
-<img src="https://frontend-eosin-seven-71.vercel.app/logo.png" alt="LevelFit" width="48" height="48" style="border-radius:12px"/>
-<h1 style="color:#f4f4f5;font-size:24px;font-weight:800;margin:20px 0 8px;letter-spacing:-0.5px">Welcome to LevelFit</h1>
-<p style="color:#a1a1aa;font-size:15px;line-height:1.6;margin:0 0 24px">Hi ${firstName}, your account is ready. Start your fitness journey today.</p>
-<a href="${env.APP_BASE_URL}/login" style="display:inline-block;background:#8bc34a;color:#0a0a0b;font-size:15px;font-weight:700;padding:14px 40px;border-radius:12px;text-decoration:none">Go to dashboard</a>
-</td></tr>
-<tr><td style="padding:24px 32px;background:#0d0d0f;border-top:1px solid #222">
-<p style="color:#52525b;font-size:12px;margin:0;text-align:center">LevelFit &mdash; Intelligent coaching for serious athletes</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body>
-</html>`;
-}
-
-function inviteHtml(inviterName: string, acceptUrl: string): string {
-  return `<!DOCTYPE html>
-<html lang="en">
-<head><meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/></head>
-<body style="margin:0;padding:0;background:#0a0a0b;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#0a0a0b;padding:40px 20px">
-<tr><td align="center">
-<table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background:#141416;border-radius:16px;border:1px solid #222;overflow:hidden">
-<tr><td style="padding:40px 32px 32px;text-align:center">
-<img src="https://frontend-eosin-seven-71.vercel.app/logo.png" alt="LevelFit" width="48" height="48" style="border-radius:12px"/>
-<h1 style="color:#f4f4f5;font-size:24px;font-weight:800;margin:20px 0 8px;letter-spacing:-0.5px">You&rsquo;re invited</h1>
-<p style="color:#a1a1aa;font-size:15px;line-height:1.6;margin:0 0 24px">${inviterName} has invited you to join LevelFit. Accept the invite to get started.</p>
-<a href="${acceptUrl}" style="display:inline-block;background:#8bc34a;color:#0a0a0b;font-size:15px;font-weight:700;padding:14px 40px;border-radius:12px;text-decoration:none">Accept invite</a>
-</td></tr>
-<tr><td style="padding:24px 32px;background:#0d0d0f;border-top:1px solid #222">
-<p style="color:#52525b;font-size:12px;margin:0;text-align:center">LevelFit &mdash; Intelligent coaching for serious athletes</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
-</body>
-</html>`;
+async function send(template: string, to: string, vars: Record<string, string>, subject: string): Promise<void> {
+  const t = getTransporter();
+  if (!t) return;
+  if (!templates.welcome) loadTemplates();
+  await t.sendMail({
+    from: env.SMTP_FROM,
+    to,
+    subject,
+    html: fill(templates[template], { ...vars, unsubscribeUrl: "#" }),
+  });
 }
 
 export async function sendWelcomeEmail(email: string, firstName: string): Promise<void> {
-  const t = getTransporter();
-  if (!t) return;
-  await t.sendMail({
-    from: env.SMTP_FROM,
-    to: email,
-    subject: "Welcome to LevelFit",
-    html: welcomeHtml(firstName),
-  });
+  await send("welcome", email, { firstName, dashboardUrl: `${env.APP_BASE_URL || "http://localhost:3000"}/login` }, "Welcome to LevelFit");
 }
 
-export async function sendInviteEmail(email: string, inviterName: string, acceptUrl: string): Promise<void> {
-  const t = getTransporter();
-  if (!t) return;
-  await t.sendMail({
-    from: env.SMTP_FROM,
-    to: email,
-    subject: `${inviterName} invited you to LevelFit`,
-    html: inviteHtml(inviterName, acceptUrl),
-  });
+export async function sendInviteEmail(email: string, inviterName: string, acceptUrl: string, expiresInDays: number): Promise<void> {
+  await send("invite", email, { inviterName, acceptUrl, expiresInDays: String(expiresInDays) }, `${inviterName} invited you to LevelFit`);
+}
+
+export async function sendPasswordResetEmail(email: string, firstName: string, resetUrl: string): Promise<void> {
+  await send("forgot-password", email, { firstName, email, resetUrl, expiresInMinutes: "60" }, "Reset your LevelFit password");
+}
+
+export async function sendPaymentReceiptEmail(email: string, firstName: string, vars: { packageName: string; coachName: string; amount: string; date: string }): Promise<void> {
+  await send("payment-receipt", email, { firstName, ...vars, dashboardUrl: `${env.APP_BASE_URL || "http://localhost:3000"}/billing` }, "Payment confirmed — LevelFit");
 }

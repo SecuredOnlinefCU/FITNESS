@@ -3,7 +3,7 @@
 <head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="color-scheme" content="dark">
 <meta name="supported-color-schemes" content="dark">
-<title>Welcome to LevelFit</title></head>
+<title>Payment receipt — LevelFit</title></head>
 <body style="margin:0;padding:0;background:#05060a;font-family:Inter,-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;font-size:15px;line-height:1.6;color:#f4f5ef;-webkit-font-smoothing:antialiased">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#05060a;padding:40px 20px">
 <tr><td align="center">
@@ -11,29 +11,33 @@
 <tr><td style="padding:48px 40px 32px;text-align:center">
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="56" height="56" fill="none" stroke-linecap="round" stroke-linejoin="round">
   <path d="M20 76 H38 V58 H56 V40 H72" stroke="#f4f5ef" stroke-width="10"/>
-  <path d="M28 70 L44 54 L56 62 L80 28" stroke="url(#wGrad)" stroke-width="11"/>
-  <path d="M80 28 H62 M80 28 V46" stroke="url(#wGrad)" stroke-width="11"/>
+  <path d="M28 70 L44 54 L56 62 L80 28" stroke="url(#pGrad)" stroke-width="11"/>
+  <path d="M80 28 H62 M80 28 V46" stroke="url(#pGrad)" stroke-width="11"/>
   <path d="M22 31 H39 L48 22" stroke="#38bdf8" stroke-width="5" opacity="0.95"/>
   <circle cx="22" cy="31" r="4.5" fill="#38bdf8"/>
   <circle cx="48" cy="22" r="4.5" fill="#38bdf8"/>
   <path d="M24 45 C34 34 49 31 60 38" stroke="#f97316" stroke-width="5" opacity="0.95"/>
-  <defs><linearGradient id="wGrad" x1="14" y1="86" x2="86" y2="14"><stop offset="0" stop-color="#f97316"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
+  <defs><linearGradient id="pGrad" x1="14" y1="86" x2="86" y2="14"><stop offset="0" stop-color="#f97316"/><stop offset="1" stop-color="#38bdf8"/></linearGradient></defs>
 </svg>
-<h1 style="color:#f4f5ef;font-size:24px;font-weight:800;margin:20px 0 6px;letter-spacing:-0.5px">Welcome to LevelFit</h1>
-<p style="color:#8a907c;font-size:14px;margin:0">Your account is ready.</p>
+<h1 style="color:#f4f5ef;font-size:24px;font-weight:800;margin:20px 0 6px;letter-spacing:-0.5px">Payment confirmed</h1>
+<p style="color:#8a907c;font-size:14px;margin:0">{{packageName}}</p>
 </td></tr>
-<tr><td style="padding:0 40px 32px">
+<tr><td style="padding:0 40px 8px">
 <p style="margin:0 0 20px;color:#f4f5ef">Hi {{firstName}},</p>
-<p style="margin:0 0 12px;color:#b7bba8">Your coaching platform is set up and ready to go. Here&rsquo;s what you can do now:</p>
-<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 24px">
-<tr><td style="padding:4px 12px 4px 0;color:#d7ff2f;font-size:16px;vertical-align:top">&#10003;</td>
-<td style="padding:4px 0;color:#b7bba8;font-size:14px">Track workouts and log progress</td></tr>
-<tr><td style="padding:4px 12px 4px 0;color:#d7ff2f;font-size:16px;vertical-align:top">&#10003;</td>
-<td style="padding:4px 0;color:#b7bba8;font-size:14px">Message your coach in real time</td></tr>
-<tr><td style="padding:4px 12px 4px 0;color:#d7ff2f;font-size:16px;vertical-align:top">&#10003;</td>
-<td style="padding:4px 0;color:#b7bba8;font-size:14px">Follow your nutrition and recovery plan</td></tr>
-<tr><td style="padding:4px 12px 4px 0;color:#d7ff2f;font-size:16px;vertical-align:top">&#10003;</td>
-<td style="padding:4px 0;color:#b7bba8;font-size:14px">Track body metrics with live charts</td></tr>
+<p style="margin:0 0 24px;color:#b7bba8">Your payment was successful. Here&rsquo;s your receipt:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#11140f;border-radius:12px;border:1px solid #20241d;margin:0 0 24px">
+<tr><td style="padding:20px 24px">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+<tr><td style="padding:6px 0;color:#8a907c;font-size:13px">Package</td>
+<td style="padding:6px 0;text-align:right;color:#f4f5ef;font-size:13px;font-weight:600">{{packageName}}</td></tr>
+<tr><td style="padding:6px 0;color:#8a907c;font-size:13px">Coach</td>
+<td style="padding:6px 0;text-align:right;color:#f4f5ef;font-size:13px">{{coachName}}</td></tr>
+<tr><td style="padding:6px 0;color:#8a907c;font-size:13px">Amount</td>
+<td style="padding:6px 0;text-align:right;color:#f4f5ef;font-size:13px;font-weight:600">{{amount}}</td></tr>
+<tr><td style="padding:6px 0;color:#8a907c;font-size:13px">Date</td>
+<td style="padding:6px 0;text-align:right;color:#f4f5ef;font-size:13px">{{date}}</td></tr>
+</table>
+</td></tr>
 </table>
 <table role="presentation" cellpadding="0" cellspacing="0">
 <tr><td align="center" style="border-radius:12px;background:#d7ff2f;padding:0">
@@ -42,8 +46,7 @@
 </table>
 </td></tr>
 <tr><td style="padding:24px 40px;background:#05060a;border-top:1px solid #20241d">
-<p style="color:#52525b;font-size:12px;margin:0;text-align:center">LevelFit &mdash; Intelligent coaching for serious athletes<br>
-<a href="{{unsubscribeUrl}}" style="color:#52525b;text-decoration:underline">Unsubscribe</a></p>
+<p style="color:#52525b;font-size:12px;margin:0;text-align:center">LevelFit &mdash; Intelligent coaching for serious athletes</p>
 </td></tr>
 </table>
 </td></tr>

@@ -8,7 +8,7 @@ import { asyncHandler } from "../../common/utils/async-handler";
 import { requireAuth, AuthenticatedRequest, requireRole } from "../../common/middleware/auth";
 import { HttpError } from "../../common/errors/http-error";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./auth.tokens";
-import { sendWelcomeEmail } from "../email/email.service";
+import { sendWelcomeEmail, sendInviteEmail, sendPasswordResetEmail } from "../email/email.service";
 
 export const authRouter = Router();
 const sha = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
@@ -149,6 +149,48 @@ authRouter.get(
 );
 
 authRouter.post(
+  "/forgot-password",
+  asyncHandler(async (req, res) => {
+    const { email } = z.object({ email: z.string().email() }).parse(req.body);
+    const user = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
+    if (!user) {
+      res.json({ success: true, message: "If that email exists, a reset link was sent." });
+      return;
+    }
+    const token = crypto.randomBytes(32).toString("hex");
+    await prisma.passwordResetToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: sha(token),
+        expiresAt: new Date(Date.now() + 3600000),
+      },
+    });
+    const resetUrl = `${env.APP_BASE_URL || "http://localhost:3000"}/reset-password?token=${token}`;
+    sendPasswordResetEmail(user.email, user.firstName || "there", resetUrl).catch(() => {});
+    res.json({ success: true, message: "If that email exists, a reset link was sent." });
+  }),
+);
+
+authRouter.post(
+  "/reset-password",
+  asyncHandler(async (req, res) => {
+    const { token, password } = z
+      .object({ token: z.string().min(1), password: z.string().min(8) })
+      .parse(req.body);
+    const record = await prisma.passwordResetToken.findFirst({
+      where: { tokenHash: sha(token), usedAt: null, expiresAt: { gte: new Date() } },
+    });
+    if (!record) throw new HttpError(400, "Invalid or expired reset token");
+    const hash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
+    await prisma.$transaction([
+      prisma.user.update({ where: { id: record.userId }, data: { passwordHash: hash } }),
+      prisma.passwordResetToken.update({ where: { id: record.id }, data: { usedAt: new Date() } }),
+    ]);
+    res.json({ success: true, message: "Password updated. You can now sign in." });
+  }),
+);
+
+authRouter.post(
   "/invites",
   requireAuth,
   requireRole(["coach", "assistant_coach"]),
@@ -175,10 +217,15 @@ authRouter.post(
         expiresAt: new Date(Date.now() + body.expiresInDays * 86400000),
       },
     });
+    const coach = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+    const acceptUrl = `${env.APP_BASE_URL}/accept-invite?token=${token}`;
+    if (coach) {
+      sendInviteEmail(body.email, coach.firstName || "Your coach", acceptUrl, body.expiresInDays).catch(() => {});
+    }
     res.status(201).json({
       inviteId: invite.id,
       inviteToken: token,
-      acceptUrl: `${env.APP_BASE_URL}/accept-invite?token=${token}`,
+      acceptUrl,
     });
   }),
 );

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { CoachPageHeader } from '@/components/coach/coach-page-header';
@@ -12,6 +12,7 @@ import { trainingApi } from '@/lib/api/modules/training';
 import { AssignWorkoutModal } from '@/components/coach/assign-workout-modal';
 import { TrainingCalendar } from '@/components/workout/training-calendar';
 import { CreateExerciseDialog } from '@/components/exercise/create-exercise-dialog';
+import { VideoPlayerModal } from '@/components/exercise/video-player-modal';
 import { Dumbbell, Library, ClipboardList, Plus, Trash2, UserPlus, Eye, CalendarDays, List as ListIcon, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -26,6 +27,16 @@ export default function CoachWorkoutsPage() {
   const [assignDate, setAssignDate] = useState<string>('');
   const [view, setView] = useState<'list' | 'calendar'>('calendar');
   const [showCreateExercise, setShowCreateExercise] = useState(false);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const assignId = params.get('assign');
+    if (assignId) {
+      setAssignTarget(assignId);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
 
   const data = workouts.data?.items ?? [];
   const exerciseCount = exercises.data?.items?.length ?? 0;
@@ -44,150 +55,176 @@ export default function CoachWorkoutsPage() {
   return (
     <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
       <DashboardShell>
-        <CoachPageHeader title="Workout library" subtitle="Create, organize, and assign training sessions." actionLabel="Build workout" actionHref="/coach/workouts/builder" />
+        <div className="max-w-6xl mx-auto space-y-12">
+          <CoachPageHeader title="Workout library" subtitle="Create, organize, and assign training sessions." actionLabel="Build workout" actionHref="/coach/workouts/builder" />
 
-        <div className="grid gap-4 md:grid-cols-3">
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-muted p-3 text-primary"><Library className="h-5 w-5" /></div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Workouts</p>
-                  <p className="text-2xl font-black">{data.length}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-muted p-3 text-primary"><Dumbbell className="h-5 w-5" /></div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Exercises</p>
-                  <p className="text-2xl font-black">{exerciseCount}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-5">
-              <div className="flex items-center gap-3">
-                <div className="rounded-2xl bg-muted p-3 text-primary"><ClipboardList className="h-5 w-5" /></div>
-                <div>
-                  <p className="text-sm text-muted-foreground">Assignments</p>
-                  <p className="text-2xl font-black">{assignmentCount}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="mt-4 flex gap-2">
-          <button
-            onClick={() => setShowCreateExercise(true)}
-            className="flex items-center gap-2 rounded-xl border border-border px-4 py-2 text-sm font-bold text-foreground hover:bg-muted transition"
-          >
-            <Video className="h-4 w-4 text-flow" /> New exercise
-          </button>
-        </div>
-
-        <div className="mt-5 flex items-center gap-2">
-          <button
-            onClick={() => setView('list')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${view === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-          >
-            <ListIcon className="h-4 w-4" /> List
-          </button>
-          <button
-            onClick={() => setView('calendar')}
-            className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${view === 'calendar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
-          >
-            <CalendarDays className="h-4 w-4" /> Calendar
-          </button>
-        </div>
-
-        {assignDate && (
-          <div className="mt-4 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-2 text-sm">
-            <span>Schedule for <strong>{new Date(assignDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong> — click <strong>Assign</strong> on a workout below</span>
-            <button onClick={() => setAssignDate('')} className="ml-auto rounded-lg px-2 py-1 text-xs text-muted-foreground hover:bg-muted transition">Clear</button>
-          </div>
-        )}
-
-        {view === 'calendar' ? (
-          <div className="mt-4">
-            <TrainingCalendar onAssignDate={setAssignDate} onCardClick={(a: WorkoutAssignment) => router.push(`/coach/workouts/builder?id=${a.workoutId}`)} workoutTitles={workoutTitles} />
-          </div>
-        ) : loading ? (
-          <div className="mt-5 space-y-3"><CardSkeleton /><CardSkeleton /><CardSkeleton /></div>
-        ) : error ? (
-          <div className="mt-5"><ErrorState message={error} onRetry={workouts.reload} /></div>
-        ) : data.length === 0 ? (
-          <Link href="/coach/workouts/builder">
-            <Card className="mt-5 border-dashed border-primary/30 transition hover:bg-muted">
-              <CardContent className="flex items-center justify-center gap-3 p-6">
-                <Plus className="h-5 w-5 text-primary" />
-                <p className="font-bold text-primary">Create your first workout</p>
-              </CardContent>
-            </Card>
-          </Link>
-        ) : (
-          <div className="mt-5 space-y-3">
-            <h3 className="text-lg font-black">Your workouts</h3>
-            {data.map((w: any) => (
-              <Card key={w.id}>
-                <CardContent className="flex items-center justify-between p-4">
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-bold truncate">{w.title}</p>
-                      <span className="text-xs text-muted-foreground">({w.exercises?.length ?? 0} exercises)</span>
+          <section>
+            <h2 className="text-base font-black text-muted-foreground tracking-widest uppercase mb-4">Overview</h2>
+            <div className="grid gap-6 md:grid-cols-3">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-2xl bg-muted p-3.5 text-primary"><Library className="h-6 w-6" /></div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase">Workouts</p>
+                      <p className="text-3xl font-black mt-0.5">{data.length}</p>
                     </div>
-                    {w.description && <p className="mt-0.5 text-sm text-muted-foreground truncate">{w.description}</p>}
-                    <p className="mt-0.5 text-xs text-muted-foreground">{new Date(w.createdAt).toLocaleDateString()}</p>
-                  </div>
-                  <div className="flex items-center gap-1 shrink-0 ml-3">
-                    <button
-                      className="rounded-xl p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
-                      onClick={() => setAssignTarget(w.id)}
-                      title="Assign to client"
-                    >
-                      <UserPlus className="h-4 w-4" />
-                    </button>
-                    <Link
-                      href={`/coach/workouts/builder?id=${w.id}`}
-                      className="rounded-xl p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
-                      title="View workout"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Link>
-                    <button
-                      className="rounded-xl p-2 text-sm text-muted-foreground hover:bg-muted hover:text-pulse transition"
-                      onClick={() => handleDelete(w.id)}
-                      title="Delete workout"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
                 </CardContent>
               </Card>
-            ))}
-          </div>
-        )}
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-2xl bg-muted p-3.5 text-primary"><Dumbbell className="h-6 w-6" /></div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase">Exercises</p>
+                      <p className="text-3xl font-black mt-0.5">{exerciseCount}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4">
+                    <div className="rounded-2xl bg-muted p-3.5 text-primary"><ClipboardList className="h-6 w-6" /></div>
+                    <div>
+                      <p className="text-xs font-bold text-muted-foreground tracking-wider uppercase">Assignments</p>
+                      <p className="text-3xl font-black mt-0.5">{assignmentCount}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </section>
 
-        {assignTarget && (
-          <AssignWorkoutModal
-            workoutId={assignTarget}
-            assignedForDate={assignDate || undefined}
-            onClose={() => setAssignTarget(null)}
-            onAssigned={() => { setAssignTarget(null); setAssignDate(''); workouts.reload(); assignments.reload(); }}
-          />
-        )}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-black text-muted-foreground tracking-widest uppercase">Exercise library</h2>
+              <button
+                onClick={() => setShowCreateExercise(true)}
+                className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:opacity-90 transition"
+              >
+                <Video className="h-4 w-4" /> New exercise
+              </button>
+            </div>
+            <p className="text-sm text-muted-foreground mb-6">{exerciseCount} exercise{exerciseCount !== 1 ? 's' : ''} in your library. Add exercises with demo videos and coach cues.</p>
+            {exerciseCount === 0 && (
+              <Card className="border-dashed border-border">
+                <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+                  <Dumbbell className="h-8 w-8 text-muted-foreground/40" />
+                  <p className="font-bold text-muted-foreground">No exercises yet</p>
+                  <p className="text-sm text-muted-foreground max-w-md">Create exercises with demo videos and coaching cues so your clients can see proper form.</p>
+                  <button onClick={() => setShowCreateExercise(true)} className="mt-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground">Create exercise</button>
+                </CardContent>
+              </Card>
+            )}
+          </section>
 
-        {showCreateExercise && (
-          <CreateExerciseDialog
-            onClose={() => setShowCreateExercise(false)}
-            onCreated={() => exercises.reload()}
-          />
-        )}
+          <section>
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-black text-muted-foreground tracking-widest uppercase">Schedule & workouts</h2>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setView('list')}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${view === 'list' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                >
+                  <ListIcon className="h-4 w-4" /> List
+                </button>
+                <button
+                  onClick={() => setView('calendar')}
+                  className={`flex items-center gap-2 rounded-xl px-4 py-2 text-sm font-bold transition ${view === 'calendar' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:bg-muted'}`}
+                >
+                  <CalendarDays className="h-4 w-4" /> Calendar
+                </button>
+              </div>
+            </div>
+
+            {assignDate && (
+              <div className="mb-5 flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-5 py-3 text-sm">
+                <span>Schedule for <strong>{new Date(assignDate + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</strong> — click <strong>Assign</strong> on a workout below</span>
+                <button onClick={() => setAssignDate('')} className="ml-auto rounded-lg px-3 py-1.5 text-xs text-muted-foreground hover:bg-muted transition">Clear</button>
+              </div>
+            )}
+
+            {view === 'calendar' ? (
+              <div>
+                <TrainingCalendar onAssignDate={setAssignDate} onCardClick={(a: WorkoutAssignment) => router.push(`/coach/workouts/builder?id=${a.workoutId}`)} workoutTitles={workoutTitles} />
+              </div>
+            ) : loading ? (
+              <div className="space-y-4"><CardSkeleton /><CardSkeleton /><CardSkeleton /></div>
+            ) : error ? (
+              <ErrorState message={error} onRetry={workouts.reload} />
+            ) : data.length === 0 ? (
+              <Link href="/coach/workouts/builder">
+                <Card className="border-dashed border-primary/30 transition hover:bg-muted">
+                  <CardContent className="flex flex-col items-center gap-3 p-8 text-center">
+                    <Plus className="h-8 w-8 text-primary" />
+                    <p className="font-bold text-primary">Create your first workout</p>
+                    <p className="text-sm text-muted-foreground">Build a workout with exercises, sets, reps, and RPE targets.</p>
+                  </CardContent>
+                </Card>
+              </Link>
+            ) : (
+              <div className="space-y-3">
+                {data.map((w: any) => (
+                  <Card key={w.id}>
+                    <CardContent className="flex items-center justify-between p-5">
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-3">
+                          <p className="font-bold text-base truncate">{w.title}</p>
+                          <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">{w.exercises?.length ?? 0} exercises</span>
+                        </div>
+                        {w.description && <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{w.description}</p>}
+                        <p className="mt-1.5 text-xs text-muted-foreground/60">Created {new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0 ml-4">
+                        <button
+                          className="rounded-xl px-3.5 py-2 text-sm font-bold text-muted-foreground hover:bg-muted hover:text-foreground transition"
+                          onClick={() => setAssignTarget(w.id)}
+                          title="Assign to client"
+                        >
+                          <UserPlus className="h-4 w-4 mr-1.5 inline-block" />Assign
+                        </button>
+                        <Link
+                          href={`/coach/workouts/builder?id=${w.id}`}
+                          className="rounded-xl p-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
+                          title="View workout"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Link>
+                        <button
+                          className="rounded-xl p-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-pulse transition"
+                          onClick={() => handleDelete(w.id)}
+                          title="Delete workout"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </section>
+
+          {assignTarget && (
+            <AssignWorkoutModal
+              workoutId={assignTarget}
+              assignedForDate={assignDate || undefined}
+              onClose={() => { setAssignTarget(null); window.history.replaceState({}, '', window.location.pathname); }}
+              onAssigned={() => { setAssignTarget(null); setAssignDate(''); workouts.reload(); assignments.reload(); }}
+            />
+          )}
+
+          {videoUrl && <VideoPlayerModal videoUrl={videoUrl} onClose={() => setVideoUrl(null)} />}
+
+          {showCreateExercise && (
+            <CreateExerciseDialog
+              onClose={() => setShowCreateExercise(false)}
+              onCreated={() => exercises.reload()}
+            />
+          )}
+        </div>
       </DashboardShell>
     </ProtectedRoute>
   );
