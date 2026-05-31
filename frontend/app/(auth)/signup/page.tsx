@@ -110,7 +110,7 @@ export default function SignupPage() {
           </div>
 
           <div>
-            <label htmlFor="signup-role" className="mb-1.5 block text-sm font-bold text-foreground">I am a\u2026</label>
+            <label htmlFor="signup-role" className="mb-1.5 block text-sm font-bold text-foreground">Account type</label>
             <div className="grid grid-cols-2 gap-3">
               <button type="button" role="tab" id="signup-role" aria-selected={role === 'client'} onClick={() => setRole('client')}
                 className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors ${role === 'client' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Client</button>

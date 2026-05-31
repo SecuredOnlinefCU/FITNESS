@@ -87,7 +87,7 @@ export function DashboardSidebar() {
     <div className="flex h-full flex-col">
       <div className="flex items-center gap-3 px-4 py-5">
         <LevelFitMark size={28} />
-        <span className="text-lg font-black tracking-tight">LevelFITness</span>
+        <span className="text-lg font-black tracking-tight">LevelFit</span>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 pb-4">
         {linkList(links, pathname)}
