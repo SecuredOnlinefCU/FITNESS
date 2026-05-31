@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
+set -e
 
-node dist/main.js &
 npx prisma db push
-wait
+
+exec node dist/main.js

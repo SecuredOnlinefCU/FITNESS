@@ -30,6 +30,9 @@ test.describe('Exercise video playback verification', () => {
       },
     });
     expect(createResp.status()).toBe(201);
+    const created = await createResp.json();
+    console.log('Created exercise demoVideoUrl:', created.demoVideoUrl);
+    expect(created.demoVideoUrl).toBeTruthy();
 
     // Verify the API returns demoVideoUrl in the list
     const listResp = await request.get(`${baseURL}/api/training/exercises`, {
@@ -38,9 +41,8 @@ test.describe('Exercise video playback verification', () => {
     const list = await listResp.json();
     const items: any[] = list.items ?? list;
     console.log('Exercise count:', items.length);
-    const bench = items.find((ex: any) => ex.name === 'Test Bench Press');
+    const bench = items.find((ex: any) => ex.id === created.id);
     expect(bench).toBeDefined();
-    console.log('Bench keys:', Object.keys(bench));
     console.log('Bench demoVideoUrl:', bench.demoVideoUrl);
     expect(bench.demoVideoUrl).toBeTruthy();
 
