@@ -9,3 +9,7 @@ nutritionRouter.get('/meal-logs',asyncHandler(async(req:AuthenticatedRequest,res
 nutritionRouter.post('/recipes',requireRole(['coach','assistant_coach']),asyncHandler(async(req:AuthenticatedRequest,res)=>res.status(201).json(await prisma.recipe.create({data:{coachUserId:req.user!.sub,...req.body},include:{ingredients:true}}))));
 nutritionRouter.get('/recipes',asyncHandler(async(req:AuthenticatedRequest,res)=>res.json({items:await prisma.recipe.findMany({where:{coachUserId:req.user!.sub},include:{ingredients:true}})})));
 for(const path of ['hydration','sleep','steps']) nutritionRouter.post('/'+path,requireRole(['client']),asyncHandler(async(req:AuthenticatedRequest,res)=>{const model:any={hydration:prisma.hydrationLog,sleep:prisma.sleepLog,steps:prisma.stepsLog}[path]; res.status(201).json(await model.create({data:{clientUserId:req.user!.sub,...req.body}}));}));
+nutritionRouter.get('/hydration', asyncHandler(async (req: AuthenticatedRequest, res) => {
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  res.json({ items: await prisma.hydrationLog.findMany({ where: { clientUserId: req.user!.sub, loggedAt: { gte: today } }, orderBy: { loggedAt: 'asc' } }) });
+}));

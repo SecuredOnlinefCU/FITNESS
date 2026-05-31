@@ -12,7 +12,8 @@ import { BookOpen, MessageSquare, FileText, Calendar } from 'lucide-react';
 
 export default function ClientProgramPage() {
   const result = useAsyncData(() => programsApi.listPrograms(), []);
-  const program = result.data?.items?.[0];
+  const membership = result.data?.items?.[0];
+  const program = membership?.program;
 
   return (
     <ProtectedRoute roles={['client', 'super_admin']}>

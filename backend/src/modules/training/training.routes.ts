@@ -106,11 +106,15 @@ trainingRouter.get('/sessions/:sessionId', asyncHandler(async (req, res) => {
     where: { id: req.params.sessionId },
     include: {
       sets: { orderBy: { setNumber: 'asc' } },
-      assignment: { include: { workout: { include: { exercises: { include: { exercise: true }, orderBy: { orderIndex: 'asc' } } } } } },
+      assignment: true,
     },
   });
   if (!session) { res.status(404).json({ error: 'Session not found' }); return; }
-  res.json(session);
+  let workout = null;
+  if (session.assignment?.workoutId) {
+    workout = await prisma.workout.findUnique({ where: { id: session.assignment.workoutId }, include: { exercises: { include: { exercise: true }, orderBy: { orderIndex: 'asc' } } } });
+  }
+  res.json({ ...session, assignment: session.assignment ? { ...session.assignment, workout } : null });
 }));
 
 trainingRouter.post('/sessions/:sessionId/complete', requireRole(['client']), asyncHandler(async (req: AuthenticatedRequest, res) => {
@@ -140,6 +144,6 @@ trainingRouter.get('/programs', requireRole(['coach', 'assistant_coach']), async
 trainingRouter.get('/coach-clients', requireRole(['coach', 'assistant_coach']), asyncHandler(async (req: AuthenticatedRequest, res) => {
   const threads = await prisma.thread.findMany({ where: { coachUserId: req.user!.sub }, select: { clientUserId: true } });
   const clientIds = [...new Set(threads.map(t => t.clientUserId))];
-  const users = await prisma.user.findMany({ where: { id: { in: clientIds } }, select: { id: true, name: true, email: true } });
+  const users = await prisma.user.findMany({ where: { id: { in: clientIds } }, select: { id: true, firstName: true, lastName: true, email: true } });
   res.json({ items: users });
 }));

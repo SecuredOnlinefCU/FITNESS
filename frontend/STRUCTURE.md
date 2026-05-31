@@ -54,6 +54,8 @@ frontend/
 │   ├── loading.tsx             # Route-level loading spinner
 │   ├── error.tsx               # Route-level error boundary
 │   ├── not-found.tsx           # Custom 404 page
+│   ├── terms/page.tsx          # Terms of Service
+│   ├── privacy/page.tsx        # Privacy Policy
 │   ├── (auth)/                 # Auth pages (login, signup, forgot-password)
 │   │   ├── layout.tsx          # Shared auth layout (centered card + logo)
 │   │   ├── login/page.tsx      # Email + password sign-in form
@@ -61,9 +63,9 @@ frontend/
 │   │   └── forgot-password/    # Email form + success state
 │   │       └── page.tsx
 │   └── (dashboard)/            # Dashboard pages
-│       ├── admin/              # Admin pages (6 routes)
-│       ├── client/             # Client pages (11 routes)
-│       ├── coach/              # Coach pages (16 routes)
+│       ├── admin/              # Admin pages (7 routes)
+│       ├── client/             # Client pages (12 routes)
+│       ├── coach/              # Coach pages (18 routes including sub-routes)
 │       └── dashboard/          # Messages route
 ├── components/
 │   ├── ui/                     # Core primitives (Button, Card, Input, Select)
@@ -74,6 +76,10 @@ frontend/
 │   ├── states/                 # Skeleton, EmptyState, ErrorState, DataSection
 │   ├── client/                 # Client dashboard components
 │   ├── coach/                  # Coach dashboard components
+│   ├── progress/            # Progress components (client selector, metrics chart, photo grid, checkin list)
+│   ├── nutrition/           # Nutrition components (plan list, macro editor, meal log review, recipe library)
+│   ├── task-create-form.tsx # Inline task creation
+│   ├── task-assign-dialog.tsx # Task assignment modal
 │   ├── intelligence/           # TodayScoreCard, NextBestActionList
 │   ├── habits/                 # HabitLoopCard
 │   ├── recovery/               # RecoverySummaryCard

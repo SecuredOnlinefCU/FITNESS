@@ -65,7 +65,7 @@ export async function detectLowAdherence(actor: Actor) {
   requireCoach(actor);
   const coachUserId = actor.userId;
   const clientIds = await listCoachClientIds(coachUserId);
-  const items = [];
+  const items: any[] = [];
   let flagsCreated = 0;
   let flagsUpdated = 0;
 
@@ -111,7 +111,7 @@ export async function detectStalledProgress(actor: Actor) {
   requireCoach(actor);
   const coachUserId = actor.userId;
   const clientIds = await listCoachClientIds(coachUserId);
-  const items = [];
+  const items: any[] = [];
   let flagsCreated = 0;
   let flagsUpdated = 0;
 
@@ -156,7 +156,7 @@ export async function detectPaymentAccessRisk(actor: Actor) {
   requireCoach(actor);
   const coachUserId = actor.userId;
   const clientIds = await listCoachClientIds(coachUserId);
-  const items = [];
+  const items: any[] = [];
   let flagsCreated = 0;
   let flagsUpdated = 0;
 

@@ -56,7 +56,7 @@ export async function generateAdaptiveWorkoutWarningsForClient(input: { coachUse
 export async function generateCoachAdaptiveWorkoutWarnings(actor: Actor) {
   requireCoach(actor);
   const clientIds = await listCoachClientIds(actor.userId);
-  const all = [];
+  const all: any[] = [];
   for (const clientUserId of clientIds) {
     all.push(...await generateAdaptiveWorkoutWarningsForClient({ coachUserId: actor.userId, clientUserId }));
   }

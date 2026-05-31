@@ -75,29 +75,30 @@ test.describe('Authentication Flow', () => {
     expect(await loginLinks.count()).toBeGreaterThanOrEqual(1);
   });
 
-  test('real signup via browser form', async ({ page }) => {
-    const email = `e2e-${Date.now()}@test.com`;
+  test('real signup via browser form as coach', async ({ page }) => {
+    const email = `e2e-${Date.now()}@levelfitest.com`;
     const password = 'TestPass123!';
 
     await page.goto('/signup');
     await page.waitForLoadState('networkidle');
 
-    const firstNameInput = page.locator('input[name="firstName"]');
-    const lastNameInput = page.locator('input[name="lastName"]');
-    const emailInput = page.locator('input[type="email"], input[name="email"]');
-    const passwordInput = page.locator('input[type="password"]').first();
-    const confirmInput = page.locator('input[type="password"]').nth(1);
+    const firstNameInput = page.getByRole('textbox', { name: 'First name' });
+    const lastNameInput = page.getByRole('textbox', { name: 'Last name' });
+    const emailInput = page.getByRole('textbox', { name: 'Email' });
+    const passwordInput = page.getByRole('textbox', { name: 'Password', exact: true });
+    const confirmInput = page.getByRole('textbox', { name: 'Confirm password' });
 
     await expect(firstNameInput).toBeVisible();
     await firstNameInput.fill('E2E');
     await lastNameInput.fill('Test');
+    await page.getByRole('tab', { name: 'Coach' }).click();
     await emailInput.fill(email);
     await passwordInput.fill(password);
     await confirmInput.fill(password);
 
-    await page.locator('button[type="submit"]').click();
+    await page.getByRole('button', { name: 'Create account' }).click();
 
-    await page.waitForURL(/\/dashboard/, { timeout: 30000 });
-    expect(page.url()).toContain('/dashboard');
+    await page.waitForURL(/\/(coach|client)\/home/, { timeout: 30000 });
+    expect(page.url()).toContain('/home');
   });
 });

@@ -50,7 +50,7 @@ export default function ClientWorkoutsPage() {
                 <div>
                   <p className="text-sm font-bold uppercase tracking-wide text-primary">Workout history</p>
                   <h2 className="mt-2 text-2xl font-black md:text-3xl">
-                    {completedCount > 0 ? `${completedCount} session${completedCount > 1 ? 's' : ''} completed` : 'No sessions yet'}
+                    {completedCount > 0 ? `${completedCount} session${completedCount === 1 ? '' : 's'} completed` : 'No sessions yet'}
                   </h2>
                   <div className="mt-3 flex flex-wrap gap-4">
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">

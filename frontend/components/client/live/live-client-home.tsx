@@ -8,6 +8,8 @@ import { LiveStatGrid } from '@/components/dashboard/live-stat-grid';
 import { TodayFocus } from '@/components/client/today-focus';
 import { ActionCard } from '@/components/client/action-card';
 import { ErrorState } from '@/components/states/error-state';
+import { CheckCircle2, Flame, Utensils } from 'lucide-react';
+import type { TodayIntelligence } from '@/lib/types/domain';
 
 async function loadClientHome() {
   const [programs, tasks, notifications] = await Promise.allSettled([
@@ -17,14 +19,28 @@ async function loadClientHome() {
   ]);
 
   const programCount = programs.status === 'fulfilled' ? programs.value.items.length : 0;
-  const taskCount = tasks.status === 'fulfilled' ? tasks.value.items.length : 0;
+  const allTasks = tasks.status === 'fulfilled' ? tasks.value.items : [];
+  const openTasks = allTasks.filter((t) => t.status === 'PENDING' || !t.status);
   const unreadCount = notifications.status === 'fulfilled' ? notifications.value.items.filter((item) => !item.openedAt).length : 0;
 
   return {
     stats: [
       { label: 'Programs', value: String(programCount), helper: 'Active coaching spaces.' },
-      { label: 'Open tasks', value: String(taskCount), helper: 'Assignments and check-ins.' },
+      { label: 'Open tasks', value: String(openTasks.length), helper: 'Assignments and check-ins.' },
       { label: 'Unread updates', value: String(unreadCount), helper: 'Messages and notifications.' },
+    ],
+    focusItems: [
+      {
+        icon: CheckCircle2,
+        title: 'Tasks',
+        detail: openTasks.length > 0 ? `${openTasks.length} task${openTasks.length === 1 ? '' : 's'} pending` : 'No tasks due today',
+      },
+      { icon: Flame, title: 'Workout', detail: programCount > 0 ? 'Active program assigned' : 'No program assigned yet' },
+      {
+        icon: Utensils,
+        title: 'Nutrition',
+        detail: unreadCount > 0 ? `${unreadCount} update${unreadCount === 1 ? '' : 's'} to review` : 'Log your next meal',
+      },
     ],
   };
 }

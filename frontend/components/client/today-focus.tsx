@@ -1,13 +1,22 @@
 import { CheckCircle2, Flame, Utensils } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import type { LucideIcon } from 'lucide-react';
 
-const items = [
+type FocusItem = {
+  icon: LucideIcon;
+  title: string;
+  detail: string;
+};
+
+const defaultItems: FocusItem[] = [
   { icon: CheckCircle2, title: 'Complete today’s task', detail: 'No task due yet' },
   { icon: Flame, title: 'Workout', detail: 'Check your assigned training' },
   { icon: Utensils, title: 'Nutrition', detail: 'Log your next meal' },
 ];
 
-export function TodayFocus() {
+export function TodayFocus({ items }: { items?: FocusItem[] }) {
+  const focusItems = items ?? defaultItems;
+
   return (
     <Card>
       <CardContent className="p-5">
@@ -18,7 +27,7 @@ export function TodayFocus() {
           </div>
         </div>
         <div className="space-y-3">
-          {items.map((item) => {
+          {focusItems.map((item) => {
             const Icon = item.icon;
             return (
               <div key={item.title} className="flex items-center gap-3 rounded-2xl border border-border p-4">

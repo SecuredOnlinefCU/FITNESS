@@ -28,10 +28,10 @@ export default function ClientTasksPage() {
             <Card>
               <CardContent className="p-5">
                 <div className="flex items-center gap-3">
-                  <div className="rounded-2xl bg-muted p-3 text-primary"><CheckSquare className="h-5 w-5" /></div>
+                  <div className="rounded-2xl bg-muted p-3 text-primary">              <CheckSquare className="h-5 w-5" /></div>
                   <div>
                     <p className="text-sm text-muted-foreground">Open tasks</p>
-                    <p className="text-2xl font-black">{tasks.filter((t: any) => t.status === 'PENDING' || !t.status).length}</p>
+                    <p className="text-2xl font-black">{tasks.filter((t: { status: string }) => t.status === 'assigned' || !t.status).length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -42,7 +42,7 @@ export default function ClientTasksPage() {
                   <div className="rounded-2xl bg-muted p-3 text-primary"><Clock className="h-5 w-5" /></div>
                   <div>
                     <p className="text-sm text-muted-foreground">Submitted</p>
-                    <p className="text-2xl font-black">{tasks.filter((t: any) => t.status === 'SUBMITTED').length}</p>
+                    <p className="text-2xl font-black">{tasks.filter((t: { submissions?: { reviewStatus: string }[] }) => t.submissions?.some((s: { reviewStatus: string }) => s.reviewStatus === 'PENDING')).length}</p>
                   </div>
                 </div>
               </CardContent>
@@ -53,7 +53,7 @@ export default function ClientTasksPage() {
                   <div className="rounded-2xl bg-muted p-3 text-primary"><MessageSquare className="h-5 w-5" /></div>
                   <div>
                     <p className="text-sm text-muted-foreground">Feedback</p>
-                    <p className="text-2xl font-black">{tasks.filter((t: any) => t.status === 'REVIEWED').length}</p>
+                    <p className="text-2xl font-black">{tasks.filter((t: { submissions?: { reviewStatus: string }[] }) => t.submissions?.some((s: { reviewStatus: string }) => s.reviewStatus === 'APPROVED' || s.reviewStatus === 'REJECTED')).length}</p>
                   </div>
                 </div>
               </CardContent>

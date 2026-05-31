@@ -7,17 +7,19 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
 import { useAsyncData } from '@/hooks/data/use-async-data';
-import { apiFetch } from '@/lib/api/client';
+import { nutritionApi } from '@/lib/api/modules/nutrition';
 import { Utensils, Target, Droplets, Apple } from 'lucide-react';
 
 export default function ClientNutritionPage() {
-  const mealLogs = useAsyncData(() => apiFetch<{ items: any[] }>('/api/nutrition/meal-logs'), []);
-  const plans = useAsyncData(() => apiFetch<{ items: any[] }>('/api/nutrition/plans'), []);
+  const mealLogs = useAsyncData(() => nutritionApi.listMealLogs(), []);
+  const plans = useAsyncData(() => nutritionApi.listPlans(), []);
+  const hydrationLogs = useAsyncData(() => nutritionApi.getHydration(), []);
 
-  const loading = mealLogs.loading || plans.loading;
-  const error = mealLogs.error || plans.error;
+  const loading = mealLogs.loading || plans.loading || hydrationLogs.loading;
+  const error = mealLogs.error || plans.error || hydrationLogs.error;
   const mealCount = mealLogs.data?.items?.length ?? 0;
   const activePlan = plans.data?.items?.[0];
+  const hydrationTotalMl = (hydrationLogs.data?.items ?? []).reduce((sum, h) => sum + h.amountMl, 0);
 
   return (
     <ProtectedRoute roles={['client', 'super_admin']}>
@@ -27,7 +29,7 @@ export default function ClientNutritionPage() {
         {loading ? (
           <div className="grid gap-4 md:grid-cols-3"><CardSkeleton /><CardSkeleton /><CardSkeleton /></div>
         ) : error ? (
-          <ErrorState message={error} onRetry={() => { mealLogs.reload(); plans.reload(); }} />
+          <ErrorState message={error} onRetry={() => { mealLogs.reload(); plans.reload(); hydrationLogs.reload(); }} />
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
             <Card>
@@ -57,8 +59,8 @@ export default function ClientNutritionPage() {
                 <div className="flex items-center gap-3">
                   <div className="rounded-2xl bg-muted p-3 text-primary"><Droplets className="h-5 w-5" /></div>
                   <div>
-                    <p className="text-sm text-muted-foreground">Hydration logged</p>
-                    <p className="text-2xl font-black">0</p>
+                    <p className="text-sm text-muted-foreground">Hydration today</p>
+                    <p className="text-2xl font-black">{hydrationTotalMl > 0 ? `${Math.round(hydrationTotalMl / 1000)}L` : '--'}</p>
                   </div>
                 </div>
               </CardContent>

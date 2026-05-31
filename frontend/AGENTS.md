@@ -119,6 +119,48 @@ frontend/e2e/
 - Console: no JS errors on landing page
 - Coverage: Verified all backend modules return 401 without auth (training, programs, feed, messaging, tasks)
 
+### 2026-05-31 — Completed 4 partial coach pages (Programs, Tasks, Progress, Nutrition)
+
+**Goal:** Build full implementations for the 4 partially-built coach dashboard pages.
+
+**Approach:** Workouts page pattern (stat cards → list with actions → assign modals → detail sub-routes). Added missing backend routes. Created API modules for progress and nutrition.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `lib/api/modules/programs.ts` | Added `getProgram`, `updateProgram`, `deleteProgram` |
+| Modified | `lib/api/modules/tasks.ts` | Added `getTask`, `createTask`, `deleteTask`, `assignTask`, `reviewSubmission` |
+| Added | `lib/api/modules/progress.ts` | New API module for metrics, photos, checkins |
+| Added | `lib/api/modules/nutrition.ts` | New API module for plans, meal logs, recipes |
+| Modified | `backend/.../programs.routes.ts` | Added GET/:id, PATCH/:id, DELETE/:id |
+| Modified | `backend/.../tasks.routes.ts` | Added GET/:id, DELETE/:id |
+| Modified | `programs/page.tsx` | Added program list with view/edit/delete |
+| Added | `programs/[id]/page.tsx` | Program detail (members, guidelines) |
+| Added | `programs/[id]/edit/page.tsx` | Program edit (reuses builder shell) |
+| Modified | `program-builder-shell.tsx` | Added edit mode with prefill |
+| Added | `task-create-form.tsx` | Inline task creation with type selector |
+| Added | `task-assign-dialog.tsx` | Assign task modal with due date |
+| Modified | `tasks/page.tsx` | Added task list with assign/delete/view |
+| Added | `tasks/[id]/page.tsx` | Task detail with submissions |
+| Added | `tasks/[id]/feedback/page.tsx` | Submission review form |
+| Added | `progress/progress-client-selector.tsx` | Client dropdown |
+| Added | `progress/progress-metrics-chart.tsx` | Bar chart of metrics |
+| Added | `progress/progress-photo-grid.tsx` | Photo grid with dates |
+| Added | `progress/progress-checkin-list.tsx` | Expandable check-ins |
+| Modified | `progress/page.tsx` | Client selector + per-client view |
+| Added | `nutrition/nutrition-plan-list.tsx` | Meal plan cards |
+| Added | `nutrition/macro-goal-editor.tsx` | Macro target form |
+| Added | `nutrition/meal-log-review.tsx` | Meal log list |
+| Added | `nutrition/recipe-library.tsx` | Recipe list + add |
+| Modified | `nutrition/page.tsx` | Client selector + full nutrition view |
+| Fixed | `live-client-home.tsx` | Removed duplicate function declaration |
+| Fixed | `pnpm-workspace.yaml` | Placeholder strings → booleans |
+| Fixed | `programs/[id]/page.tsx` | Type error (name fallback) |
+
+### Architecture Impact
+All 33 sidebar routes now have pages. 14 new components across 4 feature areas.
+
 ### Status: Complete
 
 ### 2026-05-30 — Dashboard sidebar + layout
@@ -363,4 +405,156 @@ graph TD
 | Protected redirect (Mobile) | ✅ mobile-chrome pass |
 | Desktop landing page renders | ⚠️ flaky (networkidle timeout 1/2 attempts) |
 
+### 2026-05-31 — Client-side audit: type safety, session refactor, hydration API, dynamic TodayFocus
+
+**Goal:** Full audit of all 12 client pages, API modules, and backend routes. Fix type safety, missing patterns, and UX gaps.
+
+**Approach:** Systematic audit followed by 5 targeted fixes plus pre-existing type errors exposed by stricter typing.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `lib/types/domain.ts` | 15 new types: WorkoutExercise, WorkoutAssignment, WorkoutSession, SetLog, RecoverySnapshot, NutritionPlan, NutritionDay, NutritionMeal, HydrationLog, FeedPost, TaskAssignment, TaskSubmission, Subscription, Payment, CheckinSubmission, ProgressPhoto, TodayIntelligence, TodayRecommendation |
+| Modified | `lib/api/modules/training.ts` | Replaced `any` with typed domain types for all methods |
+| Modified | `lib/api/modules/recovery.ts` | Added typed `UpsertMetricInput`; replaced `any` with `ApiList<RecoverySnapshot>` |
+| Modified | `lib/api/modules/programs.ts` | Added typed `ProgramListItem`; added `updateProgram` + `getProgram` + `deleteProgram` |
+| Modified | `lib/api/modules/payments.ts` | Replaced `any` with `Subscription`, `Payment`, `CoachingPackage` types |
+| Modified | `lib/api/modules/intelligence.ts` | Replaced raw types with `TodayIntelligence` |
+| Modified | `lib/api/modules/messaging.ts` | Replaced `any` with `Thread`, `Message` types |
+| Modified | `lib/api/modules/nutrition.ts` | Added typed `NutritionPlanItem`; added `getHydration()` method |
+| Modified | `app/(dashboard)/client/program/page.tsx` | **BUG FIX** — program data is nested under `membership.program` for client role |
+| Modified | `app/(dashboard)/client/feed/page.tsx` | **BUG FIX** — program ID is `items[0].program.id`, not `items[0].id` |
+| Modified | `app/(dashboard)/client/workouts/session/[sessionId]/page.tsx` | Refactored to `useAsyncData` + `CardSkeleton` + `ErrorState` + `aria-label` on inputs |
+| Modified | `components/client/today-focus.tsx` | Added `items` prop for data-driven rendering with default fallback |
+| Modified | `components/client/live/live-client-home.tsx` | Computes dynamic focus items from fetched data; passes to `TodayFocus` |
+| Modified | `app/(dashboard)/client/workouts/page.tsx` | Fixed pluralization pattern |
+| Modified | `app/(dashboard)/client/nutrition/page.tsx` | Now fetches hydration logs from API instead of hardcoded 0 |
+| Modified | `backend/src/modules/nutrition/nutrition.routes.ts` | Added `GET /hydration` endpoint for today's hydration logs |
+| Modified | `components/messaging/thread-list.tsx` | Imported domain `Thread` type instead of local interface |
+| Modified | `components/coach/nutrition/recipe-library.tsx` | Removed unsupported `size` prop from Button |
+| Fixed | Pre-existing type errors | `updateProgram`, `getProgram`, `deleteProgram` exposed by stricter types |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    DOMAIN[lib/types/domain.ts] -->|15 new types| APIS[API modules]
+    APIS -->|typed responses| PAGES[Client pages]
+    PAGES -->|useAsyncData| SESSION[session page]
+    PAGES -->|hydration data| NUTRITION[nutrition page]
+    PAGES -->|dynamic items| TODAY_FOCUS[TodayFocus component]
+    BACKEND -->|GET /hydration| NUTRITION
+    BUGS -->|program.id fix| FEED[feed page]
+    BUGS -->|program.program.name| PROGRAM[program page]
+```
+
+#### 2026-05-31 — Backend strict mode enabled + 14 type errors fixed
+
+**Goal:** Enable `strict: true` in backend tsconfig and fix all resulting type errors.
+
+**Approach:** Set `strict: true` (was `strict: false`) and `noImplicitAny: true` in tsconfig.json. Fixed 14 type errors across 7 files.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `backend/tsconfig.json` | `strict: false` → `true`, `noImplicitAny: false` → `true` |
+| Fixed | `backend/.../coach-action-recommendations.service.ts` | `never[]` from empty `sort()` — added explicit type cast |
+| Fixed | `backend/.../risk-signal-detectors.service.ts` | 3× `never[]` from empty `items` array — typed as `any[]` |
+| Fixed | `backend/.../workout-warning-signals.service.ts` | `never[]` from empty `all` array — typed as `any[]` |
+| Fixed | `backend/.../payments.routes.ts` | Missing `return` on early exit + success path (`noImplicitReturns`) |
+| Fixed | `backend/.../programs.routes.ts` | `name` → `firstName`/`lastName` (User model has no `name` field) |
+| Fixed | `backend/.../tasks.routes.ts` | Removed invalid `clientUser` include (no relation) — fetches users separately; `name` → `firstName`/`lastName`; `noImplicitReturns` fix |
+| Fixed | `backend/.../training.routes.ts` | Removed invalid `workout` include from WorkoutAssignment — fetches via `workoutId`; `name` → `firstName`/`lastName` |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    TSCONFIG[tsconfig.json strict:true] -->|14 errors fixed| BACKEND[backend tsc ✅]
+    BACKEND --> NEVER_FIX[3 never[] fixes]
+    BACKEND --> ROUTE_FIX[4 route fixes: selects + includes]
+    BACKEND --> RETURN_FIX[2 noImplicitReturns fixes]
+```
+
+### ADR-003 — Backend strict mode (2026-05-31)
+
+- **Context:** Backend had `strict: false` masking 14 pre-existing type errors. Previous audit estimated 30 errors but actual count after enabling was 14.
+- **Options considered:** A) Keep `strict: false` and continue masking (high maintenance burden). B) Enable `strict: true` and fix all errors (chosen). C) Partial strict (enable individual flags).
+- **Decision:** Option B — enable full `strict: true` and fix all 14 errors across 7 files.
+- **Why:** 14 errors is a manageable fix set. Keeping `strict: false` would let the error count grow. The errors were real bugs (invalid Prisma includes would crash at runtime).
+- **Consequences:** Backend now compiles with `tsc --noEmit` returning 0 errors. All future code must pass strict checks.
+
 ### Status: Complete
+- Backend `tsc --noEmit`: ✅ 0 errors with `strict: true`
+- Frontend `tsc --noEmit`: ✅ 0 errors
+- Files modified: 8
+- Root causes fixed: `never[]` inference (3 files), missing Prisma relations (2 files), `UserSelect.name` doesn't exist (2 files), `noImplicitReturns` (2 files)
+
+## ADR-002 — Type safety cleanup (2026-05-31)
+
+- **Context:** 11 of 17 API modules used `any` for response types, masking pre-existing type errors across 5+ components and pages.
+- **Options considered:** A) Incremental typing of individual API modules (chosen). B) Global `@ts-expect-error` for pre-existing errors. C) Rewriting all pages to use proper generics in one pass.
+- **Decision:** Option A — add proper types to modules consumed by client pages, fix pre-existing errors exposed by type checking.
+- **Why:** Minimal blast radius. Fixes both new and pre-existing errors without scope creep. The old `any` types were hiding real bugs (e.g., feed page accessing wrong ID path).
+- **Consequences:** 3 pre-existing type errors surfaced and fixed (missing `updateProgram`, `size` prop, `Thread` interface mismatch). Build now passes with 0 type errors.
+
+### Status: Complete
+- Build: ✅ `next build` — 44 static pages, 0 errors without `--no-lint`
+- TypeScript: Clean with typed domain types everywhere on the api layer
+- Backend: `GET /api/nutrition/hydration` endpoint added
+- All client pages (12/12): Loading, error, empty, and success states verified
+- Fixes tested: Feed page program ID bug, program page nested data bug, hydration API integration
+
+### 2026-05-31 — Full coach-client E2E audit + fixes (49 API endpoints tested)
+
+**Goal:** Systematically test every coach and client function across the stack — signup, messaging, tasks, assignments, submissions, reviews, coach intelligence (attention queue, risk signals, health scores), training workouts, nutrition plans/meals/hydration/recipes, progress metrics, programs, packages, habits, check-in expectations, and exercises.
+
+**Approach:** 49-step API test script running against production backend (Railway) with unique test accounts. Verified each endpoint returns 200/201. Supplemented with UI tests via playwright-cli for signup→dashboard flows. Fixed all issues found.
+
+### BE bugs found and fixed
+
+| File | Issue | Fix |
+|------|-------|-----|
+| `app/terms/page.tsx` | **CRITICAL** — `/terms` link returned 404 on signup page | Created terms page with brand styling |
+| `app/privacy/page.tsx` | **CRITICAL** — `/privacy` link returned 404 on signup page | Created privacy page with brand styling |
+| `coach/tasks/page.tsx` | HIGH — `any` types throughout, dead status filter | Added typed interfaces (`TaskItem`, `TaskAssignmentItem`), removed redundant `a.status === 'PENDING'` check |
+| `client/tasks/page.tsx` | HIGH — Filtered on `'PENDING'`/`'SUBMITTED'`/`'REVIEWED'` but TaskAssignment.status defaults to `'assigned'` (lowercase) | Changed to `t.status === 'assigned'` for open tasks; submitted/feedback now checks `submissions[].reviewStatus` |
+| `e2e/auth.spec.ts` | MEDIUM — "real signup" test failed: wrong locators (input[name] vs roles), no role tab click, checked for `/dashboard` not `/coach/home` | Fixed to use `getByRole` locators, click Coach tab, check for `/home` |
+| `backend messaging` | INFO — `messageType` required by Prisma but route uses `...req.body` | Frontend hooks already send `messageType: 'TEXT'`, verified working |
+
+### API endpoints verified (all pass)
+
+| Category | Endpoints | Status |
+|----------|-----------|--------|
+| Auth | signup, login, auth/me | ✅ PASS |
+| Messaging | create thread, send message, list threads, mark read | ✅ PASS |
+| Tasks | create, assign, list (coach+client), submit, review with feedback | ✅ PASS |
+| Coach intelligence | attention queue, refresh queue, full risk scan, low-adherence scan, stalled-progress scan, payment-risk scan, health scores, refresh scores, client health detail, recommendations, workout warnings, generate warnings, risk flags | ✅ PASS |
+| Training | exercises, create exercise, create workout, assign workout, client assignments, workout history | ✅ PASS |
+| Nutrition | create plan, list plans, log meal, list meals, log hydration, get hydration, create recipe | ✅ PASS |
+| Progress | log metric, get metrics | ✅ PASS |
+| Programs | create program | ✅ PASS |
+| Payments | create package, list packages | ✅ PASS |
+| Habits | create habit, list habits | ✅ PASS |
+| Check-ins | expectations | ✅ PASS |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    FIXES[2026-05-31 Audit] -->|Created| TERMS[/terms page]
+    FIXES -->|Created| PRIVACY[/privacy page]
+    FIXES -->|Fixed types| COACH_TASKS[coach/tasks/page.tsx]
+    FIXES -->|Fixed status filter| CLIENT_TASKS[client/tasks/page.tsx]
+    FIXES -->|Fixed locators| E2E_AUTH[e2e/auth.spec.ts]
+    API_TESTED[49 API endpoints] --> VERIFIED[All pass against production]
+```
+
+### Test Results
+- Frontend build: ✅ 46 pages, 0 errors
+- E2E tests: ✅ 18/18 pass (api + auth)
+- API endpoints: ✅ 49/49 verified (against Railway production)
+- Console errors fixed: Missing `/privacy` and `/terms` pages created (was causing 404 errors on signup page)
+- Remaining: Signup console errors for `/privacy` and `/terms` will resolve on next production deploy of the frontend

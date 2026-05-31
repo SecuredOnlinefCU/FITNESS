@@ -13,9 +13,9 @@ import { Newspaper, Megaphone, Bookmark, MessageSquare } from 'lucide-react';
 
 export default function ClientFeedPage() {
   const programs = useAsyncData(() => programsApi.listPrograms(), []);
-  const programId = (programs.data?.items ?? [])[0]?.id;
+  const programId = (programs.data?.items ?? [])[0]?.program?.id;
   const posts = useAsyncData(
-    () => programId ? apiFetch<{ items: any[] }>(`/api/feed/program/${programId}`) : Promise.resolve({ items: [] }),
+    () => programId ? apiFetch<{ items: unknown[] }>(`/api/feed/program/${programId}`) : Promise.resolve({ items: [] }),
     [programId],
   );
   const allPosts = posts.data?.items ?? [];

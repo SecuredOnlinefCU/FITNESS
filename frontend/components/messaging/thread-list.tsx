@@ -1,12 +1,5 @@
 import { Card, CardContent } from '@/components/ui/card';
-
-interface Thread {
-  id: string;
-  coachUserId: string;
-  clientUserId: string;
-  status: string;
-  messages?: { id: string; bodyText?: string; createdAt: string }[];
-}
+import type { Thread } from '@/lib/types/domain';
 
 interface ThreadListProps {
   threads: Thread[];

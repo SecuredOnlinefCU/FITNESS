@@ -25,6 +25,7 @@ import { recoveryRouter } from "./modules/recovery/recovery.routes";
 import { workoutWarningsRouter } from "./modules/coach-intelligence/workout-warnings.routes";
 import { todayIntelligenceRouter } from "./modules/intelligence/today-intelligence.routes";
 import { habitsRouter } from "./modules/habits/habits.routes";
+import { mediaRouter } from "./modules/media/media.routes";
 import { notFoundHandler } from "./common/middleware/not-found";
 import { errorHandler } from "./common/middleware/error-handler";
 import { rateLimit } from "./common/middleware/rate-limit";
@@ -40,6 +41,6 @@ export function createApp(){
  app.use('/api/nutrition',nutritionRouter); app.use('/api/payments',paymentsRouter); app.use('/api/notifications',notificationsRouter); app.use('/api/integrations',integrationsRouter); app.use('/api/admin',adminRouter);
  app.use('/api/coach-intelligence',coachIntelligenceRouter); app.use('/api/checkins',checkinsRouter); app.use('/api/coach-intelligence/risk-signals-v2',riskSignalsV2Router);
  app.use('/api/coach-intelligence/client-health',clientHealthRouter); app.use('/api/wearables',wearablesRouter); app.use('/api/recovery',recoveryRouter);
- app.use('/api/coach-intelligence/workout-warnings',workoutWarningsRouter); app.use('/api/intelligence',todayIntelligenceRouter); app.use('/api/habits',habitsRouter);
+ app.use('/api/coach-intelligence/workout-warnings',workoutWarningsRouter); app.use('/api/intelligence',todayIntelligenceRouter); app.use('/api/habits',habitsRouter); app.use('/api/media',mediaRouter);
  app.use(notFoundHandler); app.use(errorHandler); return app;
 }

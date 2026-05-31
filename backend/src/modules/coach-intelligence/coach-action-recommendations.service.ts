@@ -40,7 +40,7 @@ export async function generateCoachActionRecommendations(actor: Actor, clientUse
     created.push(item);
   }
 
-  return created.sort((a, b) => b.priority - a.priority);
+  return (created as any[]).sort((a: any, b: any) => b.priority - a.priority);
 }
 
 export async function completeCoachActionRecommendation(actor: Actor, recommendationId: string) {
