@@ -81,7 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 function getHomePath(role: string): string {
   switch (role) {
     case 'coach': return '/coach/home';
-    case 'admin': return '/admin';
+    case 'super_admin': return '/admin';
     default: return '/client/home';
   }
 }

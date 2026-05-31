@@ -11,7 +11,7 @@ export default function Footer() {
             <p className="text-sm text-bone-fade mt-4">The platform to coach, scale, and win.</p>
           </div>
 
-          <div>
+          <nav aria-label="Product links">
             <h4 className="text-sm font-semibold mb-4">Product</h4>
             <ul className="space-y-2 text-sm text-bone-fade">
               <li><a href="#features" className="hover:text-bone transition-colors">Features</a></li>
@@ -19,9 +19,9 @@ export default function Footer() {
               <li><Link href="/login" className="hover:text-bone transition-colors">Sign in</Link></li>
               <li><Link href="/signup" className="hover:text-bone transition-colors">Get started</Link></li>
             </ul>
-          </div>
+          </nav>
 
-          <div>
+          <nav aria-label="Company links">
             <h4 className="text-sm font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-bone-fade">
               <li><span className="text-bone-fade">About</span></li>
@@ -29,16 +29,16 @@ export default function Footer() {
               <li><span className="text-bone-fade">Careers</span></li>
               <li><span className="text-bone-fade">Contact</span></li>
             </ul>
-          </div>
+          </nav>
 
-          <div>
+          <nav aria-label="Legal links">
             <h4 className="text-sm font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-bone-fade">
               <li><span className="text-bone-fade">Privacy</span></li>
               <li><span className="text-bone-fade">Terms</span></li>
               <li><span className="text-bone-fade">Cookies</span></li>
             </ul>
-          </div>
+          </nav>
         </div>
 
         <div className="mt-12 border-t border-line pt-8 text-center text-sm text-bone-fade">

@@ -7,18 +7,31 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
 import { useAsyncData } from '@/hooks/data/use-async-data';
-import { apiFetch } from '@/lib/api/client';
-import { Dumbbell, Timer, Trophy, ChevronRight, AlertTriangle } from 'lucide-react';
+import { trainingApi } from '@/lib/api/modules/training';
+import { Dumbbell, Timer, Trophy, Play, ChevronRight, AlertTriangle } from 'lucide-react';
+import Link from 'next/link';
 
 export default function ClientWorkoutsPage() {
-  const history = useAsyncData(() => apiFetch<{ items: any[] }>('/api/training/history'), []);
-  const exercises = useAsyncData(() => apiFetch<{ items: any[] }>('/api/training/exercises'), []);
+  const history = useAsyncData(() => trainingApi.getHistory(), []);
+  const assignments = useAsyncData(() => trainingApi.listClientAssignments(), []);
+  const exercises = useAsyncData(() => trainingApi.listExercises(), []);
 
-  const loading = history.loading || exercises.loading;
-  const error = history.error || exercises.error;
+  const loading = history.loading || assignments.loading;
+  const error = history.error || assignments.error;
   const completedCount = history.data?.items?.length ?? 0;
-  const lastSession = history.data?.items?.[0];
+  const activeAssignments = assignments.data?.items?.filter((a: any) =>
+    a.status !== 'completed' && !a.sessions?.some((s: any) => s.status === 'in_progress')
+  ) ?? [];
+  const inProgress = assignments.data?.items?.filter((a: any) =>
+    a.sessions?.some((s: any) => s.status === 'in_progress')
+  ) ?? [];
   const exerciseList = exercises.data?.items?.slice(0, 10) ?? [];
+
+  async function handleStart(assignmentId: string) {
+    await trainingApi.startSession(assignmentId);
+    assignments.reload();
+    history.reload();
+  }
 
   return (
     <ProtectedRoute roles={['client', 'super_admin']}>
@@ -28,7 +41,7 @@ export default function ClientWorkoutsPage() {
         {loading ? (
           <div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>
         ) : error ? (
-          <ErrorState message={error} onRetry={() => { history.reload(); exercises.reload(); }} />
+          <ErrorState message={error} onRetry={() => { history.reload(); assignments.reload(); }} />
         ) : (
           <>
             <div className="rounded-2xl border border-primary/20 bg-card p-6">
@@ -53,27 +66,65 @@ export default function ClientWorkoutsPage() {
               </div>
             </div>
 
-            {completedCount > 0 ? (
+            {inProgress.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <h3 className="text-sm font-bold text-primary">In progress</h3>
+                {inProgress.map((a: any) => {
+                  const session = a.sessions?.find((s: any) => s.status === 'in_progress');
+                  return (
+                    <Link key={a.id} href={`/client/workouts/session/${session?.id}`}>
+                      <Card className="border-primary/30 transition hover:bg-muted">
+                        <CardContent className="flex items-center justify-between p-4">
+                          <div>
+                            <p className="font-bold">Active workout session</p>
+                            <p className="text-sm text-muted-foreground">{session?.startedAt ? `Started ${new Date(session.startedAt).toLocaleString()}` : ''}</p>
+                          </div>
+                          <Play className="h-5 w-5 text-primary" />
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+
+            {activeAssignments.length > 0 && (
+              <div className="mt-4 space-y-2">
+                <h3 className="text-sm font-bold text-foreground">Assigned workouts</h3>
+                {activeAssignments.slice(0, 5).map((a: any, i: number) => (
+                  <Card key={a.id}>
+                    <CardContent className="flex items-center justify-between p-4">
+                      <div>
+                        <p className="font-bold">Workout #{i + 1}</p>
+                        <p className="text-sm text-muted-foreground">Assigned {new Date(a.createdAt).toLocaleDateString()}</p>
+                      </div>
+                      <button
+                        className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition"
+                        onClick={() => handleStart(a.id)}
+                      >
+                        <Play className="h-4 w-4" /> Start
+                      </button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+
+            {completedCount > 0 && (
               <details className="mt-4">
                 <summary className="cursor-pointer text-sm font-bold text-primary">View recent sessions</summary>
                 <div className="mt-3 space-y-2">
-                  {history.data!.items.slice(0, 5).map((session: any, i: number) => (
-                    <div key={session.id || i} className="rounded-2xl border border-border p-3 text-sm text-muted-foreground">
-                      {session.assignment?.workout?.title || `Session ${i + 1}`} &mdash; {session.sets?.length || 0} sets logged
-                    </div>
-                  ))}
+                  {history.data!.items.slice(0, 5).map((session: any, i: number) => {
+                    const workoutTitle = session.assignment?.workout?.title;
+                    return (
+                      <div key={session.id || i} className="rounded-2xl border border-border p-3 text-sm text-muted-foreground">
+                        {workoutTitle || `Session ${i + 1}`} &mdash; {session.sets?.length || 0} sets logged
+                        {session.completedAt && <span className="ml-2 text-xs text-primary">Completed</span>}
+                      </div>
+                    );
+                  })}
                 </div>
               </details>
-            ) : null}
-
-            {lastSession && (
-              <div className="mt-4 flex items-start gap-3 rounded-2xl border border-energy/20 bg-energy/5 p-4">
-                <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-energy" />
-                <div>
-                  <p className="font-bold text-energy">Recovery notice</p>
-                  <p className="text-sm text-muted-foreground">Your readiness score is lower than usual. Consider reducing intensity by 10-15% today.</p>
-                </div>
-              </div>
             )}
 
             {exerciseList.length > 0 && (

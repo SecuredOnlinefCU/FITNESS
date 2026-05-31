@@ -1,14 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { Paperclip, Send } from 'lucide-react';
 import { useWebSocketThread } from '@/hooks/messaging/use-websocket-thread';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { DeliveryStatus } from './delivery-status';
 import { WebSocketStatusPill } from './websocket-status-pill';
+import { OptimisticMessageComposer } from './optimistic-message-composer';
 import type { Message } from '@/lib/types/domain';
 
 export function LiveThreadView({
@@ -21,14 +18,6 @@ export function LiveThreadView({
   initialMessages?: Message[];
 }) {
   const thread = useWebSocketThread({ threadId, currentUserId, initialMessages });
-  const [bodyText, setBodyText] = useState('');
-
-  async function submit() {
-    if (!bodyText.trim()) return;
-    const next = bodyText;
-    setBodyText('');
-    await thread.sendText(next);
-  }
 
   return (
     <Card>
@@ -59,14 +48,10 @@ export function LiveThreadView({
           )}
         </div>
 
-        {thread.error ? <p className="mt-2 text-xs text-red-600">{thread.error}</p> : null}
+        {thread.error ? <p className="mt-2 text-xs text-pulse">{thread.error}</p> : null}
 
-        <div className="mt-4 rounded-2xl border border-border bg-card p-3 shadow-sm">
-          <div className="flex gap-2">
-            <Button variant="secondary" type="button" aria-label="Attach media"><Paperclip className="h-4 w-4" /></Button>
-            <Input value={bodyText} onChange={(event) => setBodyText(event.target.value)} placeholder="Write a message..." onKeyDown={(event) => event.key === 'Enter' && submit()} />
-            <Button type="button" onClick={submit} disabled={!bodyText.trim()}><Send className="h-4 w-4" /></Button>
-          </div>
+        <div className="mt-4">
+          <OptimisticMessageComposer onSend={thread.sendText} />
         </div>
       </CardContent>
     </Card>

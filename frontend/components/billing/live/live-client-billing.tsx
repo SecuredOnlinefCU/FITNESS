@@ -63,7 +63,7 @@ export function LiveClientBilling() {
               {result.data.payments.map((payment: any) => (
                 <div key={payment.id} className="rounded-2xl border border-border p-4 text-sm">
                   <p className="font-bold">{payment.status}</p>
-                  <p className="text-muted-foreground">{payment.currency?.toUpperCase()} {(payment.amountCents / 100).toFixed(2)}</p>
+                  <p className="text-muted-foreground">{new Intl.NumberFormat('en-US', { style: 'currency', currency: payment.currency || 'USD' }).format(payment.amountCents / 100)}</p>
                 </div>
               ))}
             </div>

@@ -3,6 +3,12 @@ import { HttpError } from '../../common/errors/http-error';
 
 type Actor = { userId: string; role: string };
 
+function requireCoach(actor: Actor) {
+  if (!['coach', 'assistant_coach', 'super_admin'].includes(actor.role)) {
+    throw new HttpError(403, 'Coach access required');
+  }
+}
+
 function startOfToday() {
   const date = new Date();
   date.setHours(0, 0, 0, 0);
@@ -29,7 +35,9 @@ async function listCoachClientIds(coachUserId: string) {
 
 export async function detectMissedCheckIns(actor: Actor) {
   requireCoach(actor);
-  const clientIds = await listCoachClientIds(actor.userId);
+  const expectations = await prisma.clientCheckInExpectation.findMany({
+    where: { coachUserId: actor.userId, isActive: true },
+  });
   const flags = [] as any[];
 
   for (const expectation of expectations) {
@@ -42,7 +50,6 @@ export async function detectMissedCheckIns(actor: Actor) {
 
     const flag = await prisma.clientRiskFlag.upsert({
       where: {
-        // If your Prisma schema does not support a composite here, replace with findFirst + create/update.
         id: `missed-checkin-${expectation.coachUserId}-${expectation.clientUserId}`,
       },
       update: {

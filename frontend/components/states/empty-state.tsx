@@ -20,7 +20,7 @@ export function EmptyState({
         <h2 className="text-xl font-black">{title}</h2>
         <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">{description}</p>
         {actionHref && actionLabel ? (
-          <Link href={actionHref} className="mt-5 inline-flex">
+          <Link href={actionHref} className="mt-5 inline-flex" aria-label={actionLabel}>
             <Button>
               {actionLabel}
               <ArrowRight className="ml-2 h-4 w-4" />

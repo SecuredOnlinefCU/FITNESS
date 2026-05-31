@@ -26,8 +26,11 @@ test.describe('Responsive Design', () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/coach/home');
       await page.waitForURL(/\/login/, { timeout: 20000 });
-      const hasAuthForm = (await page.locator('input[type="email"]').count()) > 0;
-      expect(hasAuthForm).toBeTruthy();
+      await page.waitForLoadState('networkidle');
+      const heading = page.locator('h1');
+      await expect(heading).toBeVisible();
+      const headingText = await heading.textContent();
+      expect(headingText?.toLowerCase()).toContain('log in');
     });
   }
 });

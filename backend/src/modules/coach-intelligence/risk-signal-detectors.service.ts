@@ -123,7 +123,7 @@ export async function detectStalledProgress(actor: Actor) {
     }).catch(() => []);
 
     const recentCheckIns = await prisma.checkinSubmission.findMany({
-      where: { clientUserId, createdAt: { gte: since } },
+      where: { clientUserId, submittedAt: { gte: since } },
     }).catch(() => []);
 
     const noMetrics = recentMetrics.length === 0;

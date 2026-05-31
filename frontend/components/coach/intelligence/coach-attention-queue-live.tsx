@@ -11,8 +11,10 @@ export function CoachAttentionQueueLive() {
   const queue = useCoachAttentionQueue();
 
   async function refresh() {
-    await coachIntelligenceApi.refreshAttentionQueue();
-    await queue.reload();
+    await Promise.all([
+      coachIntelligenceApi.refreshAttentionQueue(),
+      queue.reload(),
+    ]);
   }
 
   if (queue.loading) return <div className="grid gap-4 md:grid-cols-2"><CardSkeleton /><CardSkeleton /></div>;

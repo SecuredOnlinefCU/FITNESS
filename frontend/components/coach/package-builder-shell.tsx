@@ -13,7 +13,8 @@ export function PackageBuilderShell() {
   const [billingType, setBillingType] = useState<'ONE_TIME' | 'RECURRING'>('RECURRING');
   const [status, setStatus] = useState<string | null>(null);
 
-  async function createPackage() {
+  async function createPackage(event: React.FormEvent) {
+    event.preventDefault();
     setStatus('Creating package...');
     try {
       await paymentsApi.createPackage({
@@ -25,27 +26,29 @@ export function PackageBuilderShell() {
       });
       setStatus('Package created. Clients can now check out.');
       setTitle('');
-    } catch (error: any) {
-      setStatus(error.message || 'Failed to create package.');
+    } catch (err: unknown) {
+      setStatus(err instanceof Error ? err.message : 'Failed to create package.');
     }
   }
 
   return (
     <Card>
-      <CardContent className="space-y-4 p-5">
-        <div>
-          <h2 className="text-xl font-black">Coaching package</h2>
-          <p className="text-sm text-muted-foreground">Create checkout-ready offers for clients.</p>
-        </div>
-        <Input placeholder="Package title" value={title} onChange={(event) => setTitle(event.target.value)} />
-        <Input placeholder="Price in USD" value={price} onChange={(event) => setPrice(event.target.value)} />
-        <Select value={billingType} onChange={(event) => setBillingType(event.target.value as any)}>
-          <option value="RECURRING">Monthly recurring</option>
-          <option value="ONE_TIME">One-time</option>
-        </Select>
-        {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
-        <Button onClick={createPackage} disabled={!title || !price}>Create package</Button>
-      </CardContent>
+      <form onSubmit={createPackage}>
+        <CardContent className="space-y-4 p-5">
+          <div>
+            <h2 className="text-xl font-black">Coaching package</h2>
+            <p className="text-sm text-muted-foreground">Create checkout-ready offers for clients.</p>
+          </div>
+          <Input placeholder="Package title" value={title} onChange={(event) => setTitle(event.target.value)} />
+          <Input placeholder="Price in USD" value={price} onChange={(event) => setPrice(event.target.value)} />
+          <Select value={billingType} onChange={(event) => setBillingType(event.target.value as 'ONE_TIME' | 'RECURRING')}>
+            <option value="RECURRING">Monthly recurring</option>
+            <option value="ONE_TIME">One-time</option>
+          </Select>
+          {status ? <p className="text-sm text-muted-foreground">{status}</p> : null}
+          <Button type="submit" disabled={!title || !price}>Create package</Button>
+        </CardContent>
+      </form>
     </Card>
   );
 }
