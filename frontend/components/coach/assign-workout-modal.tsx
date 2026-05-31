@@ -5,13 +5,13 @@ import { trainingApi } from '@/lib/api/modules/training';
 import { Button } from '@/components/ui/button';
 
 export function AssignWorkoutModal({ workoutId, onClose, onAssigned }: { workoutId: string; onClose: () => void; onAssigned: () => void }) {
-  const [clientIds, setClientIds] = useState<string[]>([]);
+  const [clients, setClients] = useState<{ id: string; name: string; email: string }[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    trainingApi.listCoachClients().then(r => setClientIds(r.items)).catch(() => {});
+    trainingApi.listCoachClients().then(r => setClients(r.items)).catch(() => {});
   }, []);
 
   async function handleAssign() {
@@ -42,7 +42,7 @@ export function AssignWorkoutModal({ workoutId, onClose, onAssigned }: { workout
             onChange={e => setSelectedClient(e.target.value)}
           >
             <option value="">Select a client...</option>
-            {clientIds.map(id => <option key={id} value={id}>{id.slice(0, 12)}...</option>)}
+            {clients.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.id.slice(0, 12)}</option>)}
           </select>
 
           {status && <p className="text-sm text-muted-foreground">{status}</p>}

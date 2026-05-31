@@ -140,5 +140,6 @@ trainingRouter.get('/programs', requireRole(['coach', 'assistant_coach']), async
 trainingRouter.get('/coach-clients', requireRole(['coach', 'assistant_coach']), asyncHandler(async (req: AuthenticatedRequest, res) => {
   const threads = await prisma.thread.findMany({ where: { coachUserId: req.user!.sub }, select: { clientUserId: true } });
   const clientIds = [...new Set(threads.map(t => t.clientUserId))];
-  res.json({ items: clientIds });
+  const users = await prisma.user.findMany({ where: { id: { in: clientIds } }, select: { id: true, name: true, email: true } });
+  res.json({ items: users });
 }));

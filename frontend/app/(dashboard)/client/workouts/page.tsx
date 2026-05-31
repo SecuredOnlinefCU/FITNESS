@@ -10,8 +10,10 @@ import { useAsyncData } from '@/hooks/data/use-async-data';
 import { trainingApi } from '@/lib/api/modules/training';
 import { Dumbbell, Timer, Trophy, Play, ChevronRight, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 
 export default function ClientWorkoutsPage() {
+  const router = useRouter();
   const history = useAsyncData(() => trainingApi.getHistory(), []);
   const assignments = useAsyncData(() => trainingApi.listClientAssignments(), []);
   const exercises = useAsyncData(() => trainingApi.listExercises(), []);
@@ -28,9 +30,8 @@ export default function ClientWorkoutsPage() {
   const exerciseList = exercises.data?.items?.slice(0, 10) ?? [];
 
   async function handleStart(assignmentId: string) {
-    await trainingApi.startSession(assignmentId);
-    assignments.reload();
-    history.reload();
+    const session = await trainingApi.startSession(assignmentId);
+    router.push(`/client/workouts/session/${session.id}`);
   }
 
   return (

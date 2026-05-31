@@ -32,7 +32,7 @@ export const trainingApi = {
     return apiFetch<{ items: any[] }>('/api/training/programs');
   },
   listCoachClients() {
-    return apiFetch<{ items: string[] }>('/api/training/coach-clients');
+    return apiFetch<{ items: { id: string; name: string; email: string }[] }>('/api/training/coach-clients');
   },
   listClientAssignments() {
     return apiFetch<{ items: any[] }>('/api/training/client-assignments');
