@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Authentication Flow', () => {
   test('login page renders with form fields', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const emailField = page.locator('input[type="email"], input[name="email"]');
     const passwordField = page.locator('input[type="password"], input[name="password"]');
@@ -18,7 +18,7 @@ test.describe('Authentication Flow', () => {
 
   test('login form validation shows errors for empty fields', async ({ page }) => {
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const submitButton = page.locator('button[type="submit"]');
     if (await submitButton.count() > 0) {
@@ -31,7 +31,7 @@ test.describe('Authentication Flow', () => {
 
   test('signup page renders with registration form', async ({ page }) => {
     await page.goto('/signup');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const nameField = page.locator('input[name="name"], input[placeholder*="name"]');
     const emailField = page.locator('input[type="email"], input[name="email"]');
@@ -44,7 +44,7 @@ test.describe('Authentication Flow', () => {
 
   test('forgot password page is accessible', async ({ page }) => {
     await page.goto('/forgot-password');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const emailField = page.locator('input[type="email"], input[name="email"]');
     const submitButton = page.locator('button[type="submit"]');
@@ -56,7 +56,7 @@ test.describe('Authentication Flow', () => {
 
   test('protected page redirects unauthenticated users to login', async ({ page }) => {
     await page.goto('/dashboard');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     await page.waitForTimeout(1000);
 
     const currentUrl = page.url();
@@ -70,7 +70,7 @@ test.describe('Authentication Flow', () => {
 
   test('logout link exists on landing page', async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     const loginLinks = page.locator('a').filter({ hasText: /sign ?in|log ?in/i });
     expect(await loginLinks.count()).toBeGreaterThanOrEqual(1);
   });
@@ -80,7 +80,7 @@ test.describe('Authentication Flow', () => {
     const password = 'TestPass123!';
 
     await page.goto('/signup');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const firstNameInput = page.getByRole('textbox', { name: 'First name' });
     const lastNameInput = page.getByRole('textbox', { name: 'Last name' });

@@ -3,7 +3,7 @@ import { test, expect } from '@playwright/test';
 test.describe('Landing Page', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
   });
 
   test('renders all major sections', async ({ page }) => {
@@ -68,7 +68,7 @@ test.describe('Landing Page', () => {
       if (msg.type() === 'error') errors.push(msg.text());
     });
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
     expect(errors.filter(e => !e.includes('favicon') && !e.includes('third-party'))).toEqual([]);
   });
 });

@@ -42,7 +42,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <LevelFitLogo size={36} />
         </div>
         {children}
-        <p className="relative mt-10 text-xs text-muted-foreground">&copy; 2026 LevelFITness. All rights reserved.</p>
+        <p className="relative mt-10 text-xs text-muted-foreground">&copy; 2026 LevelFit. All rights reserved.</p>
       </div>
     </div>
   );

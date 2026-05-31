@@ -7,7 +7,7 @@ export default function AdminDashboardPage() {
   return (
     <ProtectedRoute roles={['super_admin']}>
       <DashboardShell>
-        <AdminPageHeader title="Platform controls" subtitle="Monitor LevelFITness users, reports, audit logs, delivery, feature flags, and webhook health." />
+        <AdminPageHeader title="Platform controls" subtitle="Monitor LevelFit users, reports, audit logs, delivery, feature flags, and webhook health." />
         <AdminDashboardLive />
       </DashboardShell>
     </ProtectedRoute>

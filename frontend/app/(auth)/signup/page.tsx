@@ -56,7 +56,7 @@ export default function SignupPage() {
     <div className="w-full max-w-sm">
       <div className="rounded-3xl border border-border bg-card p-8">
         <h1 className="text-2xl font-black tracking-tight">Create your account</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Start your fitness journey with LevelFITness.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Start your fitness journey with LevelFit.</p>
 
         <button
           type="button"

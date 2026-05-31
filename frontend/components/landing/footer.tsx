@@ -42,7 +42,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-12 border-t border-line pt-8 text-center text-sm text-bone-fade">
-          &copy; {new Date().getFullYear()} LevelFITness. All rights reserved.
+          &copy; {new Date().getFullYear()} LevelFit. All rights reserved.
         </div>
       </div>
     </footer>

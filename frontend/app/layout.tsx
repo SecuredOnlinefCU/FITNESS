@@ -3,7 +3,7 @@ import '@/styles/globals.css';
 import { AuthProvider } from '@/components/auth/auth-provider';
 
 export const metadata: Metadata = {
-  title: 'LevelFITness',
+  title: 'LevelFit',
   description: 'Coach and client fitness platform',
 };
 

@@ -11,7 +11,7 @@ test.describe('Responsive Design', () => {
     test(`landing page renders at ${vp.name} (${vp.width}x${vp.height})`, async ({ page }) => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/');
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
 
       const body = page.locator('body');
       await expect(body).toBeVisible();
@@ -26,7 +26,7 @@ test.describe('Responsive Design', () => {
       await page.setViewportSize({ width: vp.width, height: vp.height });
       await page.goto('/coach/home');
       await page.waitForURL(/\/login/, { timeout: 20000 });
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('load');
       const heading = page.locator('h1');
       await expect(heading).toBeVisible();
       const headingText = await heading.textContent();
@@ -39,7 +39,7 @@ test.describe('Touch Targets (WCAG 2.2)', () => {
   test('nav links have minimum 44x44px touch targets', async ({ page }) => {
     await page.setViewportSize({ width: 375, height: 667 });
     await page.goto('/');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     const links = page.locator('nav a, nav button');
     const count = await links.count();

@@ -18,7 +18,7 @@ export default function PrivacyPage() {
           <h2 className="mt-8 text-lg font-bold text-foreground">1. Information We Collect</h2>
           <p>We collect information you provide when creating an account, including your name, email address, and profile information. Coaches may upload additional client data as part of their coaching services.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">2. How We Use Your Information</h2>
-          <p>Your information is used to provide and improve the LevelFITness platform, process payments, send notifications, and enable coach-client communication.</p>
+          <p>Your information is used to provide and improve the LevelFit platform, process payments, send notifications, and enable coach-client communication.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">3. Data Sharing</h2>
           <p>We do not sell your personal data. Client data shared with coaches is limited to what is necessary for coaching services. We use third-party services (Stripe, Vercel, Railway) that may process data in accordance with their own privacy policies.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">4. Data Security</h2>

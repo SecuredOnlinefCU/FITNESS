@@ -13,7 +13,7 @@ export default function ClientTodayPage() {
           </div>
         </div>
         <DashboardShell>
-          <ClientPageHeader title="Today" subtitle="Your adaptive LevelFITness plan for the next best action." />
+          <ClientPageHeader title="Today" subtitle="Your adaptive LevelFit plan for the next best action." />
           <LiveClientToday />
         </DashboardShell>
       </div>

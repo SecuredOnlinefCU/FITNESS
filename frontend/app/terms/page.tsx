@@ -16,15 +16,15 @@ export default function TermsPage() {
         <div className="prose prose-sm prose-invert max-w-none text-muted-foreground">
           <p>Last updated: May 30, 2026</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">1. Acceptance of Terms</h2>
-          <p>By accessing or using LevelFITness, you agree to be bound by these Terms of Service. If you do not agree, do not use the platform.</p>
+          <p>By accessing or using LevelFit, you agree to be bound by these Terms of Service. If you do not agree, do not use the platform.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">2. Description of Service</h2>
-          <p>LevelFITness provides a coaching platform that connects fitness coaches with clients. Coaches can create workout programs, nutrition plans, and track client progress. Clients can access assigned content and communicate with their coach.</p>
+          <p>LevelFit provides a coaching platform that connects fitness coaches with clients. Coaches can create workout programs, nutrition plans, and track client progress. Clients can access assigned content and communicate with their coach.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">3. User Responsibilities</h2>
           <p>You are responsible for maintaining the confidentiality of your account credentials and for all activities under your account. You agree to provide accurate information and keep it updated.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">4. Payments and Billing</h2>
           <p>Subscription fees are billed in advance on a monthly or annual basis. Refunds are handled in accordance with our refund policy. Coaches are responsible for setting their own pricing.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">5. Limitation of Liability</h2>
-          <p>LevelFITness is not liable for any indirect, incidental, or consequential damages arising from your use of the platform. Fitness advice and coaching content are provided by third-party coaches, not by LevelFITness.</p>
+          <p>LevelFit is not liable for any indirect, incidental, or consequential damages arising from your use of the platform. Fitness advice and coaching content are provided by third-party coaches, not by LevelFit.</p>
           <h2 className="mt-8 text-lg font-bold text-foreground">6. Contact</h2>
           <p>For questions about these terms, contact support@levelfitcoach.com.</p>
         </div>
