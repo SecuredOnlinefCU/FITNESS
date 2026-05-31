@@ -10,7 +10,7 @@ trainingRouter.use(requireAuth);
 trainingRouter.get('/exercises', asyncHandler(async (_req, res) => res.json({ items: await prisma.exercise.findMany({ take: 100 }) })));
 
 trainingRouter.post('/exercises', requireRole(['coach', 'assistant_coach']), asyncHandler(async (req: AuthenticatedRequest, res) =>
-  res.status(201).json(await prisma.exercise.create({ data: { coachUserId: req.user!.sub, ...req.body } }))
+  res.status(201).json(await prisma.exercise.create({ data: { coachUserId: req.user!.sub, name: req.body.name, instructions: req.body.instructions, muscleGroups: req.body.muscleGroups || req.body.muscleGroup, equipment: req.body.equipment } }))
 ));
 
 trainingRouter.get('/workouts', asyncHandler(async (req: AuthenticatedRequest, res) => {
@@ -71,7 +71,7 @@ trainingRouter.delete('/workouts/:id', requireRole(['coach', 'assistant_coach'])
 }));
 
 trainingRouter.post('/assignments', requireRole(['coach', 'assistant_coach']), asyncHandler(async (req: AuthenticatedRequest, res) =>
-  res.status(201).json(await prisma.workoutAssignment.create({ data: { ...req.body, assignedByUserId: req.user!.sub } }))
+  res.status(201).json(await prisma.workoutAssignment.create({ data: { workoutId: req.body.workoutId, clientUserId: req.body.clientUserId, assignedByUserId: req.user!.sub, assignedForDate: req.body.assignedForDate ? new Date(req.body.assignedForDate) : undefined } }))
 ));
 
 trainingRouter.get('/assignments', asyncHandler(async (req: AuthenticatedRequest, res) => {
