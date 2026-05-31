@@ -11,6 +11,9 @@ graph TD
     ROOT --> CONFIG[package.json]
 
     APP --> ROUTES[page.tsx + layout.tsx]
+    APP --> LOADING[loading.tsx]
+    APP --> ERROR[error.tsx]
+    APP --> NOTFOUND[not-found.tsx]
     APP --> LANDING[landing/]
     APP --> AUTH[\(auth\)/]
     APP --> DASHBOARD[\(dashboard\)/]
@@ -48,6 +51,9 @@ frontend/
 ├── app/                        # Next.js App Router pages
 │   ├── page.tsx                # Landing page (assembles all sections)
 │   ├── layout.tsx              # Root layout with AuthProvider
+│   ├── loading.tsx             # Route-level loading spinner
+│   ├── error.tsx               # Route-level error boundary
+│   ├── not-found.tsx           # Custom 404 page
 │   ├── (auth)/                 # Auth pages (login, signup, forgot-password)
 │   │   ├── layout.tsx          # Shared auth layout (centered card + logo)
 │   │   ├── login/page.tsx      # Email + password sign-in form

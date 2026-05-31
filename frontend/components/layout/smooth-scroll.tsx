@@ -1,9 +1,21 @@
 'use client';
 
-import { useEffect, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 export default function SmoothScroll({ children }: { children: ReactNode }) {
+  const [reduced, setReduced] = useState(true);
+
   useEffect(() => {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    setReduced(mq.matches);
+    const handler = (event: MediaQueryListEvent) => setReduced(event.matches);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
+  useEffect(() => {
+    if (reduced) return;
+
     let lenis: { raf: (t: number) => void; destroy: () => void } | null = null;
     let rafId: number;
 
@@ -21,7 +33,7 @@ export default function SmoothScroll({ children }: { children: ReactNode }) {
       cancelAnimationFrame(rafId);
       lenis?.destroy();
     };
-  }, []);
+  }, [reduced]);
 
   return <>{children}</>;
 }

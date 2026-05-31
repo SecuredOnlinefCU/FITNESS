@@ -56,7 +56,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const session = await authApi.signup(input);
     setTokens(session.accessToken, session.refreshToken);
     setUser(session.user);
-    router.push('/client/home');
+    router.push(getHomePath(session.user.role));
   }
 
   function signOut() {

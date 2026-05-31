@@ -52,7 +52,7 @@ export default function Hero() {
               AI-powered coaching platform
             </div>
 
-            <h1 className="text-5xl font-bold tracking-tight md:text-7xl leading-[1.05]">
+            <h1 className="font-display text-5xl font-bold tracking-tight md:text-7xl leading-[1.05]">
               Level up your fitness,{' '}
               <span className="relative inline-block min-w-[4ch]">
                 <AnimatePresence mode="wait">

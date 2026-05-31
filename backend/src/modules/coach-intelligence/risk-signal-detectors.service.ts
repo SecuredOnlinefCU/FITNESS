@@ -74,7 +74,7 @@ export async function detectLowAdherence(actor: Actor) {
 
     const [habitLogs, taskAssignments] = await Promise.all([
       prisma.habitLog.findMany({ where: { clientUserId, completedAt: { gte: since } } }).catch(() => []),
-      prisma.taskAssignment?.findMany?.({ where: { clientUserId } }).catch(() => []) ?? [],
+      prisma.taskAssignment.findMany({ where: { clientUserId } }).catch(() => []),
     ]);
 
     const assignedTasks = taskAssignments.length;
@@ -117,14 +117,14 @@ export async function detectStalledProgress(actor: Actor) {
 
   for (const clientUserId of clientIds) {
     const since = daysAgo(21);
-    const recentMetrics = await prisma.metricEntry?.findMany?.({
+    const recentMetrics = await prisma.metricEntry.findMany({
       where: { clientUserId, recordedAt: { gte: since } },
       orderBy: { recordedAt: 'desc' },
-    }).catch(() => []) ?? [];
+    }).catch(() => []);
 
     const recentCheckIns = await prisma.checkinSubmission.findMany({
       where: { clientUserId, createdAt: { gte: since } },
-    }).catch(() => []) ?? [];
+    }).catch(() => []);
 
     const noMetrics = recentMetrics.length === 0;
     const noCheckIns = recentCheckIns.length === 0;
@@ -161,11 +161,11 @@ export async function detectPaymentAccessRisk(actor: Actor) {
   let flagsUpdated = 0;
 
   for (const clientUserId of clientIds) {
-    const subscriptions = await prisma.subscription?.findMany?.({
+    const subscriptions = await prisma.subscription.findMany({
       where: { clientUserId, coachUserId },
       orderBy: { createdAt: 'desc' },
       take: 1,
-    }).catch(() => []) ?? [];
+    }).catch(() => []);
 
     const subscription = subscriptions[0];
     const riskyStatuses = ['PAST_DUE', 'UNPAID', 'CANCELED', 'INCOMPLETE', 'NONE'];

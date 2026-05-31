@@ -15,8 +15,8 @@ export function useAsyncData<T>(loader: () => Promise<T>, deps: React.Dependency
       const result = await loader();
       setData(result);
       setStatus('success');
-    } catch (err: any) {
-      setError(err?.message || 'Something went wrong.');
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Something went wrong.');
       setStatus('error');
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

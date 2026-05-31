@@ -13,9 +13,9 @@ export function WebSocketStatusPill({ status }: { status: RealtimeConnectionStat
   return (
     <span className={cn(
       'inline-flex items-center rounded-full px-3 py-1 text-xs font-black',
-      status === 'open' ? 'bg-emerald-100 text-emerald-700' :
-      status === 'connecting' ? 'bg-yellow-100 text-yellow-700' :
-      status === 'error' ? 'bg-red-100 text-red-700' :
+      status === 'open' ? 'bg-flow/15 text-flow' :
+      status === 'connecting' ? 'bg-energy/15 text-energy' :
+      status === 'error' ? 'bg-pulse/15 text-pulse' :
       'bg-muted text-muted-foreground'
     )}>
       {labels[status]}

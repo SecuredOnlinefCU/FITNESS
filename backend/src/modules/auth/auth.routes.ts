@@ -294,7 +294,7 @@ authRouter.get(
       await prisma.refreshSession.create({ data: { userId: userData.id, tokenHash: sha(refresh) } });
 
       const accessToken = signAccessToken(payload);
-      const params = new URLSearchParams({ accessToken, refreshToken, isNew: String(isNew) });
+      const params = new URLSearchParams({ accessToken, refresh: refresh, isNew: String(isNew) });
       res.redirect(`${frontendUrl}/auth/callback?${params.toString()}`);
     } catch {
       res.redirect(`${frontendUrl}/auth/callback?error=server_error`);

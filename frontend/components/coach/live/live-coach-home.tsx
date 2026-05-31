@@ -7,7 +7,7 @@ import { useAsyncData } from '@/hooks/data/use-async-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
-import { MessageSquare, AlertTriangle, Bell, Activity, Users, Eye } from 'lucide-react';
+import { MessageSquare, AlertTriangle, Bell, Activity, Eye } from 'lucide-react';
 
 async function loadCoachHome() {
   const [queue, riskFlagsResult, warnings, threads] = await Promise.allSettled([

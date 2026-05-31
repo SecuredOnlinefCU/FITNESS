@@ -25,7 +25,7 @@ export default function CoachWorkoutsPage() {
         {loading ? (
           <div className="grid gap-4 md:grid-cols-3"><CardSkeleton /><CardSkeleton /><CardSkeleton /></div>
         ) : error ? (
-          <ErrorState message={error} onRetry={() => { exercises.reload(); workouts.reload(); }} />
+          <ErrorState message={error} onRetry={() => { exercises.reload(); }} />
         ) : (
           <div className="grid gap-4 md:grid-cols-3">
             <Card>

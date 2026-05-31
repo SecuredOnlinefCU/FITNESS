@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 
 export function ClientHealthScoreCard({ item }: { item: any }) {
-  const color = item.healthStatus === 'CRITICAL' ? 'text-red-600' : item.healthStatus === 'AT_RISK' ? 'text-orange-600' : item.healthStatus === 'WATCH' ? 'text-yellow-600' : 'text-emerald-600';
+  const color = item.healthStatus === 'CRITICAL' ? 'text-pulse' : item.healthStatus === 'AT_RISK' ? 'text-energy' : item.healthStatus === 'WATCH' ? 'text-energy' : 'text-flow';
 
   return (
     <Card>

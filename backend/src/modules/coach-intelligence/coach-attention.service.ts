@@ -28,10 +28,9 @@ async function listCoachClientIds(coachUserId: string) {
 }
 
 export async function detectMissedCheckIns(actor: Actor) {
-  if (!['coach', 'assistant_coach', 'super_admin'].includes(actor.role)) throw new HttpError(403, 'Coach access required');
-  const coachUserId = actor.userId;
-  const expectations = await prisma.clientCheckInExpectation.findMany({ where: { coachUserId, isActive: true } });
-  const flags = [];
+  requireCoach(actor);
+  const clientIds = await listCoachClientIds(actor.userId);
+  const flags = [] as any[];
 
   for (const expectation of expectations) {
     const dueAt = expectation.nextDueAt;
@@ -119,7 +118,7 @@ export async function refreshCoachAttentionQueue(actor: Actor) {
   if (!['coach', 'assistant_coach', 'super_admin'].includes(actor.role)) throw new HttpError(403, 'Coach access required');
   await detectMissedCheckIns(actor);
   const clientIds = await listCoachClientIds(actor.userId);
-  const snapshots = [];
+  const snapshots = [] as any[];
   for (const clientUserId of clientIds) {
     snapshots.push(await calculateClientAttentionScore({ coachUserId: actor.userId, clientUserId }));
   }

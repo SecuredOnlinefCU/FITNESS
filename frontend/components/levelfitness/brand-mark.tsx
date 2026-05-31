@@ -8,7 +8,7 @@ export function LevelFitnessBrandMark() {
       </div>
       <div>
         <p className="text-lg font-black leading-none tracking-tight">{levelFitnessBrand.name}</p>
-        <p className="text-xs text-muted-foreground">{levelFitnessBrand.tagline}</p>
+        <p className="text-xs text-muted-foreground">{levelFitnessBrand.taglines[0]}</p>
       </div>
     </div>
   );

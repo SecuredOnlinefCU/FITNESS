@@ -16,7 +16,7 @@ export default function CTASection() {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="text-4xl font-bold md:text-5xl tracking-tight mb-6">
+          <h2 className="font-display text-4xl font-bold md:text-5xl tracking-tight mb-6">
             Start your 30-day free trial
           </h2>
           <p className="text-lg text-bone-mute mb-10 max-w-lg mx-auto">

@@ -4,7 +4,15 @@ import { clientHealthApi } from '@/lib/api/modules/client-health';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-export function CoachActionRecommendationList({ items = [], onCompleted }: { items?: any[]; onCompleted?: () => void }) {
+interface Recommendation {
+  id: string;
+  title: string;
+  body?: string;
+  recommendationType: string;
+  priority: string;
+}
+
+export function CoachActionRecommendationList({ items = [], onCompleted }: { items?: Recommendation[]; onCompleted?: () => void }) {
   async function complete(id: string) {
     await clientHealthApi.completeRecommendation(id);
     onCompleted?.();

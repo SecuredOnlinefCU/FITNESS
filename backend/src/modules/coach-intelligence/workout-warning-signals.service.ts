@@ -29,11 +29,10 @@ async function upsertWarning(input: { coachUserId?: string; clientUserId: string
 
 export async function generateAdaptiveWorkoutWarningsForClient(input: { coachUserId?: string; clientUserId: string; metricDate?: string }) {
   const metricDate = dayStart(input.metricDate);
-  const metrics = await prisma.dailyRecoveryMetric.findMany({ where: { userId: input.clientUserId, metricDate }, orderBy: { updatedAt: 'desc' } });
+  const metrics = await prisma.dailyRecoveryMetric.findMany({ where: { userId: input.clientUserId, metricDate: metricDate }, orderBy: { updatedAt: 'desc' } });
   const latest = metrics[0];
   if (!latest) return [];
-
-  const warnings = [];
+  const warnings = [] as any[];
 
   if (latest.sleepMinutes != null && latest.sleepMinutes < 300) {
     warnings.push(await upsertWarning({ coachUserId: input.coachUserId, clientUserId: input.clientUserId, warningType: 'LOW_SLEEP', severity: 'HIGH', title: 'Low sleep before training', body: 'Client sleep is under 5 hours. Consider reducing intensity or checking recovery context.', metricDate, evidenceJson: { sleepMinutes: latest.sleepMinutes } }));

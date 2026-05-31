@@ -6,7 +6,14 @@ import { intelligenceApi } from '@/lib/api/modules/intelligence';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 
-export function NextBestActionList({ items = [], onComplete }: { items?: any[]; onComplete?: () => void }) {
+interface ActionItem {
+  id: string;
+  title: string;
+  body?: string;
+  actionHref?: string;
+}
+
+export function NextBestActionList({ items = [], onComplete }: { items?: ActionItem[]; onComplete?: () => void }) {
   if (!items.length) return null;
 
   async function complete(id: string) {

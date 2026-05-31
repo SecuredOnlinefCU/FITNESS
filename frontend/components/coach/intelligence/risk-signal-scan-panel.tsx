@@ -29,7 +29,7 @@ export function RiskSignalScanPanel({ onScanned }: { onScanned?: () => void }) {
           <Button variant="secondary" disabled={scan.loading} onClick={() => run('stalled')}>Stalled progress</Button>
           <Button variant="secondary" disabled={scan.loading} onClick={() => run('payment')}>Payment risk</Button>
         </div>
-        {scan.error ? <p className="mt-3 text-sm text-red-600">{scan.error}</p> : null}
+        {scan.error ? <p className="mt-3 text-sm text-pulse">{scan.error}</p> : null}
         {scan.result ? <pre className="mt-4 max-h-72 overflow-auto rounded-2xl bg-muted p-4 text-xs">{JSON.stringify(scan.result, null, 2)}</pre> : null}
       </CardContent>
     </Card>

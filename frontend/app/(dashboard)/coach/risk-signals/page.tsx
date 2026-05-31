@@ -7,11 +7,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
 import { useAsyncData } from '@/hooks/data/use-async-data';
-import { riskSignalsV2Api } from '@/lib/api/modules/risk-signals-v2';
+import { riskSignalsV2Api, type RiskScanFullResult } from '@/lib/api/modules/risk-signals-v2';
 import { AlertTriangle, TrendingDown, DollarSign, Clock, ShieldAlert } from 'lucide-react';
 
 export default function CoachRiskSignalsPage() {
-  const result = useAsyncData(() => riskSignalsV2Api.scanFull(), []);
+  const result = useAsyncData<RiskScanFullResult>(() => riskSignalsV2Api.scanFull(), []);
   const scan = result.data;
 
   return (

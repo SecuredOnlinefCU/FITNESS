@@ -24,7 +24,7 @@ export default function Navbar() {
           <LevelFitLogo size={28} />
         </Link>
 
-        <nav className="hidden md:flex items-center gap-8 text-sm text-bone-mute">
+        <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8 text-sm text-bone-mute">
           <a href="#features" className="hover:text-bone transition-colors">Features</a>
           <a href="#pricing" className="hover:text-bone transition-colors">Pricing</a>
           <a href="#testimonials" className="hover:text-bone transition-colors">Testimonials</a>

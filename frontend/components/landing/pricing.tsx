@@ -37,7 +37,7 @@ export default function Pricing() {
           className="max-w-xl mb-16"
         >
           <span className="text-xs font-semibold uppercase tracking-widest text-signal">Pricing</span>
-          <h2 className="text-3xl font-bold mt-3 md:text-4xl tracking-tight">Simple, transparent pricing</h2>
+          <h2 className="font-display text-3xl font-bold mt-3 md:text-4xl tracking-tight">Simple, transparent pricing</h2>
           <p className="mt-4 text-bone-mute">Start free. Upgrade when you grow. No hidden fees or surprise charges.</p>
         </motion.div>
 

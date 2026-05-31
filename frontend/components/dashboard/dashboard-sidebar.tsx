@@ -3,10 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LogOut, LayoutDashboard, Home, Dumbbell, Activity, TrendingUp, Apple, BookOpen, Newspaper, CheckSquare, MessageSquare, CreditCard, Bell, Users, Brain, AlertTriangle, Layers, FileText, Megaphone, Shield, Flag, ClipboardList, Truck, Webhook, UserCog, BarChart3 } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Home, Dumbbell, Activity, TrendingUp, Apple, BookOpen, Newspaper, CheckSquare, MessageSquare, CreditCard, Bell, Users, Brain, AlertTriangle, Layers, FileText, Megaphone, Shield, Flag, ClipboardList, Truck, Webhook, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { LevelFitMark } from '@/components/levelfitness/logo';
-import type { UserRole } from '@/lib/types/auth';
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -60,6 +59,7 @@ function linkList(items: NavItem[], pathname: string) {
       <Link
         key={item.href}
         href={item.href}
+        aria-current={active ? 'page' : undefined}
         className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold transition-colors ${
           active
             ? 'bg-primary/10 text-primary'

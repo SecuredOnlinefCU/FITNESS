@@ -17,9 +17,9 @@ function startOfToday() {
 
 function healthStatus(score: number) {
   if (score < 40) return 'CRITICAL';
-  if (score < 65) return 'AT_RISK';
-  if (score < 80) return 'WATCH';
-  return 'HEALTHY';
+  if (score < 65) return 'HIGH';
+  if (score < 80) return 'MEDIUM';
+  return 'LOW';
 }
 
 async function listCoachClientIds(coachUserId: string) {
@@ -93,7 +93,7 @@ export async function calculateClientHealthScore(input: { coachUserId: string; c
 export async function refreshClientHealthScores(actor: Actor) {
   requireCoach(actor);
   const clientIds = await listCoachClientIds(actor.userId);
-  const snapshots = [];
+  const snapshots = [] as any[];
   for (const clientUserId of clientIds) {
     snapshots.push(await calculateClientHealthScore({ coachUserId: actor.userId, clientUserId }));
   }

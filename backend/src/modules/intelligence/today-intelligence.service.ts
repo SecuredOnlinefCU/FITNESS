@@ -13,8 +13,8 @@ export async function buildClientTodaySnapshot(actor: Actor) {
   const snapshotDate = todayStart();
 
   const [tasks, notifications, habits] = await Promise.all([
-    prisma.taskAssignment?.findMany?.({ where: { clientUserId, status: { not: 'COMPLETED' } } }).catch(() => []) ?? [],
-    prisma.notification?.findMany?.({ where: { userId: clientUserId, openedAt: null } }).catch(() => []) ?? [],
+    prisma.taskAssignment.findMany({ where: { clientUserId, status: { not: 'COMPLETED' } } }).catch(() => []),
+    prisma.notification.findMany({ where: { userId: clientUserId, openedAt: null } }).catch(() => []),
     prisma.habitLog.findMany({ where: { clientUserId, completedAt: { gte: snapshotDate } } }),
   ]);
 

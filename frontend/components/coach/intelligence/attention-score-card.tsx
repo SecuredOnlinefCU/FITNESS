@@ -1,7 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 
 export function AttentionScoreCard({ item }: { item: any }) {
-  const color = item.severity === 'CRITICAL' ? 'text-red-600' : item.severity === 'HIGH' ? 'text-orange-600' : item.severity === 'MEDIUM' ? 'text-yellow-600' : 'text-emerald-600';
+  const color = item.severity === 'CRITICAL' ? 'text-pulse' : item.severity === 'HIGH' ? 'text-energy' : item.severity === 'MEDIUM' ? 'text-energy' : 'text-flow';
 
   return (
     <Card>

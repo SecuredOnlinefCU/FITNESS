@@ -40,7 +40,7 @@ export default function Testimonials() {
           className="max-w-xl mb-16"
         >
           <span className="text-xs font-semibold uppercase tracking-widest text-signal">Testimonials</span>
-          <h2 className="text-3xl font-bold mt-3 md:text-4xl tracking-tight">Trusted by coaches worldwide</h2>
+          <h2 className="font-display text-3xl font-bold mt-3 md:text-4xl tracking-tight">Trusted by coaches worldwide</h2>
         </motion.div>
 
         <div className="grid gap-6 md:grid-cols-3">

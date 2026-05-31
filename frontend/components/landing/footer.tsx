@@ -24,19 +24,19 @@ export default function Footer() {
           <div>
             <h4 className="text-sm font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-bone-fade">
-              <li><a href="#" className="hover:text-bone transition-colors">About</a></li>
-              <li><a href="#" className="hover:text-bone transition-colors">Blog</a></li>
-              <li><a href="#" className="hover:text-bone transition-colors">Careers</a></li>
-              <li><a href="#" className="hover:text-bone transition-colors">Contact</a></li>
+              <li><span className="text-bone-fade">About</span></li>
+              <li><span className="text-bone-fade">Blog</span></li>
+              <li><span className="text-bone-fade">Careers</span></li>
+              <li><span className="text-bone-fade">Contact</span></li>
             </ul>
           </div>
 
           <div>
             <h4 className="text-sm font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-bone-fade">
-              <li><a href="#" className="hover:text-bone transition-colors">Privacy</a></li>
-              <li><a href="#" className="hover:text-bone transition-colors">Terms</a></li>
-              <li><a href="#" className="hover:text-bone transition-colors">Cookies</a></li>
+              <li><span className="text-bone-fade">Privacy</span></li>
+              <li><span className="text-bone-fade">Terms</span></li>
+              <li><span className="text-bone-fade">Cookies</span></li>
             </ul>
           </div>
         </div>

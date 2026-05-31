@@ -22,7 +22,7 @@ export default function FAQ() {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl font-bold md:text-4xl tracking-tight text-center mb-12"
+          className="font-display text-3xl font-bold md:text-4xl tracking-tight text-center mb-12"
         >
           Frequently asked questions
         </motion.h2>
@@ -39,6 +39,8 @@ export default function FAQ() {
             >
               <button
                 onClick={() => setOpenIndex(openIndex === i ? null : i)}
+                aria-expanded={openIndex === i}
+                aria-controls={`faq-answer-${i}`}
                 className="flex w-full items-center justify-between px-6 py-4 text-left text-sm font-medium"
               >
                 {faq.q}
@@ -57,7 +59,7 @@ export default function FAQ() {
                     transition={{ duration: 0.2 }}
                     className="overflow-hidden"
                   >
-                    <p className="px-6 pb-4 text-sm text-bone-mute">{faq.a}</p>
+                    <p id={`faq-answer-${i}`} className="px-6 pb-4 text-sm text-bone-mute">{faq.a}</p>
                   </motion.div>
                 )}
               </AnimatePresence>

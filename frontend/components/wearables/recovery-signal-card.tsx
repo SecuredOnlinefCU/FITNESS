@@ -1,7 +1,13 @@
 import { Watch, Moon, Footprints } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 
-export function RecoverySignalCard({ snapshot }: { snapshot?: any }) {
+interface RecoverySnapshot {
+  sleepMinutes?: number;
+  steps?: number;
+  readinessScore?: number;
+}
+
+export function RecoverySignalCard({ snapshot }: { snapshot?: RecoverySnapshot }) {
   return (
     <Card>
       <CardContent className="p-5">
