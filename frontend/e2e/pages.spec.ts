@@ -32,8 +32,8 @@ test.describe('Protected Pages — Auth Redirect', () => {
     test(`unauthenticated user is redirected from ${path}`, async ({ page }) => {
       await page.goto(path);
       await page.waitForURL(/\/login/, { timeout: REDIRECT_TIMEOUT });
-      const hasAuthForm = (await page.locator('input[type="email"]').count()) > 0;
-      expect(hasAuthForm).toBeTruthy();
+      await page.waitForSelector('#login-email', { timeout: 10000 });
+      await expect(page.locator('#login-email')).toBeVisible();
     });
   }
 });
@@ -68,7 +68,7 @@ test.describe('Dashboard Shell', () => {
   test('shared messages page shows auth state', async ({ page }) => {
     await page.goto('/dashboard/messages');
     await page.waitForURL(/\/login/, { timeout: REDIRECT_TIMEOUT });
-    const hasAuthForm = (await page.locator('input[type="email"]').count()) > 0;
-    expect(hasAuthForm).toBeTruthy();
+    await page.waitForSelector('#login-email', { timeout: 10000 });
+    await expect(page.locator('#login-email')).toBeVisible();
   });
 });

@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { CoachPageHeader } from '@/components/coach/coach-page-header';
@@ -8,7 +9,9 @@ export default function WorkoutBuilderPage() {
     <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
       <DashboardShell>
         <CoachPageHeader title="Workout builder" subtitle="Create structured workouts that can be assigned to clients." />
-        <WorkoutBuilderShell />
+        <Suspense fallback={<div className="p-5 text-sm text-muted-foreground">Loading builder...</div>}>
+          <WorkoutBuilderShell />
+        </Suspense>
       </DashboardShell>
     </ProtectedRoute>
   );

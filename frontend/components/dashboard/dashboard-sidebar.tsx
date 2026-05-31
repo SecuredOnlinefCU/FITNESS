@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Menu, X, LogOut, LayoutDashboard, Home, Dumbbell, Activity, TrendingUp, Apple, BookOpen, Newspaper, CheckSquare, MessageSquare, CreditCard, Bell, Users, Brain, AlertTriangle, Layers, FileText, Megaphone, Shield, Flag, ClipboardList, Truck, Webhook, BarChart3 } from 'lucide-react';
+import { Menu, X, LogOut, LayoutDashboard, Home, Dumbbell, Activity, TrendingUp, Apple, BookOpen, Newspaper, CheckSquare, MessageSquare, CreditCard, Bell, Users, Brain, AlertTriangle, Layers, FileText, Megaphone, Shield, Flag, ClipboardList, ClipboardCheck, Truck, Webhook, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { LevelFitMark } from '@/components/levelfitness/logo';
 
@@ -31,6 +31,7 @@ const coachLinks: NavItem[] = [
   { label: 'Intelligence', href: '/coach/intelligence', icon: Brain },
   { label: 'Risk signals', href: '/coach/risk-signals', icon: AlertTriangle },
   { label: 'Workouts', href: '/coach/workouts', icon: Dumbbell },
+  { label: 'Review', href: '/coach/workouts/review', icon: ClipboardCheck },
   { label: 'Programs', href: '/coach/programs', icon: Layers },
   { label: 'Tasks', href: '/coach/tasks', icon: CheckSquare },
   { label: 'Progress', href: '/coach/progress', icon: TrendingUp },

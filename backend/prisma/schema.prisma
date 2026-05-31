@@ -6,17 +6,1114 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+model User {
+  id             String                @id @default(uuid())
+  email          String                @unique
+  passwordHash   String
+  status         String                @default("active")
+  createdAt      DateTime              @default(now())
+  updatedAt      DateTime              @updatedAt
+  avatarUrl      String?
+  firstName      String?
+  lastName       String?
+  accounts       Account[]
+  primaryProgram ClientPrimaryProgram?
+  clientProfile  ClientProfile?
+  coachInvites   CoachInvite[]         @relation("CoachInvites")
+  coachProfile   CoachProfile?
+  programs       Program[]             @relation("CoachPrograms")
+  memberships    ProgramMembership[]   @relation("ClientMemberships")
+  sessions       RefreshSession[]
+  clientThreads  Thread[]              @relation("ClientThreads")
+  coachThreads   Thread[]              @relation("CoachThreads")
+  roles          UserRole[]
+}
+
+model Role {
+  id    String     @id @default(uuid())
+  name  RoleName   @unique
+  users UserRole[]
+}
+
+model UserRole {
+  id     String @id @default(uuid())
+  userId String
+  roleId String
+  role   Role   @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+}
+
+model Account {
+  id                String   @id @default(uuid())
+  userId            String
+  provider          String
+  providerAccountId String
+  accessToken       String?
+  refreshToken      String?
+  expiresAt         Int?
+  createdAt         DateTime @default(now())
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model CoachProfile {
+  userId      String   @id
+  displayName String
+  bio         String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model ClientProfile {
+  userId      String   @id
+  displayName String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model RefreshSession {
+  id        String    @id @default(uuid())
+  userId    String
+  tokenHash String    @unique
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Program {
+  id             String                 @id @default(uuid())
+  coachUserId    String
+  name           String
+  description    String?
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  primaryClients ClientPrimaryProgram[]
+  invites        CoachInvite[]
+  coach          User                   @relation("CoachPrograms", fields: [coachUserId], references: [id], onDelete: Cascade)
+  guidelines     ProgramGuideline?
+  memberships    ProgramMembership[]
+  weeks          ProgramWeek[]
+}
+
+model ProgramWeek {
+  id         String    @id @default(uuid())
+  programId  String
+  weekIndex  Int
+  phaseLabel String?
+  focus      String?
+  createdAt  DateTime  @default(now())
+  program    Program   @relation(fields: [programId], references: [id], onDelete: Cascade)
+  workouts   Workout[]
+
+  @@unique([programId, weekIndex])
+}
+
+model ProgramMembership {
+  id            String   @id @default(uuid())
+  programId     String
+  clientUserId  String
+  addedByUserId String?
+  status        String   @default("active")
+  joinedAt      DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  clientUser    User     @relation("ClientMemberships", fields: [clientUserId], references: [id], onDelete: Cascade)
+  program       Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+
+  @@unique([programId, clientUserId])
+}
+
+model ClientPrimaryProgram {
+  clientUserId String   @id
+  programId    String
+  setByUserId  String
+  updatedAt    DateTime @updatedAt
+  clientUser   User     @relation(fields: [clientUserId], references: [id], onDelete: Cascade)
+  program      Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+}
+
+model CoachInvite {
+  id          String    @id @default(uuid())
+  coachUserId String
+  programId   String?
+  email       String
+  displayName String
+  tokenHash   String    @unique
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime
+  acceptedAt  DateTime?
+  coach       User      @relation("CoachInvites", fields: [coachUserId], references: [id], onDelete: Cascade)
+  program     Program?  @relation(fields: [programId], references: [id])
+}
+
+model ProgramGuideline {
+  id        String   @id @default(uuid())
+  programId String   @unique
+  contentMd String
+  updatedAt DateTime @updatedAt
+  program   Program  @relation(fields: [programId], references: [id], onDelete: Cascade)
+}
+
+model FeedPost {
+  id           String          @id @default(uuid())
+  authorUserId String
+  scopeType    FeedScopeType
+  scopeId      String
+  bodyText     String?
+  tag          String?
+  status       String          @default("ACTIVE")
+  pinnedAt     DateTime?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  reports      ContentReport[] @relation("PostReports")
+  comments     FeedComment[]
+  media        FeedMedia[]
+  reactions    FeedReaction[]
+  saves        FeedSave[]
+}
+
+model FeedMedia {
+  id           String         @id @default(uuid())
+  postId       String
+  ownerUserId  String
+  assetType    MediaAssetType
+  storageKey   String
+  cdnUrl       String?
+  thumbnailUrl String?
+  mimeType     String?
+  durationMs   Int?
+  width        Int?
+  height       Int?
+  createdAt    DateTime       @default(now())
+  post         FeedPost       @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model FeedComment {
+  id              String   @id @default(uuid())
+  postId          String
+  authorUserId    String
+  parentCommentId String?
+  bodyText        String
+  status          String   @default("ACTIVE")
+  createdAt       DateTime @default(now())
+  post            FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+}
+
+model FeedReaction {
+  id           String   @id @default(uuid())
+  postId       String
+  userId       String
+  reactionType String
+  createdAt    DateTime @default(now())
+  post         FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model FeedSave {
+  id        String   @id @default(uuid())
+  postId    String
+  userId    String
+  createdAt DateTime @default(now())
+  post      FeedPost @relation(fields: [postId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+}
+
+model ContentReport {
+  id             String   @id @default(uuid())
+  reporterUserId String
+  targetType     String
+  targetId       String
+  reasonCode     String
+  notes          String?
+  status         String   @default("OPEN")
+  createdAt      DateTime @default(now())
+  post           FeedPost @relation("PostReports", fields: [targetId], references: [id], onDelete: NoAction, map: "post_report_fk")
+}
+
+model ModerationAction {
+  id          String   @id @default(uuid())
+  actorUserId String
+  reportId    String?
+  targetType  String
+  targetId    String
+  actionType  String
+  notes       String?
+  createdAt   DateTime @default(now())
+}
+
+model Thread {
+  id           String    @id @default(uuid())
+  coachUserId  String
+  clientUserId String
+  status       String    @default("active")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  messages     Message[]
+  client       User      @relation("ClientThreads", fields: [clientUserId], references: [id])
+  coach        User      @relation("CoachThreads", fields: [coachUserId], references: [id])
+
+  @@unique([coachUserId, clientUserId])
+}
+
+model Message {
+  id           String        @id @default(uuid())
+  threadId     String
+  senderUserId String
+  messageType  MessageType
+  bodyText     String?
+  mediaAssetId String?
+  durationMs   Int?
+  createdAt    DateTime      @default(now())
+  editedAt     DateTime?
+  deletedAt    DateTime?
+  thread       Thread        @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  flags        MessageFlag[]
+}
+
+model MessageFlag {
+  id            String    @id @default(uuid())
+  messageId     String
+  userId        String
+  isRead        Boolean   @default(false)
+  readAt        DateTime?
+  isStarred     Boolean   @default(false)
+  isPinned      Boolean   @default(false)
+  playbackSpeed Float?
+  message       Message   @relation(fields: [messageId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+}
+
+model Exercise {
+  id                 String            @id @default(uuid())
+  coachUserId        String?
+  name               String
+  instructions       String?
+  demoVideoUrl       String?
+  coachCues          String?
+  muscleGroups       String?
+  equipment          String?
+  defaultDemoMediaId String?
+  createdAt          DateTime          @default(now())
+  workoutLinks       WorkoutExercise[]
+}
+
+model Workout {
+  id          String            @id @default(uuid())
+  coachUserId String
+  programId   String?
+  weekId      String?
+  dayIndex    Int?
+  title       String
+  description String?
+  createdAt   DateTime          @default(now())
+  exercises   WorkoutExercise[]
+  assignments WorkoutAssignment[]
+  week        ProgramWeek?      @relation(fields: [weekId], references: [id])
+}
+
+model WorkoutExercise {
+  id                    String   @id @default(uuid())
+  workoutId             String
+  exerciseId            String
+  orderIndex            Int
+  prescribedSets        Int?
+  prescribedReps        String?
+  prescribedRestSeconds Int?
+  prescribedRpe         Float?
+  supersetGroupId       String?
+  tempo                 String?
+  notes                 String?
+  exercise              Exercise @relation(fields: [exerciseId], references: [id])
+  workout               Workout  @relation(fields: [workoutId], references: [id], onDelete: Cascade)
+}
+
+model WorkoutAssignment {
+  id               String           @id @default(uuid())
+  workoutId        String
+  clientUserId     String
+  assignedByUserId String
+  assignedForDate  DateTime?
+  status           String           @default("assigned")
+  createdAt        DateTime         @default(now())
+  sessions         WorkoutSession[]
+  workout          Workout          @relation(fields: [workoutId], references: [id])
+}
+
+model WorkoutSession {
+  id             String            @id @default(uuid())
+  assignmentId   String
+  clientUserId   String
+  startedAt      DateTime          @default(now())
+  completedAt    DateTime?
+  status         String            @default("in_progress")
+  offlineCreated Boolean           @default(false)
+  coachReview    String?
+  sets           SetLog[]
+  assignment     WorkoutAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+}
+
+model SetLog {
+  id                String         @id @default(uuid())
+  sessionId         String
+  workoutExerciseId String
+  setNumber         Int
+  reps              Int?
+  weight            Float?
+  rpe               Float?
+  setType           String         @default("working")
+  notes             String?
+  createdAt         DateTime       @default(now())
+  session           WorkoutSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+}
+
+model Task {
+  id          String           @id @default(uuid())
+  coachUserId String
+  programId   String?
+  title       String
+  description String?
+  taskType    String
+  createdAt   DateTime         @default(now())
+  assignments TaskAssignment[]
+}
+
+model TaskAssignment {
+  id                   String           @id @default(uuid())
+  taskId               String
+  clientUserId         String
+  dueAt                DateTime?
+  recurrenceRule       String?
+  reminderSettingsJson String?
+  status               String           @default("assigned")
+  createdAt            DateTime         @default(now())
+  task                 Task             @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  submissions          TaskSubmission[]
+}
+
+model TaskSubmission {
+  id           String         @id @default(uuid())
+  assignmentId String
+  clientUserId String
+  bodyText     String?
+  mediaAssetId String?
+  submittedAt  DateTime       @default(now())
+  reviewStatus String         @default("PENDING")
+  feedback     TaskFeedback[]
+  assignment   TaskAssignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+}
+
+model TaskFeedback {
+  id                   String         @id @default(uuid())
+  submissionId         String
+  coachUserId          String
+  feedbackText         String?
+  feedbackMediaAssetId String?
+  createdAt            DateTime       @default(now())
+  submission           TaskSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model ProgressPhoto {
+  id           String              @id @default(uuid())
+  clientUserId String
+  programId    String?
+  mediaAssetId String
+  photoType    PhotoType
+  capturedAt   DateTime              @default(now())
+  notes        String?
+  createdAt    DateTime              @default(now())
+  coachNotes   ProgressCoachNote[]
+}
+
+model ProgressCoachNote {
+  id          String        @id @default(uuid())
+  photoId     String
+  coachUserId String
+  note        String
+  createdAt   DateTime      @default(now())
+  photo       ProgressPhoto @relation(fields: [photoId], references: [id], onDelete: Cascade)
+}
+
+model MetricEntry {
+  id           String   @id @default(uuid())
+  clientUserId String
+  programId    String?
+  metricType   String
+  unit         String?
+  value        Float
+  recordedAt   DateTime @default(now())
+  source       String   @default("manual")
+  createdAt    DateTime @default(now())
+}
+
+model CheckinForm {
+  id          String              @id @default(uuid())
+  coachUserId String
+  programId   String?
+  title       String
+  description String?
+  schemaJson  Json
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  submissions CheckinSubmission[]
+}
+
+model CheckinSubmission {
+  id           String             @id @default(uuid())
+  formId       String
+  clientUserId String
+  programId    String?
+  answersJson  Json
+  notes        String?
+  submittedAt  DateTime           @default(now())
+  coachNotes   CheckinCoachNote[]
+  form         CheckinForm        @relation(fields: [formId], references: [id], onDelete: Cascade)
+}
+
+model CheckinCoachNote {
+  id           String            @id @default(uuid())
+  submissionId String
+  coachUserId  String
+  note         String
+  createdAt    DateTime          @default(now())
+  submission   CheckinSubmission @relation(fields: [submissionId], references: [id], onDelete: Cascade)
+}
+
+model NutritionPlan {
+  id           String             @id @default(uuid())
+  coachUserId  String
+  clientUserId String
+  programId    String?
+  planType     NutritionPlanType
+  title        String
+  notes        String?
+  startDate    DateTime?
+  endDate      DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  days         NutritionPlanDay[]
+}
+
+model NutritionPlanDay {
+  id       String              @id @default(uuid())
+  planId   String
+  dayIndex Int
+  plan     NutritionPlan       @relation(fields: [planId], references: [id], onDelete: Cascade)
+  meals    NutritionPlanMeal[]
+}
+
+model NutritionPlanMeal {
+  id           String           @id @default(uuid())
+  dayId        String
+  mealType     MealType
+  title        String
+  instructions String?
+  calories     Float?
+  protein      Float?
+  carbs        Float?
+  fat          Float?
+  recipeId     String?
+  day          NutritionPlanDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+}
+
+model MacroGoal {
+  id            String   @id @default(uuid())
+  clientUserId  String
+  programId     String?
+  calories      Float?
+  protein       Float?
+  carbs         Float?
+  fat           Float?
+  effectiveFrom DateTime @default(now())
+  createdAt     DateTime @default(now())
+}
+
+model MealLog {
+  id           String          @id @default(uuid())
+  clientUserId String
+  programId    String?
+  mealType     MealType
+  mealTime     DateTime        @default(now())
+  title        String?
+  notes        String?
+  mediaAssetId String?
+  calories     Float?
+  protein      Float?
+  carbs        Float?
+  fat          Float?
+  createdAt    DateTime        @default(now())
+  coachNotes   MealCoachNote[]
+}
+
+model MealCoachNote {
+  id          String   @id @default(uuid())
+  mealLogId   String
+  coachUserId String
+  note        String
+  createdAt   DateTime @default(now())
+  mealLog     MealLog  @relation(fields: [mealLogId], references: [id], onDelete: Cascade)
+}
+
+model Recipe {
+  id           String             @id @default(uuid())
+  coachUserId  String
+  title        String
+  instructions String?
+  calories     Float?
+  protein      Float?
+  carbs        Float?
+  fat          Float?
+  createdAt    DateTime           @default(now())
+  bookItems    RecipeBookItem[]
+  ingredients  RecipeIngredient[]
+}
+
+model RecipeIngredient {
+  id       String  @id @default(uuid())
+  recipeId String
+  name     String
+  quantity Float?
+  unit     String?
+  calories Float?
+  protein  Float?
+  carbs    Float?
+  fat      Float?
+  recipe   Recipe  @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+}
+
+model RecipeBook {
+  id          String           @id @default(uuid())
+  coachUserId String
+  title       String
+  description String?
+  createdAt   DateTime         @default(now())
+  items       RecipeBookItem[]
+}
+
+model RecipeBookItem {
+  id           String     @id @default(uuid())
+  recipeBookId String
+  recipeId     String
+  recipeBook   RecipeBook @relation(fields: [recipeBookId], references: [id], onDelete: Cascade)
+  recipe       Recipe     @relation(fields: [recipeId], references: [id], onDelete: Cascade)
+
+  @@unique([recipeBookId, recipeId])
+}
+
+model HydrationLog {
+  id           String   @id @default(uuid())
+  clientUserId String
+  amountMl     Float
+  loggedAt     DateTime @default(now())
+  createdAt    DateTime @default(now())
+}
+
+model SleepLog {
+  id              String   @id @default(uuid())
+  clientUserId    String
+  durationMinutes Int
+  qualityScore    Float?
+  loggedAt        DateTime @default(now())
+  createdAt       DateTime @default(now())
+}
+
+model StepsLog {
+  id             String   @id @default(uuid())
+  clientUserId   String
+  stepsCount     Int
+  sourceProvider String   @default("manual")
+  loggedAt       DateTime @default(now())
+  createdAt      DateTime @default(now())
+}
+
+model CoachingPackage {
+  id               String            @id @default(uuid())
+  coachUserId      String
+  title            String
+  description      String?
+  priceCents       Int
+  currency         String            @default("usd")
+  billingType      BillingType
+  interval         BillingInterval?
+  trialDays        Int               @default(0)
+  includesJson     Json              @default("{}")
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  checkoutSessions CheckoutSession[]
+  payments         Payment[]
+  subscriptions    Subscription[]
+}
+
+model DiscountCode {
+  id               String            @id @default(uuid())
+  coachUserId      String
+  code             String
+  percentOff       Float?
+  amountOffCents   Int?
+  expiresAt        DateTime?
+  maxRedemptions   Int?
+  redemptions      Int               @default(0)
+  isActive         Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  checkoutSessions CheckoutSession[]
+
+  @@unique([coachUserId, code])
+}
+
+model CheckoutSession {
+  id                String          @id @default(uuid())
+  clientUserId      String
+  coachUserId       String
+  packageId         String
+  discountCodeId    String?
+  amountCents       Int
+  currency          String
+  billingType       BillingType
+  provider          String          @default("stripe")
+  providerSessionId String?
+  checkoutUrl       String?
+  status            CheckoutStatus  @default(CREATED)
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  discountCode      DiscountCode?   @relation(fields: [discountCodeId], references: [id])
+  package           CoachingPackage @relation(fields: [packageId], references: [id], onDelete: Cascade)
+}
+
+model Payment {
+  id                String           @id @default(uuid())
+  clientUserId      String
+  coachUserId       String
+  packageId         String?
+  amountCents       Int
+  currency          String
+  status            PaymentStatus    @default(PENDING)
+  provider          String           @default("stripe")
+  providerPaymentId String?
+  createdAt         DateTime         @default(now())
+  package           CoachingPackage? @relation(fields: [packageId], references: [id])
+}
+
+model Subscription {
+  id                     String             @id @default(uuid())
+  clientUserId           String
+  coachUserId            String
+  packageId              String
+  status                 SubscriptionStatus @default(ACTIVE)
+  provider               String             @default("stripe")
+  providerSubscriptionId String?
+  startedAt              DateTime           @default(now())
+  renewsAt               DateTime?
+  canceledAt             DateTime?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+  package                CoachingPackage    @relation(fields: [packageId], references: [id], onDelete: Cascade)
+}
+
+model SessionCredit {
+  id           String   @id @default(uuid())
+  coachUserId  String
+  clientUserId String
+  remaining    Int      @default(0)
+  updatedAt    DateTime @updatedAt
+
+  @@unique([coachUserId, clientUserId])
+}
+
+model SessionCreditLedger {
+  id           String   @id @default(uuid())
+  coachUserId  String
+  clientUserId String
+  amount       Int
+  reason       String?
+  createdAt    DateTime @default(now())
+}
+
+model DeviceToken {
+  id        String         @id @default(uuid())
+  userId    String
+  platform  DevicePlatform
+  token     String         @unique
+  deviceId  String?
+  createdAt DateTime       @default(now())
+  revokedAt DateTime?
+}
+
+model NotificationPreference {
+  id              String   @id @default(uuid())
+  userId          String
+  type            String
+  enabled         Boolean  @default(true)
+  quietHoursStart String?
+  quietHoursEnd   String?
+  updatedAt       DateTime @updatedAt
+
+  @@unique([userId, type])
+}
+
+model Notification {
+  id             String    @id @default(uuid())
+  userId         String
+  type           String
+  title          String
+  body           String?
+  payloadJson    Json      @default("{}")
+  deliveryStatus String    @default("QUEUED")
+  createdAt      DateTime  @default(now())
+  sentAt         DateTime?
+  openedAt       DateTime?
+}
+
+model NotificationTemplate {
+  id            String   @id @default(uuid())
+  key           String   @unique
+  titleTemplate String
+  bodyTemplate  String?
+  isActive      Boolean  @default(true)
+  updatedAt     DateTime @updatedAt
+}
+
+model IntegrationAccount {
+  id                    String              @id @default(uuid())
+  userId                String
+  provider              IntegrationProvider
+  externalUserId        String?
+  accessTokenEncrypted  String?
+  refreshTokenEncrypted String?
+  scopesJson            Json                @default("{}")
+  status                IntegrationStatus   @default(CONNECTED)
+  createdAt             DateTime            @default(now())
+  updatedAt             DateTime            @updatedAt
+  disconnectedAt        DateTime?
+
+  @@unique([userId, provider])
+}
+
+model IntegrationSyncEvent {
+  id           String              @id @default(uuid())
+  userId       String
+  provider     IntegrationProvider
+  eventType    String
+  status       SyncStatus
+  payloadJson  Json                @default("{}")
+  errorMessage String?
+  createdAt    DateTime            @default(now())
+}
+
+model FeatureFlag {
+  id         String   @id @default(uuid())
+  key        String   @unique
+  enabled    Boolean  @default(false)
+  configJson Json     @default("{}")
+  updatedAt  DateTime @updatedAt
+}
+
+model AdminAuditLog {
+  id           String   @id @default(uuid())
+  actorUserId  String
+  actionType   String
+  targetType   String
+  targetId     String?
+  metadataJson Json     @default("{}")
+  createdAt    DateTime @default(now())
+}
+
+model Challenge {
+  id            String    @id @default(uuid())
+  programId     String?
+  coachUserId   String
+  title         String
+  challengeType String
+  startAt       DateTime?
+  endAt         DateTime?
+  createdAt     DateTime  @default(now())
+}
+
+model ClientRiskFlag {
+  id           String    @id @default(uuid())
+  coachUserId  String
+  clientUserId String
+  flagType     String
+  severity     String    @default("MEDIUM")
+  title        String
+  body         String?
+  status       String    @default("OPEN")
+  evidenceJson Json      @default("{}")
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  resolvedAt   DateTime?
+
+  @@index([coachUserId, status, severity])
+  @@index([clientUserId, status])
+  @@index([flagType, status])
+}
+
+model CoachAttentionSnapshot {
+  id             String   @id @default(uuid())
+  coachUserId    String
+  clientUserId   String
+  score          Int      @default(0)
+  severity       String   @default("LOW")
+  missedCheckins Int      @default(0)
+  openTasks      Int      @default(0)
+  unreadMessages Int      @default(0)
+  inactiveDays   Int      @default(0)
+  riskFlagsOpen  Int      @default(0)
+  evidenceJson   Json     @default("{}")
+  snapshotDate   DateTime
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([coachUserId, clientUserId, snapshotDate])
+  @@index([coachUserId, score])
+  @@index([clientUserId, snapshotDate])
+}
+
+model ClientCheckInExpectation {
+  id                String    @id @default(uuid())
+  coachUserId       String
+  clientUserId      String
+  cadence           String    @default("WEEKLY")
+  expectedEveryDays Int       @default(7)
+  lastCheckInAt     DateTime?
+  nextDueAt         DateTime?
+  isActive          Boolean   @default(true)
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([coachUserId, clientUserId])
+  @@index([coachUserId, isActive])
+  @@index([clientUserId, isActive])
+}
+
+model CoachRiskRule {
+  id            String   @id @default(uuid())
+  coachUserId   String
+  ruleType      String
+  title         String
+  thresholdJson Json     @default("{}")
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([coachUserId, ruleType, isActive])
+}
+
+model CoachRiskScanRun {
+  id             String   @id @default(uuid())
+  coachUserId    String
+  scanType       String
+  clientsScanned Int      @default(0)
+  flagsCreated   Int      @default(0)
+  flagsUpdated   Int      @default(0)
+  evidenceJson   Json     @default("{}")
+  createdAt      DateTime @default(now())
+
+  @@index([coachUserId, createdAt])
+}
+
+model ClientHealthScoreSnapshot {
+  id              String   @id @default(uuid())
+  coachUserId     String
+  clientUserId    String
+  score           Int      @default(100)
+  healthStatus    String   @default("HEALTHY")
+  adherenceScore  Int      @default(100)
+  progressScore   Int      @default(100)
+  engagementScore Int      @default(100)
+  paymentScore    Int      @default(100)
+  riskPenalty     Int      @default(0)
+  evidenceJson    Json     @default("{}")
+  snapshotDate    DateTime
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([coachUserId, clientUserId, snapshotDate])
+  @@index([coachUserId, score])
+  @@index([clientUserId, snapshotDate])
+}
+
+model RiskFlagTimelineEvent {
+  id           String   @id @default(uuid())
+  coachUserId  String
+  clientUserId String
+  riskFlagId   String?
+  eventType    String
+  title        String
+  body         String?
+  severity     String?
+  metadataJson Json     @default("{}")
+  createdAt    DateTime @default(now())
+
+  @@index([coachUserId, clientUserId, createdAt])
+  @@index([riskFlagId, createdAt])
+}
+
+model CoachActionRecommendation {
+  id                 String    @id @default(uuid())
+  coachUserId        String
+  clientUserId       String
+  recommendationType String
+  title              String
+  body               String?
+  priority           Int       @default(50)
+  actionHref         String?
+  status             String    @default("OPEN")
+  evidenceJson       Json      @default("{}")
+  createdAt          DateTime  @default(now())
+  completedAt        DateTime?
+  dismissedAt        DateTime?
+
+  @@index([coachUserId, status, priority])
+  @@index([clientUserId, status])
+}
+
+model WearableConnection {
+  id                String    @id @default(uuid())
+  userId            String
+  provider          String
+  status            String    @default("DISCONNECTED")
+  externalAccountId String?
+  lastSyncedAt      DateTime?
+  errorMessage      String?
+  scopesJson        Json      @default("{}")
+  metadataJson      Json      @default("{}")
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  @@unique([userId, provider])
+  @@index([userId, status])
+}
+
+model DailyRecoveryMetric {
+  id                String   @id @default(uuid())
+  userId            String
+  metricDate        DateTime
+  provider          String   @default("MANUAL")
+  sleepMinutes      Int?
+  sleepScore        Int?
+  restingHeartRate  Int?
+  hrvMs             Int?
+  steps             Int?
+  caloriesBurned    Int?
+  readinessScore    Int?
+  recoveryStatus    String   @default("UNKNOWN")
+  sourcePayloadJson Json     @default("{}")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([userId, metricDate, provider])
+  @@index([userId, metricDate])
+  @@index([userId, recoveryStatus])
+}
+
+model WorkoutWarningSignal {
+  id           String    @id @default(uuid())
+  coachUserId  String?
+  clientUserId String
+  warningType  String
+  severity     String    @default("MEDIUM")
+  title        String
+  body         String?
+  workoutId    String?
+  metricDate   DateTime?
+  status       String    @default("OPEN")
+  evidenceJson Json      @default("{}")
+  createdAt    DateTime  @default(now())
+  resolvedAt   DateTime?
+
+  @@index([clientUserId, status, severity])
+  @@index([coachUserId, status, severity])
+}
+
+model HabitDefinition {
+  id          String     @id @default(uuid())
+  coachUserId String
+  programId   String?
+  title       String
+  description String?
+  cadence     String     @default("DAILY")
+  targetCount Int        @default(1)
+  isActive    Boolean    @default(true)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  logs        HabitLog[]
+
+  @@index([coachUserId, isActive])
+  @@index([programId, isActive])
+}
+
+model HabitLog {
+  id                String          @id @default(uuid())
+  habitDefinitionId String
+  clientUserId      String
+  completedAt       DateTime        @default(now())
+  notes             String?
+  habit             HabitDefinition @relation(fields: [habitDefinitionId], references: [id], onDelete: Cascade)
+
+  @@index([clientUserId, completedAt])
+  @@index([habitDefinitionId, completedAt])
+}
+
+model DailyClientSnapshot {
+  id              String   @id @default(uuid())
+  clientUserId    String
+  snapshotDate    DateTime
+  openTasks       Int      @default(0)
+  workoutsDue     Int      @default(0)
+  unreadMessages  Int      @default(0)
+  mealsLogged     Int      @default(0)
+  habitsCompleted Int      @default(0)
+  habitTarget     Int      @default(0)
+  readinessScore  Int?
+  sleepMinutes    Int?
+  steps           Int?
+  waterOunces     Int?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@unique([clientUserId, snapshotDate])
+  @@index([clientUserId, snapshotDate])
+}
+
+model TodayRecommendation {
+  id                 String    @id @default(uuid())
+  clientUserId       String
+  recommendationType String
+  title              String
+  body               String?
+  priority           Int       @default(50)
+  actionHref         String?
+  status             String    @default("OPEN")
+  reasonJson         Json      @default("{}")
+  createdAt          DateTime  @default(now())
+  completedAt        DateTime?
+  dismissedAt        DateTime?
+
+  @@index([clientUserId, status, priority])
+  @@index([clientUserId, createdAt])
+}
+
 enum RoleName {
   super_admin
   coach
   assistant_coach
   client
 }
+
 enum FeedScopeType {
   PROGRAM
   COACH_PRIVATE
   CHALLENGE
 }
+
 enum MessageType {
   TEXT
   IMAGE
@@ -24,6 +1121,7 @@ enum MessageType {
   VOICE
   SYSTEM
 }
+
 enum MediaAssetType {
   FEED_IMAGE
   FEED_VIDEO
@@ -33,17 +1131,20 @@ enum MediaAssetType {
   VOICE_NOTE
   CHAT_MEDIA
 }
+
 enum PhotoType {
   FRONT
   SIDE
   BACK
   CUSTOM
 }
+
 enum NutritionPlanType {
   STRUCTURED
   FLEXIBLE
   MACRO_ONLY
 }
+
 enum MealType {
   BREAKFAST
   LUNCH
@@ -51,26 +1152,31 @@ enum MealType {
   SNACK
   OTHER
 }
+
 enum BillingType {
   ONE_TIME
   RECURRING
 }
+
 enum BillingInterval {
   MONTH
   YEAR
 }
+
 enum CheckoutStatus {
   CREATED
   COMPLETED
   EXPIRED
   CANCELED
 }
+
 enum PaymentStatus {
   PENDING
   SUCCEEDED
   FAILED
   REFUNDED
 }
+
 enum SubscriptionStatus {
   ACTIVE
   PAST_DUE
@@ -78,11 +1184,13 @@ enum SubscriptionStatus {
   TRIALING
   INCOMPLETE
 }
+
 enum DevicePlatform {
   IOS
   ANDROID
   WEB
 }
+
 enum IntegrationProvider {
   APPLE_HEALTH
   HEALTH_CONNECT
@@ -92,983 +1200,15 @@ enum IntegrationProvider {
   MYFITNESSPAL
   CRONOMETER
 }
+
 enum IntegrationStatus {
   CONNECTED
   DISCONNECTED
   ERROR
 }
+
 enum SyncStatus {
   STARTED
   SUCCESS
   FAILED
-}
-model User {
-  id String @id @default(uuid())
-  email String @unique
-  passwordHash String
-  firstName String?
-  lastName String?
-  avatarUrl String?
-  status String @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  roles UserRole[]
-  coachProfile CoachProfile?
-  clientProfile ClientProfile?
-  sessions RefreshSession[]
-  accounts Account[]
-  coachInvites CoachInvite[] @relation("CoachInvites")
-  memberships ProgramMembership[] @relation("ClientMemberships")
-  programs Program[] @relation("CoachPrograms")
-  primaryProgram ClientPrimaryProgram?
-  coachThreads Thread[] @relation("CoachThreads")
-  clientThreads Thread[] @relation("ClientThreads")
-}
-model Role {
-  id String @id @default(uuid())
-  name RoleName @unique
-  users UserRole[]
-}
-model UserRole {
-  id String @id @default(uuid())
-  userId String
-  roleId String
-  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
-  role Role @relation(fields:[roleId],references:[id],onDelete:Cascade)
-  @@unique([userId,roleId])
-}
-model Account {
-  id                String @id @default(uuid())
-  userId            String
-  provider          String
-  providerAccountId String
-  accessToken       String?
-  refreshToken      String?
-  expiresAt         Int?
-  createdAt         DateTime @default(now())
-  user              User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  @@unique([provider, providerAccountId])
-}
-model CoachProfile {
-  userId String @id
-  displayName String
-  bio String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
-}
-model ClientProfile {
-  userId String @id
-  displayName String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
-}
-model RefreshSession {
-  id String @id @default(uuid())
-  userId String
-  tokenHash String @unique
-  createdAt DateTime @default(now())
-  revokedAt DateTime?
-  user User @relation(fields:[userId],references:[id],onDelete:Cascade)
-}
-model Program {
-  id String @id @default(uuid())
-  coachUserId String
-  name String
-  description String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  coach User @relation("CoachPrograms",fields:[coachUserId],references:[id],onDelete:Cascade)
-  primaryClients ClientPrimaryProgram[]
-  memberships ProgramMembership[]
-  invites CoachInvite[]
-  guidelines ProgramGuideline?
-}
-model ProgramMembership {
-  id String @id @default(uuid())
-  programId String
-  clientUserId String
-  addedByUserId String?
-  status String @default("active")
-  joinedAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  program Program @relation(fields:[programId],references:[id],onDelete:Cascade)
-  clientUser User @relation("ClientMemberships",fields:[clientUserId],references:[id],onDelete:Cascade)
-  @@unique([programId,clientUserId])
-}
-model ClientPrimaryProgram {
-  clientUserId String @id
-  programId String
-  setByUserId String
-  updatedAt DateTime @updatedAt
-  clientUser User @relation(fields:[clientUserId],references:[id],onDelete:Cascade)
-  program Program @relation(fields:[programId],references:[id],onDelete:Cascade)
-}
-model CoachInvite {
-  id String @id @default(uuid())
-  coachUserId String
-  programId String?
-  email String
-  displayName String
-  tokenHash String @unique
-  createdAt DateTime @default(now())
-  expiresAt DateTime
-  acceptedAt DateTime?
-  coach User @relation("CoachInvites",fields:[coachUserId],references:[id],onDelete:Cascade)
-  program Program? @relation(fields:[programId],references:[id],onDelete:SetNull)
-}
-model ProgramGuideline {
-  id String @id @default(uuid())
-  programId String @unique
-  contentMd String
-  updatedAt DateTime @updatedAt
-  program Program @relation(fields:[programId],references:[id],onDelete:Cascade)
-}
-model FeedPost {
-  id String @id @default(uuid())
-  authorUserId String
-  scopeType FeedScopeType
-  scopeId String
-  bodyText String?
-  tag String?
-  status String @default("ACTIVE")
-  pinnedAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  media FeedMedia[]
-  comments FeedComment[]
-  reactions FeedReaction[]
-  saves FeedSave[]
-  reports ContentReport[] @relation("PostReports")
-}
-model FeedMedia {
-  id String @id @default(uuid())
-  postId String
-  ownerUserId String
-  assetType MediaAssetType
-  storageKey String
-  cdnUrl String?
-  thumbnailUrl String?
-  mimeType String?
-  durationMs Int?
-  width Int?
-  height Int?
-  createdAt DateTime @default(now())
-  post FeedPost @relation(fields:[postId],references:[id],onDelete:Cascade)
-}
-model FeedComment {
-  id String @id @default(uuid())
-  postId String
-  authorUserId String
-  parentCommentId String?
-  bodyText String
-  status String @default("ACTIVE")
-  createdAt DateTime @default(now())
-  post FeedPost @relation(fields:[postId],references:[id],onDelete:Cascade)
-}
-model FeedReaction {
-  id String @id @default(uuid())
-  postId String
-  userId String
-  reactionType String
-  createdAt DateTime @default(now())
-  post FeedPost @relation(fields:[postId],references:[id],onDelete:Cascade)
-  @@unique([postId,userId])
-}
-model FeedSave {
-  id String @id @default(uuid())
-  postId String
-  userId String
-  createdAt DateTime @default(now())
-  post FeedPost @relation(fields:[postId],references:[id],onDelete:Cascade)
-  @@unique([postId,userId])
-}
-model ContentReport {
-  id String @id @default(uuid())
-  reporterUserId String
-  targetType String
-  targetId String
-  reasonCode String
-  notes String?
-  status String @default("OPEN")
-  createdAt DateTime @default(now())
-  post FeedPost? @relation("PostReports",fields:[targetId],references:[id],onDelete:NoAction, map:"post_report_fk")
-}
-model ModerationAction {
-  id String @id @default(uuid())
-  actorUserId String
-  reportId String?
-  targetType String
-  targetId String
-  actionType String
-  notes String?
-  createdAt DateTime @default(now())
-}
-model Thread {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  status String @default("active")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  coach User @relation("CoachThreads",fields:[coachUserId],references:[id])
-  client User @relation("ClientThreads",fields:[clientUserId],references:[id])
-  messages Message[]
-  @@unique([coachUserId,clientUserId])
-}
-model Message {
-  id String @id @default(uuid())
-  threadId String
-  senderUserId String
-  messageType MessageType
-  bodyText String?
-  mediaAssetId String?
-  durationMs Int?
-  createdAt DateTime @default(now())
-  editedAt DateTime?
-  deletedAt DateTime?
-  thread Thread @relation(fields:[threadId],references:[id],onDelete:Cascade)
-  flags MessageFlag[]
-}
-model MessageFlag {
-  id String @id @default(uuid())
-  messageId String
-  userId String
-  isRead Boolean @default(false)
-  readAt DateTime?
-  isStarred Boolean @default(false)
-  isPinned Boolean @default(false)
-  playbackSpeed Float?
-  message Message @relation(fields:[messageId],references:[id],onDelete:Cascade)
-  @@unique([messageId,userId])
-}
-model Exercise {
-  id String @id @default(uuid())
-  coachUserId String?
-  name String
-  instructions String?
-  muscleGroups String?
-  equipment String?
-  defaultDemoMediaId String?
-  createdAt DateTime @default(now())
-  workoutLinks WorkoutExercise[]
-}
-model Workout {
-  id String @id @default(uuid())
-  coachUserId String
-  programId String?
-  title String
-  description String?
-  createdAt DateTime @default(now())
-  exercises WorkoutExercise[]
-}
-model WorkoutExercise {
-  id String @id @default(uuid())
-  workoutId String
-  exerciseId String
-  orderIndex Int
-  prescribedSets Int?
-  prescribedReps String?
-  prescribedRestSeconds Int?
-  tempo String?
-  notes String?
-  workout Workout @relation(fields:[workoutId],references:[id],onDelete:Cascade)
-  exercise Exercise @relation(fields:[exerciseId],references:[id])
-}
-model WorkoutAssignment {
-  id String @id @default(uuid())
-  workoutId String
-  clientUserId String
-  assignedByUserId String
-  assignedForDate DateTime?
-  status String @default("assigned")
-  createdAt DateTime @default(now())
-  sessions WorkoutSession[]
-}
-model WorkoutSession {
-  id String @id @default(uuid())
-  assignmentId String
-  clientUserId String
-  startedAt DateTime @default(now())
-  completedAt DateTime?
-  status String @default("in_progress")
-  offlineCreated Boolean @default(false)
-  assignment WorkoutAssignment @relation(fields:[assignmentId],references:[id],onDelete:Cascade)
-  sets SetLog[]
-}
-model SetLog {
-  id String @id @default(uuid())
-  sessionId String
-  workoutExerciseId String
-  setNumber Int
-  reps Int?
-  weight Float?
-  rpe Float?
-  notes String?
-  createdAt DateTime @default(now())
-  session WorkoutSession @relation(fields:[sessionId],references:[id],onDelete:Cascade)
-}
-model Task {
-  id String @id @default(uuid())
-  coachUserId String
-  programId String?
-  title String
-  description String?
-  taskType String
-  createdAt DateTime @default(now())
-  assignments TaskAssignment[]
-}
-model TaskAssignment {
-  id String @id @default(uuid())
-  taskId String
-  clientUserId String
-  dueAt DateTime?
-  recurrenceRule String?
-  reminderSettingsJson String?
-  status String @default("assigned")
-  createdAt DateTime @default(now())
-  task Task @relation(fields:[taskId],references:[id],onDelete:Cascade)
-  submissions TaskSubmission[]
-}
-model TaskSubmission {
-  id String @id @default(uuid())
-  assignmentId String
-  clientUserId String
-  bodyText String?
-  mediaAssetId String?
-  submittedAt DateTime @default(now())
-  reviewStatus String @default("PENDING")
-  assignment TaskAssignment @relation(fields:[assignmentId],references:[id],onDelete:Cascade)
-  feedback TaskFeedback[]
-}
-model TaskFeedback {
-  id String @id @default(uuid())
-  submissionId String
-  coachUserId String
-  feedbackText String?
-  feedbackMediaAssetId String?
-  createdAt DateTime @default(now())
-  submission TaskSubmission @relation(fields:[submissionId],references:[id],onDelete:Cascade)
-}
-model ProgressPhoto {
-  id String @id @default(uuid())
-  clientUserId String
-  programId String?
-  mediaAssetId String
-  photoType PhotoType
-  capturedAt DateTime @default(now())
-  notes String?
-  createdAt DateTime @default(now())
-  coachNotes ProgressCoachNote[]
-}
-model ProgressCoachNote {
-  id String @id @default(uuid())
-  photoId String
-  coachUserId String
-  note String
-  createdAt DateTime @default(now())
-  photo ProgressPhoto @relation(fields:[photoId],references:[id],onDelete:Cascade)
-}
-model MetricEntry {
-  id String @id @default(uuid())
-  clientUserId String
-  programId String?
-  metricType String
-  unit String?
-  value Float
-  recordedAt DateTime @default(now())
-  source String @default("manual")
-  createdAt DateTime @default(now())
-}
-model CheckinForm {
-  id String @id @default(uuid())
-  coachUserId String
-  programId String?
-  title String
-  description String?
-  schemaJson Json
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  submissions CheckinSubmission[]
-}
-model CheckinSubmission {
-  id String @id @default(uuid())
-  formId String
-  clientUserId String
-  programId String?
-  answersJson Json
-  notes String?
-  submittedAt DateTime @default(now())
-  form CheckinForm @relation(fields:[formId],references:[id],onDelete:Cascade)
-  coachNotes CheckinCoachNote[]
-}
-model CheckinCoachNote {
-  id String @id @default(uuid())
-  submissionId String
-  coachUserId String
-  note String
-  createdAt DateTime @default(now())
-  submission CheckinSubmission @relation(fields:[submissionId],references:[id],onDelete:Cascade)
-}
-model NutritionPlan {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  programId String?
-  planType NutritionPlanType
-  title String
-  notes String?
-  startDate DateTime?
-  endDate DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  days NutritionPlanDay[]
-}
-model NutritionPlanDay {
-  id String @id @default(uuid())
-  planId String
-  dayIndex Int
-  plan NutritionPlan @relation(fields:[planId],references:[id],onDelete:Cascade)
-  meals NutritionPlanMeal[]
-}
-model NutritionPlanMeal {
-  id String @id @default(uuid())
-  dayId String
-  mealType MealType
-  title String
-  instructions String?
-  calories Float?
-  protein Float?
-  carbs Float?
-  fat Float?
-  recipeId String?
-  day NutritionPlanDay @relation(fields:[dayId],references:[id],onDelete:Cascade)
-}
-model MacroGoal {
-  id String @id @default(uuid())
-  clientUserId String
-  programId String?
-  calories Float?
-  protein Float?
-  carbs Float?
-  fat Float?
-  effectiveFrom DateTime @default(now())
-  createdAt DateTime @default(now())
-}
-model MealLog {
-  id String @id @default(uuid())
-  clientUserId String
-  programId String?
-  mealType MealType
-  mealTime DateTime @default(now())
-  title String?
-  notes String?
-  mediaAssetId String?
-  calories Float?
-  protein Float?
-  carbs Float?
-  fat Float?
-  createdAt DateTime @default(now())
-  coachNotes MealCoachNote[]
-}
-model MealCoachNote {
-  id String @id @default(uuid())
-  mealLogId String
-  coachUserId String
-  note String
-  createdAt DateTime @default(now())
-  mealLog MealLog @relation(fields:[mealLogId],references:[id],onDelete:Cascade)
-}
-model Recipe {
-  id String @id @default(uuid())
-  coachUserId String
-  title String
-  instructions String?
-  calories Float?
-  protein Float?
-  carbs Float?
-  fat Float?
-  createdAt DateTime @default(now())
-  ingredients RecipeIngredient[]
-  bookItems RecipeBookItem[]
-}
-model RecipeIngredient {
-  id String @id @default(uuid())
-  recipeId String
-  name String
-  quantity Float?
-  unit String?
-  calories Float?
-  protein Float?
-  carbs Float?
-  fat Float?
-  recipe Recipe @relation(fields:[recipeId],references:[id],onDelete:Cascade)
-}
-model RecipeBook {
-  id String @id @default(uuid())
-  coachUserId String
-  title String
-  description String?
-  createdAt DateTime @default(now())
-  items RecipeBookItem[]
-}
-model RecipeBookItem {
-  id String @id @default(uuid())
-  recipeBookId String
-  recipeId String
-  recipeBook RecipeBook @relation(fields:[recipeBookId],references:[id],onDelete:Cascade)
-  recipe Recipe @relation(fields:[recipeId],references:[id],onDelete:Cascade)
-  @@unique([recipeBookId,recipeId])
-}
-model HydrationLog {
-  id String @id @default(uuid())
-  clientUserId String
-  amountMl Float
-  loggedAt DateTime @default(now())
-  createdAt DateTime @default(now())
-}
-model SleepLog {
-  id String @id @default(uuid())
-  clientUserId String
-  durationMinutes Int
-  qualityScore Float?
-  loggedAt DateTime @default(now())
-  createdAt DateTime @default(now())
-}
-model StepsLog {
-  id String @id @default(uuid())
-  clientUserId String
-  stepsCount Int
-  sourceProvider String @default("manual")
-  loggedAt DateTime @default(now())
-  createdAt DateTime @default(now())
-}
-model CoachingPackage {
-  id String @id @default(uuid())
-  coachUserId String
-  title String
-  description String?
-  priceCents Int
-  currency String @default("usd")
-  billingType BillingType
-  interval BillingInterval?
-  trialDays Int @default(0)
-  includesJson Json @default("{}")
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  checkoutSessions CheckoutSession[]
-  payments Payment[]
-  subscriptions Subscription[]
-}
-model DiscountCode {
-  id String @id @default(uuid())
-  coachUserId String
-  code String
-  percentOff Float?
-  amountOffCents Int?
-  expiresAt DateTime?
-  maxRedemptions Int?
-  redemptions Int @default(0)
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  checkoutSessions CheckoutSession[]
-  @@unique([coachUserId,code])
-}
-model CheckoutSession {
-  id String @id @default(uuid())
-  clientUserId String
-  coachUserId String
-  packageId String
-  discountCodeId String?
-  amountCents Int
-  currency String
-  billingType BillingType
-  provider String @default("stripe")
-  providerSessionId String?
-  checkoutUrl String?
-  status CheckoutStatus @default(CREATED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  package CoachingPackage @relation(fields:[packageId],references:[id],onDelete:Cascade)
-  discountCode DiscountCode? @relation(fields:[discountCodeId],references:[id],onDelete:SetNull)
-}
-model Payment {
-  id String @id @default(uuid())
-  clientUserId String
-  coachUserId String
-  packageId String?
-  amountCents Int
-  currency String
-  status PaymentStatus @default(PENDING)
-  provider String @default("stripe")
-  providerPaymentId String?
-  createdAt DateTime @default(now())
-  package CoachingPackage? @relation(fields:[packageId],references:[id],onDelete:SetNull)
-}
-model Subscription {
-  id String @id @default(uuid())
-  clientUserId String
-  coachUserId String
-  packageId String
-  status SubscriptionStatus @default(ACTIVE)
-  provider String @default("stripe")
-  providerSubscriptionId String?
-  startedAt DateTime @default(now())
-  renewsAt DateTime?
-  canceledAt DateTime?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  package CoachingPackage @relation(fields:[packageId],references:[id],onDelete:Cascade)
-}
-model SessionCredit {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  remaining Int @default(0)
-  updatedAt DateTime @updatedAt
-  @@unique([coachUserId,clientUserId])
-}
-model SessionCreditLedger {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  amount Int
-  reason String?
-  createdAt DateTime @default(now())
-}
-model DeviceToken {
-  id String @id @default(uuid())
-  userId String
-  platform DevicePlatform
-  token String @unique
-  deviceId String?
-  createdAt DateTime @default(now())
-  revokedAt DateTime?
-}
-model NotificationPreference {
-  id String @id @default(uuid())
-  userId String
-  type String
-  enabled Boolean @default(true)
-  quietHoursStart String?
-  quietHoursEnd String?
-  updatedAt DateTime @updatedAt
-  @@unique([userId,type])
-}
-model Notification {
-  id String @id @default(uuid())
-  userId String
-  type String
-  title String
-  body String?
-  payloadJson Json @default("{}")
-  deliveryStatus String @default("QUEUED")
-  createdAt DateTime @default(now())
-  sentAt DateTime?
-  openedAt DateTime?
-}
-model NotificationTemplate {
-  id String @id @default(uuid())
-  key String @unique
-  titleTemplate String
-  bodyTemplate String?
-  isActive Boolean @default(true)
-  updatedAt DateTime @updatedAt
-}
-model IntegrationAccount {
-  id String @id @default(uuid())
-  userId String
-  provider IntegrationProvider
-  externalUserId String?
-  accessTokenEncrypted String?
-  refreshTokenEncrypted String?
-  scopesJson Json @default("{}")
-  status IntegrationStatus @default(CONNECTED)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  disconnectedAt DateTime?
-  @@unique([userId,provider])
-}
-model IntegrationSyncEvent {
-  id String @id @default(uuid())
-  userId String
-  provider IntegrationProvider
-  eventType String
-  status SyncStatus
-  payloadJson Json @default("{}")
-  errorMessage String?
-  createdAt DateTime @default(now())
-}
-model FeatureFlag {
-  id String @id @default(uuid())
-  key String @unique
-  enabled Boolean @default(false)
-  configJson Json @default("{}")
-  updatedAt DateTime @updatedAt
-}
-model AdminAuditLog {
-  id String @id @default(uuid())
-  actorUserId String
-  actionType String
-  targetType String
-  targetId String?
-  metadataJson Json @default("{}")
-  createdAt DateTime @default(now())
-}
-model Challenge {
-  id String @id @default(uuid())
-  programId String?
-  coachUserId String
-  title String
-  challengeType String
-  startAt DateTime?
-  endAt DateTime?
-  createdAt DateTime @default(now())
-}
-
-// === PATCH: Coach Intelligence Client Risk ===
-model ClientRiskFlag {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  flagType String
-  severity String @default("MEDIUM")
-  title String
-  body String?
-  status String @default("OPEN")
-  evidenceJson Json @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  resolvedAt DateTime?
-  @@index([coachUserId,status,severity])
-  @@index([clientUserId,status])
-  @@index([flagType,status])
-}
-model CoachAttentionSnapshot {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  score Int @default(0)
-  severity String @default("LOW")
-  missedCheckins Int @default(0)
-  openTasks Int @default(0)
-  unreadMessages Int @default(0)
-  inactiveDays Int @default(0)
-  riskFlagsOpen Int @default(0)
-  evidenceJson Json @default("{}")
-  snapshotDate DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@unique([coachUserId,clientUserId,snapshotDate])
-  @@index([coachUserId,score])
-  @@index([clientUserId,snapshotDate])
-}
-model ClientCheckInExpectation {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  cadence String @default("WEEKLY")
-  expectedEveryDays Int @default(7)
-  lastCheckInAt DateTime?
-  nextDueAt DateTime?
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@unique([coachUserId,clientUserId])
-  @@index([coachUserId,isActive])
-  @@index([clientUserId,isActive])
-}
-
-// === PATCH: Coach Risk Signals v2 ===
-model CoachRiskRule {
-  id String @id @default(uuid())
-  coachUserId String
-  ruleType String
-  title String
-  thresholdJson Json @default("{}")
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@index([coachUserId,ruleType,isActive])
-}
-model CoachRiskScanRun {
-  id String @id @default(uuid())
-  coachUserId String
-  scanType String
-  clientsScanned Int @default(0)
-  flagsCreated Int @default(0)
-  flagsUpdated Int @default(0)
-  evidenceJson Json @default("{}")
-  createdAt DateTime @default(now())
-  @@index([coachUserId,createdAt])
-}
-
-// === PATCH: Client Health Score ===
-model ClientHealthScoreSnapshot {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  score Int @default(100)
-  healthStatus String @default("HEALTHY")
-  adherenceScore Int @default(100)
-  progressScore Int @default(100)
-  engagementScore Int @default(100)
-  paymentScore Int @default(100)
-  riskPenalty Int @default(0)
-  evidenceJson Json @default("{}")
-  snapshotDate DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@unique([coachUserId,clientUserId,snapshotDate])
-  @@index([coachUserId,score])
-  @@index([clientUserId,snapshotDate])
-}
-model RiskFlagTimelineEvent {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  riskFlagId String?
-  eventType String
-  title String
-  body String?
-  severity String?
-  metadataJson Json @default("{}")
-  createdAt DateTime @default(now())
-  @@index([coachUserId,clientUserId,createdAt])
-  @@index([riskFlagId,createdAt])
-}
-model CoachActionRecommendation {
-  id String @id @default(uuid())
-  coachUserId String
-  clientUserId String
-  recommendationType String
-  title String
-  body String?
-  priority Int @default(50)
-  actionHref String?
-  status String @default("OPEN")
-  evidenceJson Json @default("{}")
-  createdAt DateTime @default(now())
-  completedAt DateTime?
-  dismissedAt DateTime?
-  @@index([coachUserId,status,priority])
-  @@index([clientUserId,status])
-}
-
-// === PATCH: Wearables & Recovery ===
-model WearableConnection {
-  id String @id @default(uuid())
-  userId String
-  provider String
-  status String @default("DISCONNECTED")
-  externalAccountId String?
-  lastSyncedAt DateTime?
-  errorMessage String?
-  scopesJson Json @default("{}")
-  metadataJson Json @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@unique([userId,provider])
-  @@index([userId,status])
-}
-model DailyRecoveryMetric {
-  id String @id @default(uuid())
-  userId String
-  metricDate DateTime
-  provider String @default("MANUAL")
-  sleepMinutes Int?
-  sleepScore Int?
-  restingHeartRate Int?
-  hrvMs Int?
-  steps Int?
-  caloriesBurned Int?
-  readinessScore Int?
-  recoveryStatus String @default("UNKNOWN")
-  sourcePayloadJson Json @default("{}")
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@unique([userId,metricDate,provider])
-  @@index([userId,metricDate])
-  @@index([userId,recoveryStatus])
-}
-model WorkoutWarningSignal {
-  id String @id @default(uuid())
-  coachUserId String?
-  clientUserId String
-  warningType String
-  severity String @default("MEDIUM")
-  title String
-  body String?
-  workoutId String?
-  metricDate DateTime?
-  status String @default("OPEN")
-  evidenceJson Json @default("{}")
-  createdAt DateTime @default(now())
-  resolvedAt DateTime?
-  @@index([clientUserId,status,severity])
-  @@index([coachUserId,status,severity])
-}
-
-// === PATCH: Adaptive Today & Habits ===
-model HabitDefinition {
-  id String @id @default(uuid())
-  coachUserId String
-  programId String?
-  title String
-  description String?
-  cadence String @default("DAILY")
-  targetCount Int @default(1)
-  isActive Boolean @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  logs HabitLog[]
-  @@index([coachUserId,isActive])
-  @@index([programId,isActive])
-}
-model HabitLog {
-  id String @id @default(uuid())
-  habitDefinitionId String
-  clientUserId String
-  completedAt DateTime @default(now())
-  notes String?
-  habit HabitDefinition @relation(fields:[habitDefinitionId],references:[id],onDelete:Cascade)
-  @@index([clientUserId,completedAt])
-  @@index([habitDefinitionId,completedAt])
-}
-model DailyClientSnapshot {
-  id String @id @default(uuid())
-  clientUserId String
-  snapshotDate DateTime
-  openTasks Int @default(0)
-  workoutsDue Int @default(0)
-  unreadMessages Int @default(0)
-  mealsLogged Int @default(0)
-  habitsCompleted Int @default(0)
-  habitTarget Int @default(0)
-  readinessScore Int?
-  sleepMinutes Int?
-  steps Int?
-  waterOunces Int?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  @@unique([clientUserId,snapshotDate])
-  @@index([clientUserId,snapshotDate])
-}
-model TodayRecommendation {
-  id String @id @default(uuid())
-  clientUserId String
-  recommendationType String
-  title String
-  body String?
-  priority Int @default(50)
-  actionHref String?
-  status String @default("OPEN")
-  reasonJson Json @default("{}")
-  createdAt DateTime @default(now())
-  completedAt DateTime?
-  dismissedAt DateTime?
-  @@index([clientUserId,status,priority])
-  @@index([clientUserId,createdAt])
 }

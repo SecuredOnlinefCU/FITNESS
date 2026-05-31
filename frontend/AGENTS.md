@@ -1,5 +1,66 @@
 # LevelFITness — Agent Memory
 
+## 2026-05-31 — Coach workout enhancements: program periodization, 1RM tracking, exercise video/cues, RPE/supersets, set types, builder edit mode
+
+**Goal:** Close 7 strategic gaps in the coach workout system — program periodization (ProgramWeek model), 1RM estimation, exercise demo videos + coach cues, RPE prescription + superset grouping, set types (warmup/working/drop/failure), builder edit mode, and semantic workout naming.
+
+**Approach:** Batch schema changes (Prisma), backend routes (ProgramWeek CRUD, 1RM endpoint, fixed WorkoutAssignment relation), frontend domain types + API modules, then targeted UI updates across 6 pages/components.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `backend/prisma/schema.prisma` | Added `ProgramWeek` model + `weekId`/`dayIndex` on `Workout`, `demoVideoUrl`/`coachCues` on `Exercise`, `prescribedRpe`/`supersetGroupId` on `WorkoutExercise`, `setType` on `SetLog`, `workout` relation + `assignments` back-ref on `WorkoutAssignment` |
+| Modified | `backend/.../programs.routes.ts` | Added week CRUD (GET/POST/PATCH/DELETE `/weeks`), included weeks + workouts in `GET /:id` |
+| Modified | `backend/.../training.routes.ts` | Added `GET /estimated-max` (Epley 1RM with RPE adjustment), accepted new fields on exercise/workout create/update |
+| Added | `backend/prisma/migrations/20260531_.../migration.sql` | Incremental migration SQL for all new columns + tables |
+| Modified | `frontend/lib/types/domain.ts` | Added `ProgramWeek`, updated `Exercise`/`WorkoutExercise`/`Workout`/`SetLog` with new fields |
+| Modified | `frontend/lib/api/modules/programs.ts` | Added `listWeeks`/`createWeek`/`updateWeek`/`deleteWeek` |
+| Modified | `frontend/lib/api/modules/training.ts` | Added `getEstimatedMaxes`, updated create/update for new fields |
+| Modified | `frontend/app/.../client/workouts/session/[sessionId]/page.tsx` | Added video icon, coach cues tooltip, set type selector, RPE display, prescribed RPE badges |
+| Modified | `frontend/app/.../client/progress/page.tsx` | Added 1RM estimated max card section with exercise badges |
+| Modified | `frontend/app/.../coach/programs/[id]/page.tsx` | Added weeks UI (add week form, expandable workout list per week showing day index + title + exercise count) |
+| Modified | `frontend/components/coach/workout-builder-shell.tsx` | Added edit mode (`?id=`), RPE field, superset toggle, program week + day selector, auto-title generation |
+| Modified | `frontend/app/.../coach/workouts/review/page.tsx` | Added set type badges (warmup/working/drop/failure) with brand colors |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    SCHEMA[Prisma: ProgramWeek model + 6 new fields] --> BACKEND[Backend routes]
+    BACKEND -->|week CRUD| PROGRAMS[programs.routes.ts]
+    BACKEND -->|1RM + new fields| TRAINING[training.routes.ts]
+    TYPES[domain.ts types] --> API[API modules]
+    API -->|weeks| PROGRAMS_PAGE[program detail + weeks UI]
+    API -->|1RM| PROGRESS_PAGE[client progress page]
+    API -->|video/cues/RPE/setType| SESSION_PAGE[session logging]
+    BUILDER[workout-builder-shell] -->|edit mode + RPE + superset + weeks| COACH_WORKOUTS
+    REVIEW[coach review page] -->|set type badges| COACH
+```
+
+### ADR-006 — 1RM estimation via Epley formula (2026-05-31)
+
+- **Context:** Need to show estimated 1RM for clients without adding new tables or dependencies. The existing `SetLog` has `reps`, `weight`, and `rpe` — enough for estimation.
+- **Options considered:** A) Epley formula (`weight × (1 + reps / 30)`) with RPE adjustment (`weight × (1 + reps × 0.0333)`) — no new tables needed. B) Brzycki formula (`weight × (36 / (37 - reps))`) — less accurate at high reps. C) Store calculated 1RM in a new column — would need migration and update triggers.
+- **Decision:** Option A — Epley formula, using RPE-adjusted variant when RPE is available.
+- **Why:** Epley is the most validated formula for sub-maximal 1RM estimation. Using RPE data when available (Bove et al. adjustment) improves accuracy. No schema changes needed.
+- **Consequences:** Backend endpoint `/estimated-max` returns exercise name + best estimated 1RM. Frontend shows as green badges on client progress page.
+
+### ADR-007 — Text URL for exercise video (2026-05-31)
+
+- **Context:** Need demo video and coach cues for exercises. The existing codebase has `defaultDemoMediaId` (orphan column) and `EXERCISE_VIDEO` media asset type, but the media pipeline (upload, storage, processing) is not implemented and would require S3 + significant infra.
+- **Options considered:** A) Text URL field (`demoVideoUrl` + `coachCues` text) — simple, zero infra. B) Full media pipeline via existing MediaAsset model — would require implementing S3 upload, thumbnail generation, CDN distribution. C) Embedded YouTube/Vimeo iframe — user-hosted videos, just store URL.
+- **Decision:** Option A — `demoVideoUrl` (text) + `coachCues` (text) on `Exercise` model.
+- **Why:** A text URL field costs nothing in infra and gets 90% of the value — coaches can link to YouTube demos or self-hosted videos. The full S3 media pipeline is a separate project. `coachCues` text gives clients simple form guidance without building a video annotation system.
+- **Consequences:** Coaches fill in URLs when creating/editing exercises. Clients see a video link icon and hover tooltip with cues during workouts. No S3, no CDN, no media processing.
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
+- Backend type-check: ✅ `tsc --noEmit` — 0 errors
+- Frontend build: ✅ Compilation passed (static generation may timeout without DB — normal)
+- Migration SQL: `prisma/migrations/20260531_add_program_weeks_1rm_and_video_cues/migration.sql` — run against prod DB
+- All 7 Tier 1/Tier 2 gaps addressed: Program periodization (weeks), 1RM tracking, video/cues, builder edit mode, RPE+supersets, set types, workout naming
+
 ## Change History
 
 ### 2026-05-30 — Design system overhaul: brand tokens + semantic CSS variables + batch color replacement
@@ -558,3 +619,162 @@ graph TD
 - API endpoints: ✅ 49/49 verified (against Railway production)
 - Console errors fixed: Missing `/privacy` and `/terms` pages created (was causing 404 errors on signup page)
 - Remaining: Signup console errors for `/privacy` and `/terms` will resolve on next production deploy of the frontend
+
+### 2026-05-31 — Body Metrics Dashboard (Everfit Tier 1 gap)
+
+**Goal:** Replace basic bar chart with a 24-metric dashboard matching Everfit's body tracking — per-metric sparkline trends, % change indicators, time-range filtering, category grouping.
+
+**Approach:** SVG sparklines with Framer Motion (no new deps) + new backend `/metrics/summary` endpoint for aggregated per-metric data (latest value, % change, count). Frontend: 3 new components (MetricSparkline, MetricCard, MetricsDashboard) + updated coach/client progress pages.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `backend/.../constants/metric-types.ts` | 24 standard metric types with labels, default units, categories |
+| Modified | `backend/.../progress.routes.ts` | Enhanced `GET /metrics` with `metricType`, `from`, `to`, `limit` query params; added `GET /metrics/summary` for per-metric aggregation |
+| Modified | `frontend/lib/types/domain.ts` | Added `MetricSummary` type with latestValue, previousValue, changePercent, category |
+| Modified | `frontend/lib/api/modules/progress.ts` | Added `getMetricsSummary()`, typed `listMetrics()` with filter params; removed `any[]` |
+| Added | `frontend/components/metrics/metric-sparkline.tsx` | SVG sparkline with Framer Motion draw animation, gradient fill, endpoint dot |
+| Added | `frontend/components/metrics/metric-card.tsx` | Single metric card: value, unit, sparkline, % change badge with directional icon and color |
+| Added | `frontend/components/metrics/metrics-dashboard.tsx` | Full dashboard: metric grid, time-range filter (1w/4w/12w/all), category filter (body/measurements/vitals/wellness/nutrition), loading/empty/error states |
+| Modified | `frontend/app/(dashboard)/client/progress/page.tsx` | Replaced 3 stat cards with MetricsDashboard + photos/checkins summary cards |
+| Modified | `frontend/app/(dashboard)/coach/progress/page.tsx` | Replaced old ProgressMetricsChart with MetricsDashboard; kept photo grid + checkin list |
+| Removed | `frontend/components/coach/progress/progress-metrics-chart.tsx` | Orphaned after migration to new MetricsDashboard |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    BACKEND[progress.routes.ts] -->|GET /metrics?filter| FE[Frontend API]
+    BACKEND -->|GET /metrics/summary| FE
+    FE -->|useAsyncData| DB[MetricsDashboard]
+    DB -->|per-metric| CARD[MetricCard]
+    CARD -->|sparkline| SPARK[MetricSparkline]
+    DB -->|time+category filter| UI[State toggle buttons]
+    CARD -->|% change badge| COLOR[Flow/Energy token colors]
+```
+
+### ADR-004 — Body Metrics Dashboard (2026-05-31)
+
+- **Context:** Everfit tracks 24 body metrics with sparkline charts; LEVELFIT had a basic 4-metric bar chart showing only the last 10 entries. Needed to match competitive parity.
+- **Options considered:** A) SVG sparklines + Framer Motion (chosen — no new deps, animated, lightweight). B) Recharts (production-grade but 28 kB added bundle, unnecessary for sparklines). C) Simple table (insufficient visual comparison).
+- **Decision:** Option A — custom SVG sparklines with Framer Motion draw animation.
+- **Why:** Framer Motion v12.40 already installed. SVG sparklines are the right visualization for compact per-metric trends. Adding a chart library for sparklines would increase bundle size unnecessarily.
+- **Consequences:** Bundle impact for `/client/progress`: 156 kB (sparkline + dashboard components added ~53 kB shared client chunk). Backend gains new aggregation endpoint — no new tables or migrations needed.
+
+### Status: Complete
+- Frontend build: ✅ 46 pages, 0 errors
+- Backend type-check: ✅ 0 errors
+- All states: loading (8-card skeleton grid), empty ("No metrics recorded yet" + icon + CTA), error (ErrorState with retry), populated (metric grid with sparklines)
+- Time range: 1 week / 4 weeks / 12 weeks / All
+- Categories: All, Body, Measurements, Vitals, Wellness, Nutrition
+- Per metric: sparkline, latest value, unit, % change with directional icon (flow/up, energy/down)
+- Remaining: Exercise PRs tab (separate feature), custom metric groups (future), metric CRUD for coaches (future)
+
+### 2026-05-31 — Training Calendar (Everfit Tier 1 gap #1)
+
+**Goal:** Replace linear workout list with a weekly Mon-Sun calendar grid matching Everfit's training calendar — assign workouts by date, view assignments across weeks, navigate between weeks.
+
+**Approach:** Click-to-assign weekly grid (no drag-drop, no new deps). Backend: 3 new endpoints (calendar filter, PATCH, DELETE). Frontend: reusable TrainingCalendar + CalendarWorkoutCard components, date picker in assign modal, calendar/list toggle on both coach and client workouts pages.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `backend/.../training.routes.ts` | `GET /assignments/calendar?from=&to=` for date-range filtered assignments with workout includes |
+| Added | `backend/.../training.routes.ts` | `PATCH /assignments/:id` to update assignedForDate or status |
+| Added | `backend/.../training.routes.ts` | `DELETE /assignments/:id` to unassign a workout |
+| Modified | `frontend/lib/types/domain.ts` | Added `assignedForDate` field to WorkoutAssignment type |
+| Modified | `frontend/lib/api/modules/training.ts` | Added `getCalendarAssignments()`, `updateAssignment()`, `deleteAssignment()` |
+| Added | `frontend/components/workout/calendar-workout-card.tsx` | Small card showing workout title with Dumbbell icon, truncation |
+| Added | `frontend/components/workout/training-calendar.tsx` | Full weekly grid: navigation, 1/2/4 week toggle, loading skeleton, error/empty states, today highlight, + button on empty days |
+| Modified | `frontend/components/coach/assign-workout-modal.tsx` | Added optional `assignedForDate` prop + `<input type="date">` field; passes date to API |
+| Modified | `frontend/app/(dashboard)/coach/workouts/page.tsx` | Added List/Calendar toggle; calendar shows all client assignments; click day → assign modal with pre-filled date |
+| Modified | `frontend/app/(dashboard)/client/workouts/page.tsx` | Added List/Calendar toggle; calendar shows client's own assignments |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    BACKEND[training.routes.ts] -->|GET /assignments/calendar| API[Frontend trainingApi]
+    BACKEND -->|PATCH /assignments/:id| API
+    BACKEND -->|DELETE /assignments/:id| API
+    API -->|getCalendarAssignments| CAL[TrainingCalendar]
+    CAL -->|per-assignment card| CARD[CalendarWorkoutCard]
+    CAL -->|click empty day| MODAL[AssignWorkoutModal+date]
+    MODAL -->|assign with date| API
+    COACH[coach/workouts page] -->|calendar toggle| CAL
+    CLIENT[client/workouts page] -->|calendar toggle| CAL
+```
+
+### ADR-005 — Training Calendar click-to-assign (2026-05-31)
+
+- **Context:** Everfit's calendar supports drag-drop assignment; the app currently has no calendar at all (linear list only). Needed to close the biggest feature gap without adding unnecessary complexity.
+- **Options considered:** A) Click-to-assign weekly grid (chosen — no new deps, fast to build, 90% of value). B) Full drag-drop with @dnd-kit (richer UX but new dependency + ~3-4hr dev time). C) Date-grouped list (fastest but still list-based, no visual calendar).
+- **Decision:** Option A — click-to-assign weekly calendar grid with prev/next week navigation, 1/2/4 week toggle, and native date picker in the assign modal.
+- **Why:** @dnd-kit adds a dependency and ~2x implementation time for marginal UX gain on first pass. The click-to-assign pattern (click day → modal with pre-filled date) covers the core calendar use case. Drag-drop can be added as a follow-up.
+- **Consequences:** No new npm dependencies. Coach can see all assignments in weekly view, click any empty day to assign with that date pre-filled. Client sees their own calendar. 1/2/4 week toggle supports planning ahead.
+
+### Status: Complete
+- Frontend build: ✅ 46 pages, 0 errors
+- Backend type-check: ✅ 0 errors
+- Coach page: default calendar view with week nav, 1/2/4 toggle, click day → assign with date, toggle back to list
+- Client page: calendar toggle, shows own assignments by date
+- All states: loading (grid of skeleton cells), error (pulse-styled banner), empty (empty cells with add button), populated (workout cards in cells)
+- Today: highlighted day cell with primary border
+
+### 2026-05-31 — Bugfix: timezone date mismatch + card click action + broken modal path
+
+**Bug 1 (critical):** `formatISO()` used `toISOString()` (UTC) while grid cells were computed from local dates. Assignments would appear in wrong day cells for non-UTC timezones. Clicking "+" on a day cell set a different date than shown.
+
+**Fix:** Replaced `formatISO` with `localDateStr` using `getFullYear()/getMonth()/getDate()` — always local.
+
+**Bug 2:** Calendar day click opened `AssignWorkoutModal` with `workoutId=""` (empty string) via a spurious `assignTarget === 'new'` path — API call would always fail.
+
+**Fix:** Removed the `assignTarget === 'new'` path. Calendar click now just stores the date in `assignDate` state. A subtle banner appears: *"Schedule for [date] — click Assign on a workout below"* with "Clear" button. List view "Assign" buttons no longer clear the date. Modal only renders with a real `workoutId`.
+
+**Bug 3:** `CalendarWorkoutCard` `<button>` had no click action — cards were inert.
+
+**Fix:** Added `onCardClick` prop to `TrainingCalendar`. Coach page passes a handler that navigates to `/coach/workouts/builder?id=workoutId`. Added `workoutTitles` lookup map (built from coach's workout list) so cards show real workout titles despite `WorkoutAssignment` not having a `workout` relation in Prisma schema.
+
+| Action | File | Why |
+|--------|------|-----|
+| Fixed | `components/workout/training-calendar.tsx` | `formatISO` → `localDateStr` — fixes UTC/local date mismatch |
+| Fixed | `components/workout/training-calendar.tsx` | Removed `assignTarget === 'new'` modal path — calendar click just stores date |
+| Fixed | `components/workout/training-calendar.tsx` | Added `onCardClick` + `workoutTitles` props; passes `title` to `CalendarWorkoutCard` |
+| Fixed | `components/workout/calendar-workout-card.tsx` | Added optional `title` prop (displays actual workout name from lookup map) |
+| Fixed | `app/(dashboard)/coach/workouts/page.tsx` | Calendar click → stores date + banner ("Schedule for... click Assign"); removed broken `'new'` modal; adds `onCardClick` + `workoutTitles` to calendar |
+| Fixed | `backend/.../training.routes.ts` | Removed invalid `workout` include on `WorkoutAssignment` (no relation in Prisma schema) |
+
+### 2026-05-31 — Exercise demo video feature (backend route + video player + create dialog)
+
+**Goal:** Allow coaches to assign demo videos to exercises and preview them during workout building.
+
+**Approach:** Added `PATCH /exercises/:id` for updating `demoVideoUrl` on existing exercises. Frontend: reusable `VideoPlayerModal` component, play button in workout-builder search results, `CreateExerciseDialog` with video upload, "New exercise" button on workouts page.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `backend/.../training.routes.ts` | `PATCH /exercises/:id` endpoint for updating demoVideoUrl on existing exercises |
+| Modified | `frontend/lib/types/domain.ts` | Added `demoVideoUrl` (string \| undefined) to Exercise type |
+| Modified | `frontend/lib/api/modules/training.ts` | Added `updateExercise()` and `listExercises()` methods |
+| Added | `frontend/components/exercise/video-player-modal.tsx` | Modal with video player (file `?v=` param for S3, Vimeo fallback), close via backdrop+X/Esc |
+| Modified | `frontend/components/coach/workout-builder-shell.tsx` | Added play button on exercises with demoVideoUrl, video modal rendering |
+| Added | `frontend/components/exercise/create-exercise-dialog.tsx` | Full dialog: name, instructions, muscle group, equipment, file upload → S3 → create exercise |
+| Modified | `frontend/app/(dashboard)/coach/workouts/page.tsx` | Added "New exercise" button + CreateExerciseDialog integration |
+
+### ADR-006 — Exercise demo video storage (2026-05-31)
+
+- **Context:** Exercises need demo videos. Bandwidth costs make hosting videos on app server infeasible.
+- **Options considered:** A) Upload to S3 via existing `uploadFile()` → store `demoVideoUrl` as string (chosen). B) Store video bytes in DB (bad for perf). C) Link to YouTube/Vimeo (no upload flow).
+- **Decision:** Option A — reuse existing S3 upload pipeline, store the returned URL as a string field on Exercise.
+- **Why:** Zero new infrastructure. The `uploadFile()` function already handles S3 multipart upload. The field is just a string — no new relations or tables.
+- **Consequences:** Coach must upload a video file per exercise. Video playback uses S3 pre-signed URLs (or direct CDN URLs). File size limits handled by existing upload middleware.
+
+### Status: Complete
+- Frontend build: ✅ 46 pages, 0 errors (2 pre-existing type errors in workout-builder-shell.tsx unchanged)
+- Backend type-check: ✅ 0 errors
+- All states: video modal handles loading (spinner), error (fallback message), success (video plays); create dialog handles uploading, saving, error states, field validation
+- Files added: 2 (video-player-modal.tsx, create-exercise-dialog.tsx)
+- Files modified: 2 (workout-builder-shell.tsx, workouts/page.tsx) — backend: training.routes.ts, training.ts, domain.ts

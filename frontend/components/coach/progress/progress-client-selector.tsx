@@ -5,7 +5,7 @@ import { progressApi } from '@/lib/api/modules/progress';
 import { Users } from 'lucide-react';
 
 export function ProgressClientSelector({ selectedId, onChange }: { selectedId: string; onChange: (id: string) => void }) {
-  const [clients, setClients] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; firstName: string; lastName: string; email: string }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -25,7 +25,7 @@ export function ProgressClientSelector({ selectedId, onChange }: { selectedId: s
         disabled={loading}
       >
         {loading ? <option>Loading clients...</option> : null}
-        {clients.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.id.slice(0, 12)}</option>)}
+        {clients.map(c => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
       </select>
     </div>
   );

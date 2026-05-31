@@ -4,15 +4,17 @@ export type MessageDeliveryStatus = 'queued' | 'connecting' | 'sent' | 'delivere
 export type Message = { id: ID; threadId: ID; senderUserId: ID; messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'VOICE' | 'SYSTEM'; bodyText?: string | null; mediaAssetId?: string | null; createdAt?: ISODate; deliveryStatus?: MessageDeliveryStatus };
 export type Thread = { id: ID; coachUserId: ID; clientUserId: ID; status?: string; messages?: Message[] };
 export type MediaAsset = { id: ID; ownerUserId: ID; assetType: 'FEED_IMAGE' | 'FEED_VIDEO' | 'TASK_VIDEO' | 'PROGRESS_PHOTO' | 'EXERCISE_VIDEO' | 'VOICE_NOTE' | 'CHAT_MEDIA'; storageKey?: string; blobUrl?: string | null; mimeType?: string | null; privacyScope?: 'PRIVATE' | 'PROGRAM' | 'PUBLIC'; uploadStatus?: string };
+export type FeedMedia = { id: ID; postId: ID; ownerUserId: ID; assetType: string; storageKey: string; cdnUrl?: string | null; thumbnailUrl?: string | null; mimeType?: string | null; };
 export type Notification = { id: ID; userId: ID; type: string; title: string; body?: string | null; openedAt?: ISODate | null; createdAt?: ISODate };
 export type Program = { id: ID; coachUserId: ID; name: string; description?: string | null };
+export type ProgramWeek = { id: ID; programId: ID; weekIndex: number; phaseLabel?: string | null; focus?: string | null; workouts?: Workout[] };
 export type Task = { id: ID; coachUserId: ID; title: string; description?: string | null; taskType: string };
 export type CoachingPackage = { id: ID; coachUserId: ID; title: string; priceCents: number; currency: string; billingType: 'ONE_TIME' | 'RECURRING'; interval?: 'MONTH' | 'YEAR' | null };
 export type MetricEntry = { id: ID; clientUserId: ID; metricType: string; value: number; unit?: string | null; recordedAt?: ISODate };
 export type MetricSummary = { metricType: string; label: string; unit: string; latestValue: number; previousValue: number | null; changePercent: number; count: number; category: string };
 export type MealLog = { id: ID; clientUserId: ID; mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK' | 'OTHER'; title?: string | null; calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null };
-export type Exercise = { id: ID; coachUserId?: ID | null; name: string; instructions?: string | null };
-export type Workout = { id: ID; coachUserId: ID; title: string; description?: string | null; programId?: ID | null };
+export type Exercise = { id: ID; coachUserId?: ID | null; name: string; instructions?: string | null; demoVideoUrl?: string | null; coachCues?: string | null };
+export type Workout = { id: ID; coachUserId: ID; title: string; description?: string | null; programId?: ID | null; weekId?: ID | null; dayIndex?: number | null };
 export type IntegrationProvider = 'APPLE_HEALTH' | 'HEALTH_CONNECT' | 'FITBIT' | 'GARMIN' | 'OURA' | 'MYFITNESSPAL' | 'CRONOMETER';
 
 // Workout & Training
@@ -23,9 +25,12 @@ export type WorkoutExercise = {
   exercise?: Exercise | null;
   orderIndex: number;
   prescribedSets?: number | null;
-  prescribedReps?: number | null;
+  prescribedReps?: string | null;
   prescribedRestSeconds?: number | null;
+  prescribedRpe?: number | null;
+  supersetGroupId?: string | null;
   tempo?: string | null;
+  notes?: string | null;
 };
 
 export type WorkoutAssignment = {
@@ -33,6 +38,7 @@ export type WorkoutAssignment = {
   workoutId: ID;
   clientUserId: ID;
   assignedByUserId: ID;
+  assignedForDate?: string | null;
   status?: string;
   createdAt?: ISODate;
   workout?: Workout & { exercises?: WorkoutExercise[] } | null;
@@ -47,6 +53,7 @@ export type WorkoutSession = {
   completedAt?: ISODate | null;
   status?: string;
   offlineCreated?: boolean | null;
+  coachReview?: string | null;
   assignment?: WorkoutAssignment | null;
   sets?: SetLog[];
 };
@@ -59,6 +66,7 @@ export type SetLog = {
   reps?: number | null;
   weight?: number | null;
   rpe?: number | null;
+  setType?: string | null;
   notes?: string | null;
 };
 
@@ -82,15 +90,18 @@ export type NutritionPlan = {
   id: ID;
   coachUserId: ID;
   clientUserId?: ID | null;
+  planType?: string;
   title: string;
-  description?: string | null;
+  notes?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
   days?: NutritionDay[];
 };
 
 export type NutritionDay = {
   id: ID;
   planId: ID;
-  dayLabel: string;
+  dayIndex: number;
   meals?: NutritionMeal[];
 };
 
@@ -99,10 +110,12 @@ export type NutritionMeal = {
   dayId: ID;
   mealType: string;
   title?: string | null;
+  instructions?: string | null;
   calories?: number | null;
   protein?: number | null;
   carbs?: number | null;
   fat?: number | null;
+  recipeId?: string | null;
 };
 
 export type HydrationLog = {
@@ -181,8 +194,11 @@ export type CheckinSubmission = {
 export type ProgressPhoto = {
   id: ID;
   clientUserId: ID;
-  capturedAt?: ISODate;
-  mediaAssetId?: string | null;
+  capturedAt: string;
+  mediaAssetId: ID;
+  photoType: string;
+  notes?: string | null;
+  media?: FeedMedia | null;
   coachNotes?: unknown[];
 };
 

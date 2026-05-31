@@ -6,7 +6,7 @@ import { trainingApi } from '@/lib/api/modules/training';
 import { Button } from '@/components/ui/button';
 
 export function TaskAssignDialog({ taskId, onClose, onAssigned }: { taskId: string; onClose: () => void; onAssigned: () => void }) {
-  const [clients, setClients] = useState<{ id: string; name: string; email: string }[]>([]);
+  const [clients, setClients] = useState<{ id: string; firstName: string; lastName: string; email: string }[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
@@ -49,7 +49,7 @@ export function TaskAssignDialog({ taskId, onClose, onAssigned }: { taskId: stri
             onChange={e => setSelectedClient(e.target.value)}
           >
             <option value="">Select a client...</option>
-            {clients.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.id.slice(0, 12)}</option>)}
+            {clients.map(c => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
           </select>
 
           <input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)}

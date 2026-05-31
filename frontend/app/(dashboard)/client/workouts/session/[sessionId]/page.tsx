@@ -10,7 +10,15 @@ import { ErrorState } from '@/components/states/error-state';
 import { Button } from '@/components/ui/button';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { trainingApi } from '@/lib/api/modules/training';
-import { Dumbbell, CheckCircle, Plus, X } from 'lucide-react';
+import { Dumbbell, CheckCircle, Plus, X, Video, Info, AlertTriangle } from 'lucide-react';
+
+const SET_TYPE_OPTIONS = [
+  { value: 'warmup', label: 'Warm-up' },
+  { value: 'working', label: 'Working' },
+  { value: 'backoff', label: 'Back-off' },
+  { value: 'drop', label: 'Drop set' },
+  { value: 'failure', label: 'To failure' },
+];
 
 export default function WorkoutSessionPage() {
   const params = useParams();
@@ -23,7 +31,7 @@ export default function WorkoutSessionPage() {
   );
 
   const [loggingExercise, setLoggingExercise] = useState<string | null>(null);
-  const [logForm, setLogForm] = useState({ reps: 10, weight: 0, rpe: 7, notes: '' });
+  const [logForm, setLogForm] = useState({ reps: 10, weight: 0, rpe: 7, setType: 'working', notes: '' });
   const [completing, setCompleting] = useState(false);
 
   const session = sessionResult.data;
@@ -39,10 +47,11 @@ export default function WorkoutSessionPage() {
       reps: logForm.reps,
       weight: logForm.weight,
       rpe: logForm.rpe,
+      setType: logForm.setType,
       notes: logForm.notes || undefined,
     });
     setLoggingExercise(null);
-    setLogForm({ reps: 10, weight: 0, rpe: 7, notes: '' });
+    setLogForm({ reps: 10, weight: 0, rpe: 7, setType: 'working', notes: '' });
     sessionResult.reload();
   }, [session, sessionId, logForm, sessionResult]);
 
@@ -72,7 +81,7 @@ export default function WorkoutSessionPage() {
             </div>
 
             <div className="mt-5 space-y-4">
-              {([...(session.assignment?.workout?.exercises ?? [])] as Array<{ id: string; orderIndex: number; exercise?: { name?: string | null } | null; prescribedSets?: number | null; prescribedReps?: number | null; prescribedRestSeconds?: number | null; tempo?: string | null }>).sort((a, b) => a.orderIndex - b.orderIndex).map((we, i) => {
+              {([...(session.assignment?.workout?.exercises ?? [])] as Array<{ id: string; orderIndex: number; exercise?: { name?: string | null; demoVideoUrl?: string | null; coachCues?: string | null } | null; prescribedSets?: number | null; prescribedReps?: string | null; prescribedRestSeconds?: number | null; prescribedRpe?: number | null; supersetGroupId?: string | null; tempo?: string | null }>).sort((a, b) => a.orderIndex - b.orderIndex).map((we, i) => {
                 const loggedSets = session.sets?.filter((s) => s.workoutExerciseId === we.id) ?? [];
                 const isLogging = loggingExercise === we.id;
 
@@ -86,12 +95,32 @@ export default function WorkoutSessionPage() {
                             <p className="font-bold">{we.exercise?.name || 'Exercise'}</p>
                             <p className="text-xs text-muted-foreground">
                               {we.prescribedSets ? `${we.prescribedSets}×${we.prescribedReps}` : ''}
+                              {we.prescribedRpe ? ` @ RPE ${we.prescribedRpe}` : ''}
                               {we.prescribedRestSeconds ? ` · ${we.prescribedRestSeconds}s rest` : ''}
                               {we.tempo ? ` · ${we.tempo}` : ''}
+                              {we.supersetGroupId ? ` · Superset` : ''}
                             </p>
                           </div>
                         </div>
-                        <Dumbbell className="h-5 w-5 text-muted-foreground" />
+                        <div className="flex items-center gap-1">
+                          {we.exercise?.demoVideoUrl && (
+                            <a href={we.exercise.demoVideoUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg p-1.5 text-primary hover:bg-primary/10 transition" aria-label="Watch demo video">
+                              <Video className="h-4 w-4" />
+                            </a>
+                          )}
+                          {we.exercise?.coachCues && (
+                            <div className="group relative">
+                              <span className="rounded-lg p-1.5 text-muted-foreground hover:bg-muted transition cursor-help" aria-label="Coach cues">
+                                <Info className="h-4 w-4" />
+                              </span>
+                              <div className="absolute right-0 top-full z-10 mt-1 hidden w-64 rounded-xl border border-border bg-card p-3 text-xs shadow-lg group-hover:block">
+                                <p className="font-bold text-foreground">Coach cues</p>
+                                <p className="mt-1 text-muted-foreground">{we.exercise.coachCues}</p>
+                              </div>
+                            </div>
+                          )}
+                          <Dumbbell className="h-5 w-5 text-muted-foreground" />
+                        </div>
                       </div>
 
                       {loggedSets.length > 0 && (
@@ -99,6 +128,9 @@ export default function WorkoutSessionPage() {
                           {loggedSets.map((set) => (
                             <div key={set.id} className="flex items-center gap-3 rounded-lg bg-muted px-3 py-1.5 text-xs">
                               <span className="font-bold text-muted-foreground">Set {set.setNumber}</span>
+                              <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase ${set.setType === 'warmup' ? 'bg-flow/10 text-flow' : set.setType === 'drop' ? 'bg-pulse/10 text-pulse' : set.setType === 'failure' ? 'bg-energy/10 text-energy' : 'bg-primary/10 text-primary'}`}>
+                                {SET_TYPE_OPTIONS.find(o => o.value === set.setType)?.label || set.setType}
+                              </span>
                               <span>{set.reps} reps</span>
                               {set.weight ? <span>@ {set.weight}kg</span> : null}
                               {set.rpe ? <span>RPE {set.rpe}</span> : null}
@@ -110,18 +142,24 @@ export default function WorkoutSessionPage() {
 
                       {isLogging ? (
                         <div className="space-y-2 rounded-lg border border-border p-3">
-                          <div className="grid grid-cols-3 gap-2">
+                          <div className="grid grid-cols-4 gap-2">
                             <div>
                               <label className="text-xs text-muted-foreground">Reps</label>
                               <input type="number" min={0} value={logForm.reps} onChange={e => setLogForm(f => ({ ...f, reps: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="Reps" />
                             </div>
                             <div>
-                              <label className="text-xs text-muted-foreground">Weight (kg)</label>
-                              <input type="number" min={0} step={0.5} value={logForm.weight} onChange={e => setLogForm(f => ({ ...f, weight: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="Weight in kilograms" />
+                              <label className="text-xs text-muted-foreground">Weight</label>
+                              <input type="number" min={0} step={0.5} value={logForm.weight} onChange={e => setLogForm(f => ({ ...f, weight: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="Weight" />
                             </div>
                             <div>
                               <label className="text-xs text-muted-foreground">RPE</label>
-                              <input type="number" min={1} max={10} value={logForm.rpe} onChange={e => setLogForm(f => ({ ...f, rpe: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="RPE rating 1 to 10" />
+                              <input type="number" min={1} max={10} value={logForm.rpe} onChange={e => setLogForm(f => ({ ...f, rpe: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="RPE rating" />
+                            </div>
+                            <div>
+                              <label className="text-xs text-muted-foreground">Type</label>
+                              <select value={logForm.setType} onChange={e => setLogForm(f => ({ ...f, setType: e.target.value }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm" aria-label="Set type">
+                                {SET_TYPE_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                              </select>
                             </div>
                           </div>
                           <input placeholder="Notes (optional)" value={logForm.notes} onChange={e => setLogForm(f => ({ ...f, notes: e.target.value }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm" aria-label="Optional notes" />

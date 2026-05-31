@@ -82,7 +82,7 @@ export function MetricsDashboard({ clientUserId }: Props) {
         </div>
       </div>
 
-      {summary.loading || sparklineQueries.loading ? (
+      {summary.loading ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {Array.from({ length: 8 }).map((_, i) => <CardSkeleton key={i} />)}
         </div>
@@ -95,12 +95,17 @@ export function MetricsDashboard({ clientUserId }: Props) {
           <p className="mt-1 text-sm text-muted-foreground">Log your first body measurement, weight, or health metric to start tracking progress.</p>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map(m => {
-            const sparkData = sparklineQueries.data?.items.find(s => s.metricType === m.metricType);
-            return <MetricCard key={m.metricType} metric={m} sparklineValues={sparkData?.values ?? []} />;
-          })}
-        </div>
+        <>
+          {sparklineQueries.loading && (
+            <p className="text-xs text-muted-foreground animate-pulse">Updating charts...</p>
+          )}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {filtered.map(m => {
+              const sparkData = sparklineQueries.data?.items.find(s => s.metricType === m.metricType);
+              return <MetricCard key={m.metricType} metric={m} sparklineValues={sparkData?.values ?? []} />;
+            })}
+          </div>
+        </>
       )}
     </div>
   );

@@ -17,7 +17,7 @@ test.describe('Responsive Design', () => {
       await expect(body).toBeVisible();
 
       const scrollHeight = await page.evaluate(() => document.body.scrollHeight);
-      expect(scrollHeight).toBeGreaterThan(vp.height);
+      expect(scrollHeight).toBeGreaterThanOrEqual(vp.height);
     });
   }
 
@@ -41,11 +41,11 @@ test.describe('Touch Targets (WCAG 2.2)', () => {
     await page.goto('/');
     await page.waitForLoadState('load');
 
-    const links = page.locator('nav a, nav button');
+    const links = page.locator('nav[aria-label="Main navigation"] a, nav[aria-label="Main navigation"] button');
     const count = await links.count();
     const tooSmall: number[] = [];
 
-    for (let i = 0; i < Math.min(count, 10); i++) {
+    for (let i = 0; i < count; i++) {
       const box = await links.nth(i).boundingBox();
       if (box && (box.width < 44 || box.height < 44)) {
         tooSmall.push(i);

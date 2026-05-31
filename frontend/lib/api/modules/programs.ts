@@ -1,7 +1,7 @@
 import { apiFetch } from '@/lib/api/client';
-import type { ApiList } from '@/lib/types/domain';
+import type { ApiList, ProgramWeek } from '@/lib/types/domain';
 
-type ProgramNested = { id: string; coachUserId: string; name: string; description?: string | null };
+type ProgramNested = { id: string; coachUserId: string; name: string; description?: string | null; weeks?: ProgramWeek[] };
 type ClientBrief = { id: string; name?: string; email?: string };
 type MembershipBrief = { id: string; clientUserId: string; status?: string; clientUser?: ClientBrief };
 type ProgramGuidelines = { contentMd?: string };
@@ -17,6 +17,7 @@ export type ProgramListItem = {
   program?: ProgramNested;
   memberships?: MembershipBrief[];
   guidelines?: ProgramGuidelines | null;
+  weeks?: ProgramWeek[];
 };
 
 export const programsApi = {
@@ -34,5 +35,17 @@ export const programsApi = {
   },
   deleteProgram(id: string) {
     return apiFetch<void>(`/api/programs/${id}`, { method: 'DELETE' });
+  },
+  listWeeks(programId: string) {
+    return apiFetch<ApiList<ProgramWeek>>(`/api/programs/${programId}/weeks`);
+  },
+  createWeek(programId: string, input: { weekIndex: number; phaseLabel?: string; focus?: string }) {
+    return apiFetch<ProgramWeek>(`/api/programs/${programId}/weeks`, { method: 'POST', body: JSON.stringify(input) });
+  },
+  updateWeek(programId: string, weekId: string, input: { phaseLabel?: string; focus?: string }) {
+    return apiFetch<ProgramWeek>(`/api/programs/${programId}/weeks/${weekId}`, { method: 'PATCH', body: JSON.stringify(input) });
+  },
+  deleteWeek(programId: string, weekId: string) {
+    return apiFetch<void>(`/api/programs/${programId}/weeks/${weekId}`, { method: 'DELETE' });
   },
 };

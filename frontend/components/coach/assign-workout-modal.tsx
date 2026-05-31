@@ -4,9 +4,10 @@ import { useState, useEffect } from 'react';
 import { trainingApi } from '@/lib/api/modules/training';
 import { Button } from '@/components/ui/button';
 
-export function AssignWorkoutModal({ workoutId, onClose, onAssigned }: { workoutId: string; onClose: () => void; onAssigned: () => void }) {
-  const [clients, setClients] = useState<{ id: string; name: string; email: string }[]>([]);
+export function AssignWorkoutModal({ workoutId, onClose, onAssigned, assignedForDate: defaultDate }: { workoutId: string; onClose: () => void; onAssigned: () => void; assignedForDate?: string }) {
+  const [clients, setClients] = useState<{ id: string; firstName: string; lastName: string; email: string }[]>([]);
   const [selectedClient, setSelectedClient] = useState('');
+  const [date, setDate] = useState(defaultDate || '');
   const [status, setStatus] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
@@ -19,7 +20,7 @@ export function AssignWorkoutModal({ workoutId, onClose, onAssigned }: { workout
     setSaving(true);
     setStatus('Assigning...');
     try {
-      await trainingApi.assignWorkout({ workoutId, clientUserId: selectedClient });
+      await trainingApi.assignWorkout({ workoutId, clientUserId: selectedClient, assignedForDate: date || undefined });
       setStatus('Assigned!');
       setTimeout(onAssigned, 1000);
     } catch (err: unknown) {
@@ -42,9 +43,16 @@ export function AssignWorkoutModal({ workoutId, onClose, onAssigned }: { workout
             onChange={e => setSelectedClient(e.target.value)}
           >
             <option value="">Select a client...</option>
-            {clients.map(c => <option key={c.id} value={c.id}>{c.name || c.email || c.id.slice(0, 12)}</option>)}
+            {clients.map(c => <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>)}
           </select>
 
+          <label className="text-sm text-muted-foreground">Assign for date (optional)</label>
+          <input
+            type="date"
+            value={date}
+            onChange={e => setDate(e.target.value)}
+            className="w-full rounded-xl border border-border bg-card p-3 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+          />
           {status && <p className="text-sm text-muted-foreground">{status}</p>}
         </div>
 

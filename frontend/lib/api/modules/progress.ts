@@ -1,5 +1,5 @@
 import { apiFetch } from '@/lib/api/client';
-import type { ApiList, MetricEntry, MetricSummary } from '@/lib/types/domain';
+import type { ApiList, MetricEntry, MetricSummary, ProgressPhoto } from '@/lib/types/domain';
 
 export const progressApi = {
   listMetrics(clientUserId?: string, filters?: { metricType?: string; from?: string; to?: string; limit?: number }) {
@@ -18,13 +18,16 @@ export const progressApi = {
   },
   listPhotos(clientUserId?: string) {
     const qs = clientUserId ? `?clientUserId=${clientUserId}` : '';
-    return apiFetch<ApiList<{ id: string; clientUserId: string; photoType?: string; capturedAt?: string; coachNotes?: unknown[] }>>(`/api/progress/photos${qs}`);
+    return apiFetch<ApiList<ProgressPhoto>>(`/api/progress/photos${qs}`);
+  },
+  getComparePhotos(beforePhotoId: string, afterPhotoId: string) {
+    return apiFetch<{ before: ProgressPhoto | null; after: ProgressPhoto | null }>(`/api/progress/photos/compare?beforePhotoId=${beforePhotoId}&afterPhotoId=${afterPhotoId}`);
   },
   listCheckins(clientUserId?: string) {
     const qs = clientUserId ? `?clientUserId=${clientUserId}` : '';
     return apiFetch<ApiList<unknown>>(`/api/progress/checkins${qs}`);
   },
   listCoachClients() {
-    return apiFetch<ApiList<{ id: string; name: string; email: string }>>('/api/training/coach-clients');
+    return apiFetch<ApiList<{ id: string; firstName: string; lastName: string; email: string }>>('/api/training/coach-clients');
   },
 };
