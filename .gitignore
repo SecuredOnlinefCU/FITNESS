@@ -43,3 +43,5 @@ playwright-report/
 test-results/
 frontend/playwright-report/
 frontend/test-results/
+*.auth.json
+.playwright-cli/

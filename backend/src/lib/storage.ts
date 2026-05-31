@@ -1,4 +1,5 @@
-import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
+import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
 import { env } from "../config/env";
 
 function createS3Client(): S3Client | null {
@@ -19,14 +20,16 @@ function createS3Client(): S3Client | null {
 export const s3 = createS3Client();
 export const bucketName = env.RAILWAY_BUCKET_NAME || "";
 
-export async function uploadFile(key: string, body: Buffer, mimeType: string): Promise<string> {
+export async function getPresignedUploadUrl(key: string, mimeType: string, expiresInSeconds = 900): Promise<string> {
   if (!s3) throw new Error("Storage not configured — add RAILWAY_BUCKET_* env vars");
-  await s3.send(new PutObjectCommand({
+  return getSignedUrl(s3, new PutObjectCommand({
     Bucket: bucketName,
     Key: key,
-    Body: body,
     ContentType: mimeType,
-  }));
+  }), { expiresIn: expiresInSeconds });
+}
+
+export async function getPublicUrl(key: string): Promise<string> {
   const baseUrl = env.RAILWAY_BUCKET_URL ? `${env.RAILWAY_BUCKET_URL}/${bucketName}` : `https://${bucketName}.s3.${env.RAILWAY_BUCKET_REGION}.amazonaws.com`;
   return `${baseUrl}/${key}`;
 }

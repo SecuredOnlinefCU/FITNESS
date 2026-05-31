@@ -1,0 +1,18 @@
+{
+  "cookies": [],
+  "origins": [
+    {
+      "origin": "https://frontend-eosin-seven-71.vercel.app",
+      "localStorage": [
+        {
+          "name": "fitness_refresh_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZjlkYjE0YS1kNDcxLTQ0ZmEtYTAxNi1jYjlhN2MzMTRjZWMiLCJlbWFpbCI6InRlc3Rjb2FjaEBsZXZlbGZpdGVzdC5jb20iLCJyb2xlIjoiY29hY2giLCJpYXQiOjE3ODAyMDE3ODEsImV4cCI6MTc4Mjc5Mzc4MX0.MjdZypoGMtZEGE-sBaq8GsH6XIyFI0rqtkgVz5-tmTc"
+        },
+        {
+          "name": "fitness_access_token",
+          "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJkZjlkYjE0YS1kNDcxLTQ0ZmEtYTAxNi1jYjlhN2MzMTRjZWMiLCJlbWFpbCI6InRlc3Rjb2FjaEBsZXZlbGZpdGVzdC5jb20iLCJyb2xlIjoiY29hY2giLCJpYXQiOjE3ODAyMDE3ODEsImV4cCI6MTc4MDIwMjY4MX0.mjSJbC-rGh2QSHRDIDvxGrW7-tCoCmcx4XVunQsaOJ0"
+        }
+      ]
+    }
+  ]
+}
