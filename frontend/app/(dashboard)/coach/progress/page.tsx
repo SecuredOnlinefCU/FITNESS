@@ -5,12 +5,10 @@ import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
 import { CoachPageHeader } from '@/components/coach/coach-page-header';
 import { ProgressClientSelector } from '@/components/coach/progress/progress-client-selector';
-import { ProgressMetricsChart } from '@/components/coach/progress/progress-metrics-chart';
+import { MetricsDashboard } from '@/components/metrics/metrics-dashboard';
 import { ProgressPhotoGrid } from '@/components/coach/progress/progress-photo-grid';
 import { ProgressCheckinList } from '@/components/coach/progress/progress-checkin-list';
-import { TrendingUp, Camera, ClipboardCheck, BarChart3, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import Link from 'next/link';
+import { Camera, ClipboardCheck, BarChart3 } from 'lucide-react';
 
 export default function CoachProgressPage() {
   const [selectedClientId, setSelectedClientId] = useState('');
@@ -26,8 +24,8 @@ export default function CoachProgressPage() {
 
         {selectedClientId ? (
           <div className="space-y-5">
-            <div className="grid gap-5 md:grid-cols-3">
-              <ProgressMetricsChart clientUserId={selectedClientId} />
+            <MetricsDashboard clientUserId={selectedClientId} />
+            <div className="grid gap-5 md:grid-cols-2">
               <ProgressPhotoGrid clientUserId={selectedClientId} />
               <ProgressCheckinList clientUserId={selectedClientId} />
             </div>

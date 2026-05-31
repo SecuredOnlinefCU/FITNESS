@@ -9,6 +9,7 @@ export type Program = { id: ID; coachUserId: ID; name: string; description?: str
 export type Task = { id: ID; coachUserId: ID; title: string; description?: string | null; taskType: string };
 export type CoachingPackage = { id: ID; coachUserId: ID; title: string; priceCents: number; currency: string; billingType: 'ONE_TIME' | 'RECURRING'; interval?: 'MONTH' | 'YEAR' | null };
 export type MetricEntry = { id: ID; clientUserId: ID; metricType: string; value: number; unit?: string | null; recordedAt?: ISODate };
+export type MetricSummary = { metricType: string; label: string; unit: string; latestValue: number; previousValue: number | null; changePercent: number; count: number; category: string };
 export type MealLog = { id: ID; clientUserId: ID; mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK' | 'OTHER'; title?: string | null; calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null };
 export type Exercise = { id: ID; coachUserId?: ID | null; name: string; instructions?: string | null };
 export type Workout = { id: ID; coachUserId: ID; title: string; description?: string | null; programId?: ID | null };
