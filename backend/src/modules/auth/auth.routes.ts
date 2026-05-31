@@ -41,13 +41,17 @@ authRouter.post(
       })
       .parse(req.body);
 
+    const email = body.email.toLowerCase();
+    const existing = await prisma.user.findUnique({ where: { email } });
+    if (existing) throw new HttpError(409, "An account with this email already exists");
+
     const displayName = `${body.firstName} ${body.lastName}`;
     const hash = await bcrypt.hash(body.password, env.BCRYPT_ROUNDS);
     const rid = await roleId(body.role);
 
     const user = await prisma.user.create({
       data: {
-        email: body.email.toLowerCase(),
+        email,
         passwordHash: hash,
         firstName: body.firstName,
         lastName: body.lastName,
