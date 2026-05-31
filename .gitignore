@@ -6,39 +6,10 @@ dist/
 *.log
 .DS_Store
 
-# Extracted packs (source material, not project source)
-*.zip
-backend_media_storage_signed_urls_pack/
-backend_stabilization_pack/
-levelfit_landing_prod_dropin/
-levelfitness-adaptive-today-intelligence-habit-loops-pack/
-levelfitness-backend-level-merge-plan-pack/
-levelfitness-client-dashboard-package/
-levelfitness-client-health-score-risk-timeline-actions-pack/
-levelfitness-coach-dashboard-module/
-levelfitness-coach-intelligence-client-risk-pack/
-levelfitness-coach-risk-signals-v2-pack/
-levelfitness-corrected-prisma-master-schema-plan-pack/
-levelfitness-elite-project-design-pack/
-levelfitness-express-backend-level-corrected-pack/
-levelfitness-express-backend-level-corrected-pack(1)/
-levelfitness-full-master-pack(1)/
-levelfitness-integrated-frontend-ws-package/
-levelfitness-media-billing-ui-module/
-levelfitness-messaging-notifications-ui-module/
-levelfitness-next-ui-ux-design-pack/
-levelfitness-real-data-loading-states-ui-layer/
-levelfitness-true-integrated-monorepo-pack/
-levelfitness-wearables-recovery-intelligence-pack/
-levelfitness_coach_dashboard_module/
-levelfitness_frontend_brand_client_dashboard/
-levelfitness_integrated_frontend_ws_package/
-levelfitness_media_billing_ui_module/
-levelfitness_messaging_notifications_ui_module/
-levelfitness_real_data_loading_states_ui_layer/
-unified_fitness_backend_v1/
-scripts/
-Z-Image/
+# Archive of old development artifacts
+archive/
+
+# Playwright
 playwright-report/
 test-results/
 frontend/playwright-report/
