@@ -8,7 +8,6 @@ import type { Message } from '@/lib/types/domain';
 type OptimisticMessage = Message & {
   optimistic?: boolean;
   failed?: boolean;
-  durationMs?: number;
 };
 
 export function useOptimisticThread({

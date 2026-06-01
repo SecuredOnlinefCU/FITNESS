@@ -9,7 +9,6 @@ import type { Message } from '@/lib/types/domain';
 type LiveMessage = Message & {
   clientMessageId?: string;
   deliveryStatus?: MessageDeliveryStatus;
-  durationMs?: number;
 };
 
 function clientId() {
