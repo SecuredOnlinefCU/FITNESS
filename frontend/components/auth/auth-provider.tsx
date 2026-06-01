@@ -56,12 +56,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const session = await authApi.signup(input);
     setTokens(session.accessToken, session.refreshToken);
     setUser(session.user);
-    router.push(getHomePath(session.user.role));
+    if (session.user.role === 'client') {
+      router.push('/onboarding');
+    } else {
+      router.push(getHomePath(session.user.role));
+    }
   }
 
   function signOut() {
     clearTokens();
     setUser(null);
+    if (typeof window !== 'undefined') localStorage.removeItem('levelfit_onboarding_complete');
     router.push('/login');
   }
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ProtectedRoute } from '@/components/auth/protected-route';
 import { DashboardShell } from '@/components/layout/dashboard-shell';
@@ -14,12 +14,25 @@ import { coachIntelligenceApi } from '@/lib/api/modules/coach-intelligence';
 import { clientHealthApi } from '@/lib/api/modules/client-health';
 import { trainingApi } from '@/lib/api/modules/training';
 import { clientsApi } from '@/lib/api/modules/clients';
+import type { CoachInvite } from '@/lib/api/modules/clients';
 import { Search, Filter, ChevronRight, ShieldCheck, AlertTriangle, MessageSquare, TrendingUp, Mail, Check, X, UserPlus } from 'lucide-react';
 import { InviteClientDialog } from '@/components/coach/invite-client-dialog';
 
+type ScoreItem = { clientUserId: string; score: number; healthStatus: string; adherenceScore: number; progressScore: number; engagementScore: number; paymentScore: number };
+type CoachClient = { id: string; firstName: string; lastName: string; email: string };
+type QueueItem = { id?: string; clientUserId: string; score: number; severity: string; missedCheckins: number; openTasks: number; unreadMessages: number; inactiveDays: number; riskFlagsOpen: number };
+
 export default function CoachClientsPage() {
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [showInvite, setShowInvite] = useState(false);
+  const debounceRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => setDebouncedSearch(search), 200);
+    return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
+  }, [search]);
 
   const queue = useAsyncData(() => coachIntelligenceApi.attentionQueue(), []);
   const scores = useAsyncData(() => clientHealthApi.scores(), []);
@@ -29,30 +42,30 @@ export default function CoachClientsPage() {
   const loading = queue.loading || scores.loading || clients.loading;
   const error = queue.error || scores.error;
 
-  const queueItems = queue.data?.items ?? [];
-  const scoreItems = scores.data?.items ?? [];
-  const clientItems = clients.data?.items ?? [];
-  const pendingItems = pending.data?.items ?? [];
+  const queueItems: QueueItem[] = queue.data?.items ?? [];
+  const scoreItems: ScoreItem[] = scores.data?.items ?? [];
+  const clientItems: CoachClient[] = clients.data?.items ?? [];
+  const pendingItems: CoachInvite[] = pending.data?.items ?? [];
 
-  const scoreMap = new Map(scoreItems.map((s: any) => [s.clientUserId, s]));
-  const clientMap = new Map(clientItems.map((c: any) => [c.id, c]));
+  const scoreMap = new Map(scoreItems.map(s => [s.clientUserId, s]));
+  const clientMap = new Map(clientItems.map(c => [c.id, c]));
 
   const filtered = queueItems.length > 0
-    ? queueItems.filter((item: any) => {
-        if (!search.trim()) return true;
+    ? queueItems.filter(item => {
+        if (!debouncedSearch.trim()) return true;
         const client = clientMap.get(item.clientUserId);
         const name = client ? `${client.firstName || ''} ${client.lastName || ''}`.toLowerCase() : '';
         const email = client?.email?.toLowerCase() || '';
-        return name.includes(search.toLowerCase()) || email.includes(search.toLowerCase());
+        return name.includes(debouncedSearch.toLowerCase()) || email.includes(debouncedSearch.toLowerCase());
       })
     : clientItems
-        .filter((c: any) => {
-          if (!search.trim()) return true;
+        .filter(c => {
+          if (!debouncedSearch.trim()) return true;
           const name = `${c.firstName || ''} ${c.lastName || ''}`.toLowerCase();
           const email = c.email?.toLowerCase() || '';
-          return name.includes(search.toLowerCase()) || email.includes(search.toLowerCase());
+          return name.includes(debouncedSearch.toLowerCase()) || email.includes(debouncedSearch.toLowerCase());
         })
-        .map((c: any) => ({
+        .map(c => ({
           id: c.id,
           clientUserId: c.id,
           score: 50,
@@ -60,7 +73,7 @@ export default function CoachClientsPage() {
           inactiveDays: 0,
           riskFlagsOpen: 0,
           severity: 'LOW',
-        }));
+        } as QueueItem));
 
   async function handleApprove(inviteId: string) {
     await clientsApi.approveInvite(inviteId);
@@ -109,7 +122,7 @@ export default function CoachClientsPage() {
           <div className="mb-6">
             <h2 className="mb-3 text-lg font-black text-foreground">Pending requests ({pendingItems.length})</h2>
             <div className="space-y-2">
-              {pendingItems.map((invite: any) => (
+              {pendingItems.map(invite => (
                 <Card key={invite.id} className="border-energy/30 bg-energy/5">
                   <CardContent className="flex items-center justify-between p-4">
                     <div className="flex items-center gap-3">
@@ -159,7 +172,7 @@ export default function CoachClientsPage() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filtered.map((item: any, i: number) => {
+            {filtered.map((item, i) => {
               const client = clientMap.get(item.clientUserId);
               const health = scoreMap.get(item.clientUserId);
               const score = health?.score ?? item.score ?? 50;
@@ -169,7 +182,7 @@ export default function CoachClientsPage() {
               const initials = client ? `${(client.firstName || '')[0] || ''}${(client.lastName || '')[0] || ''}`.toUpperCase() : `${i + 1}`;
 
               return (
-                <Link key={item.id} href={`/coach/clients/${item.clientUserId}`}>
+                <Link key={item.id || item.clientUserId} href={`/coach/clients/${item.clientUserId}`}>
                   <Card className="cursor-pointer transition hover:border-primary/30">
                     <CardContent className="p-5">
                       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">

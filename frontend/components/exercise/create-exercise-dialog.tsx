@@ -5,7 +5,7 @@ import { X, Upload } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { trainingApi } from '@/lib/api/modules/training';
-import { uploadFile } from '@/lib/api/modules/media';
+import { uploadToSharepoint } from '@/lib/api/modules/media';
 
 type CreateExerciseDialogProps = {
   onClose: () => void;
@@ -29,8 +29,8 @@ export function CreateExerciseDialog({ onClose, onCreated }: CreateExerciseDialo
     try {
       let demoVideoUrl: string | undefined;
       if (videoFile) {
-        setStatus('Uploading video...');
-        const result = await uploadFile(videoFile);
+        setStatus('Uploading video to SharePoint...');
+        const result = await uploadToSharepoint(videoFile);
         demoVideoUrl = result.url;
       }
       setStatus('Saving exercise...');

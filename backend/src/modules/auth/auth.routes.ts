@@ -66,7 +66,7 @@ authRouter.post(
     const refresh = signRefreshToken(payload);
     await prisma.refreshSession.create({ data: { userId: user.id, tokenHash: sha(refresh) } });
 
-    sendWelcomeEmail(user.email, user.firstName || "").catch(() => {});
+    sendWelcomeEmail(user.email, user.firstName || "").catch((err) => console.error("[email] welcome send failed:", err));
     res.status(201).json({
       user: { id: user.id, email: user.email, role: payload.role, firstName: user.firstName, lastName: user.lastName },
       accessToken: signAccessToken(payload),
@@ -165,8 +165,8 @@ authRouter.post(
         expiresAt: new Date(Date.now() + 3600000),
       },
     });
-    const resetUrl = `${env.APP_BASE_URL || "http://localhost:3000"}/reset-password?token=${token}`;
-    sendPasswordResetEmail(user.email, user.firstName || "there", resetUrl).catch(() => {});
+    const resetUrl = `${env.APP_BASE_URL}/reset-password?token=${token}`;
+    sendPasswordResetEmail(user.email, user.firstName || "there", resetUrl).catch((err) => console.error("[email] reset send failed:", err));
     res.json({ success: true, message: "If that email exists, a reset link was sent." });
   }),
 );
@@ -220,7 +220,7 @@ authRouter.post(
     const coach = await prisma.user.findUnique({ where: { id: req.user!.sub } });
     const acceptUrl = `${env.APP_BASE_URL}/accept-invite?token=${token}`;
     if (coach) {
-      sendInviteEmail(body.email, coach.firstName || "Your coach", acceptUrl, body.expiresInDays).catch(() => {});
+      sendInviteEmail(body.email, coach.firstName || "Your coach", acceptUrl, body.expiresInDays).catch((err) => console.error("[email] invite send failed:", err));
     }
     res.status(201).json({
       inviteId: invite.id,
@@ -241,7 +241,6 @@ authRouter.post(
     });
 
     if (!invite) throw new HttpError(400, "Invalid invite token");
-    if (invite.acceptedAt) throw new HttpError(400, "Invite already accepted");
     if (invite.expiresAt < new Date()) throw new HttpError(400, "Invite has expired");
 
     // Check if user already exists
@@ -250,6 +249,12 @@ authRouter.post(
       include: { roles: { include: { role: true } } },
     });
 
+    const isResumingIncomplete = !!(user && invite.acceptedAt && !user.passwordHash);
+
+    if (invite.acceptedAt && !isResumingIncomplete) {
+      throw new HttpError(400, "Invite already accepted");
+    }
+
     if (!user) {
       // Create new user account
       const displayName = invite.displayName;
@@ -257,7 +262,7 @@ authRouter.post(
       user = await prisma.user.create({
         data: {
           email: invite.email.toLowerCase(),
-          passwordHash: "", // No password — invite-based signup
+          passwordHash: "",
           firstName: displayName.split(" ")[0] || null,
           lastName: displayName.split(" ").slice(1).join(" ") || null,
           roles: { create: [{ roleId: clientRoleId }] },
@@ -267,22 +272,24 @@ authRouter.post(
       });
     }
 
-    // Mark invite as accepted
-    await prisma.coachInvite.update({
-      where: { id: invite.id },
-      data: {
-        acceptedAt: new Date(),
-        status: "ACCEPTED",
-      },
-    });
+    if (!isResumingIncomplete) {
+      await prisma.coachInvite.update({
+        where: { id: invite.id },
+        data: {
+          acceptedAt: new Date(),
+          status: "ACCEPTED",
+        },
+      });
+    }
 
-    // Generate tokens for the user
     const payload = { sub: user.id, email: user.email, role: user.roles[0]?.role?.name || "client" };
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
     await prisma.refreshSession.create({
       data: { userId: user.id, tokenHash: sha(refreshToken) },
     });
+
+    const isNewUser = !user.passwordHash;
 
     res.json({
       user: {
@@ -296,7 +303,32 @@ authRouter.post(
       refreshToken,
       inviteId: invite.id,
       coachUserId: invite.coachUserId,
+      isNewUser,
     });
+  }),
+);
+
+authRouter.post(
+  "/set-password",
+  requireAuth,
+  asyncHandler(async (req: AuthenticatedRequest, res) => {
+    const { password } = z
+      .object({ password: z.string().min(8).max(128) })
+      .parse(req.body);
+
+    const user = await prisma.user.findUnique({ where: { id: req.user!.sub } });
+    if (!user) throw new HttpError(404, "User not found");
+    if (user.passwordHash) {
+      throw new HttpError(400, "Password already set. Use reset-password instead.");
+    }
+
+    const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { passwordHash },
+    });
+
+    res.json({ success: true });
   }),
 );
 
@@ -307,7 +339,7 @@ authRouter.get(
       throw new HttpError(503, "Google OAuth not configured");
     }
     const state = crypto.randomBytes(32).toString("hex");
-    const redirectUri = `${env.APP_BASE_URL?.replace(/\/$/, "") || "http://localhost:4000"}/api/auth/google/callback`;
+    const redirectUri = `${env.APP_BASE_URL.replace(/\/$/, "")}/api/auth/google/callback`;
     const params = new URLSearchParams({
       client_id: env.GOOGLE_CLIENT_ID,
       redirect_uri: redirectUri,
@@ -325,11 +357,11 @@ authRouter.get(
   "/google/callback",
   asyncHandler(async (req, res) => {
     if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) {
-      const feUrl = env.APP_BASE_URL || "http://localhost:3000";
+      const feUrl = env.APP_BASE_URL;
       return res.redirect(`${feUrl}/auth/callback?error=google_not_configured`);
     }
     const { code, state } = z.object({ code: z.string(), state: z.string().optional() }).parse(req.query);
-    const frontendUrl = env.APP_BASE_URL || "http://localhost:3000";
+    const frontendUrl = env.APP_BASE_URL;
 
     try {
       const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {

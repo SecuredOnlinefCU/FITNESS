@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { progressApi } from '@/lib/api/modules/progress';
 import { Users } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function ProgressClientSelector({ selectedId, onChange }: { selectedId: string; onChange: (id: string) => void }) {
   const [clients, setClients] = useState<{ id: string; firstName: string; lastName: string; email: string }[]>([]);
@@ -12,7 +13,7 @@ export function ProgressClientSelector({ selectedId, onChange }: { selectedId: s
     progressApi.listCoachClients().then(r => {
       setClients(r.items);
       if (!selectedId && r.items.length > 0) onChange(r.items[0].id);
-    }).catch(() => {}).finally(() => setLoading(false));
+    }).catch(() => toast.error('Failed to load clients')).finally(() => setLoading(false));
   }, []);
 
   return (

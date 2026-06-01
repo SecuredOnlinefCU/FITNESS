@@ -13,9 +13,10 @@ import { clientsApi } from '@/lib/api/modules/clients';
 import {
   ArrowLeft, ShieldCheck, AlertTriangle, TrendingUp, TrendingDown, Minus,
   Dumbbell, Activity, FileText, Plus, Trash2, Zap, Brain, Heart, Target,
-  Clock, ChevronRight, Flame, AlertCircle, CheckCircle, XCircle,
+  Clock, ChevronRight, Flame, AlertCircle, CheckCircle, XCircle, Camera,
 } from 'lucide-react';
 import type { ClientDossier } from '@/lib/api/modules/clients';
+import { progressApi } from '@/lib/api/modules/progress';
 
 const TABS = ['Overview', 'Performance', 'Intelligence', 'Programs', 'Workouts', 'Progress', 'Notes'] as const;
 type Tab = (typeof TABS)[number];
@@ -70,6 +71,7 @@ export default function ClientDossierPage(props: { params: Promise<{ clientId: s
   const [noteText, setNoteText] = useState('');
 
   const dossier = useAsyncData(() => clientsApi.getDossier(clientId), [clientId]);
+  const clientPhotos = useAsyncData(() => progressApi.listPhotos(clientId), [clientId]);
 
   const loading = dossier.loading;
   const error = dossier.error;
@@ -552,7 +554,27 @@ export default function ClientDossierPage(props: { params: Promise<{ clientId: s
             )}
 
             {activeTab === 'Progress' && (
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {clientPhotos.data && clientPhotos.data.items.length > 0 && (
+                  <div>
+                    <h3 className="mb-3 font-black">Progress Photos</h3>
+                    <div className="grid grid-cols-4 gap-2 md:grid-cols-6">
+                      {clientPhotos.data.items.slice(0, 12).map(p => (
+                        <div key={p.id} className="group relative aspect-square overflow-hidden rounded-xl bg-muted">
+                          {p.media?.cdnUrl ? (
+                            <img src={p.media.cdnUrl} alt="" className="h-full w-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-xs text-muted-foreground">{p.photoType}</div>
+                          )}
+                          <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-1.5">
+                            <p className="text-[10px] text-white">{new Date(p.capturedAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <h3 className="font-black">Progress Metrics</h3>
                 {metrics.length === 0 ? (
                   <div className="rounded-2xl bg-muted p-6 text-center">

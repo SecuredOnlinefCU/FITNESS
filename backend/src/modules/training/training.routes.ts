@@ -1,27 +1,40 @@
 
 import { Router } from 'express';
+import { z } from 'zod';
 import { prisma } from '../../lib/prisma';
 import { requireAuth, AuthenticatedRequest, requireRole } from '../../common/middleware/auth';
 import { asyncHandler } from '../../common/utils/async-handler';
+import { detectMilestones } from '../feed/feed.service';
 
 export const trainingRouter = Router();
 trainingRouter.use(requireAuth);
 
 trainingRouter.get('/exercises', asyncHandler(async (_req, res) => res.json({ items: await prisma.exercise.findMany({ take: 100 }) })));
 
-trainingRouter.post('/exercises', requireRole(['coach', 'assistant_coach']), asyncHandler(async (req: AuthenticatedRequest, res) =>
-  res.status(201).json(await prisma.exercise.create({
+const exerciseSchema = z.object({
+  name: z.string().min(1),
+  instructions: z.string().optional(),
+  demoVideoUrl: z.string().url().max(2000).optional().nullable(),
+  coachCues: z.string().optional(),
+  muscleGroups: z.string().optional(),
+  muscleGroup: z.string().optional(),
+  equipment: z.string().optional(),
+});
+
+trainingRouter.post('/exercises', requireRole(['coach', 'assistant_coach']), asyncHandler(async (req: AuthenticatedRequest, res) => {
+  const body = exerciseSchema.parse(req.body);
+  return res.status(201).json(await prisma.exercise.create({
     data: {
       coachUserId: req.user!.sub,
-      name: req.body.name,
-      instructions: req.body.instructions,
-      demoVideoUrl: req.body.demoVideoUrl,
-      coachCues: req.body.coachCues,
-      muscleGroups: req.body.muscleGroups || req.body.muscleGroup,
-      equipment: req.body.equipment,
+      name: body.name,
+      instructions: body.instructions,
+      demoVideoUrl: body.demoVideoUrl ?? null,
+      coachCues: body.coachCues,
+      muscleGroups: body.muscleGroups || body.muscleGroup,
+      equipment: body.equipment,
     },
-  }))
-));
+  }));
+}));
 
 trainingRouter.get('/workouts', asyncHandler(async (req: AuthenticatedRequest, res) => {
   const where: Record<string, unknown> = {};
@@ -196,7 +209,9 @@ trainingRouter.get('/sessions/:sessionId', asyncHandler(async (req, res) => {
 trainingRouter.post('/sessions/:sessionId/complete', requireRole(['client']), asyncHandler(async (req: AuthenticatedRequest, res) => {
   const session = await prisma.workoutSession.findFirst({ where: { id: req.params.sessionId, clientUserId: req.user!.sub } });
   if (!session) { res.status(404).json({ error: 'Session not found' }); return; }
-  res.json(await prisma.workoutSession.update({ where: { id: req.params.sessionId }, data: { status: 'completed', completedAt: new Date() }, include: { sets: true } }));
+  const updated = await prisma.workoutSession.update({ where: { id: req.params.sessionId }, data: { status: 'completed', completedAt: new Date() }, include: { sets: true } });
+  detectMilestones(req.user!.sub).catch(() => {});
+  res.json(updated);
 }));
 
 trainingRouter.post('/sessions/:sessionId/sets', requireRole(['client']), asyncHandler(async (req, res) =>
@@ -246,4 +261,108 @@ trainingRouter.get('/coach-clients', requireRole(['coach', 'assistant_coach']), 
   const clientIds = [...new Set(threads.map(t => t.clientUserId))];
   const users = await prisma.user.findMany({ where: { id: { in: clientIds } }, select: { id: true, firstName: true, lastName: true, email: true } });
   res.json({ items: users });
+}));
+
+trainingRouter.get('/exercises/substitutions', asyncHandler(async (req, res) => {
+  const exerciseId = req.query.exerciseId as string;
+  if (!exerciseId) { res.status(400).json({ error: 'exerciseId required' }); return; }
+  const source = await prisma.exercise.findUnique({ where: { id: exerciseId } });
+  if (!source) { res.status(404).json({ error: 'Exercise not found' }); return; }
+  const sourceGroups = (source.muscleGroups || '').toLowerCase().split(',').map(s => s.trim());
+  const allExercises = await prisma.exercise.findMany({ where: { id: { not: exerciseId } }, take: 100 });
+  const scored = allExercises.map(ex => {
+    const groups = (ex.muscleGroups || '').toLowerCase().split(',').map(s => s.trim());
+    const overlap = groups.filter(g => sourceGroups.some(sg => g.includes(sg) || sg.includes(g))).length;
+    return { exercise: ex, score: overlap };
+  }).filter(s => s.score > 0).sort((a, b) => b.score - a.score).slice(0, 5);
+  res.json({ items: scored.map(s => s.exercise) });
+}));
+
+trainingRouter.get('/adaptive-adjustment', requireRole(['client']), asyncHandler(async (req: AuthenticatedRequest, res) => {
+  const userId = req.user!.sub;
+  const workoutExerciseId = req.query.workoutExerciseId as string;
+  if (!workoutExerciseId) { res.status(400).json({ error: 'workoutExerciseId required' }); return; }
+
+  const we = await prisma.workoutExercise.findUnique({
+    where: { id: workoutExerciseId },
+    include: { exercise: { select: { name: true } } },
+  });
+  if (!we) { res.status(404).json({ error: 'Workout exercise not found' }); return; }
+
+  const since14d = new Date(Date.now() - 14 * 86400000);
+  const recentSets = await prisma.setLog.findMany({
+    where: {
+      workoutExerciseId,
+      session: { clientUserId: userId, startedAt: { gte: since14d } },
+      rpe: { not: null },
+    },
+    orderBy: { createdAt: 'desc' },
+    take: 20,
+  });
+
+  if (recentSets.length === 0) {
+    res.json({ adjustment: 'none', reason: 'No recent data — follow prescribed plan', prescribedRpe: we.prescribedRpe, prescribedSets: we.prescribedSets, prescribedReps: we.prescribedReps });
+    return;
+  }
+
+  const avgRpe = recentSets.reduce((sum, s) => sum + (s.rpe || 7), 0) / recentSets.length;
+  const prescribedRpe = we.prescribedRpe || 7;
+  const rpeDelta = avgRpe - prescribedRpe;
+
+  let volumeAdjustment = 1.0;
+  let intensityNote = '';
+
+  if (rpeDelta > 2) {
+    volumeAdjustment = 0.85;
+    intensityNote = `RPE was high (${avgRpe.toFixed(1)} vs prescribed ${prescribedRpe}) — reducing volume by 15%`;
+  } else if (rpeDelta < -2) {
+    volumeAdjustment = 1.1;
+    intensityNote = `RPE was low (${avgRpe.toFixed(1)} vs prescribed ${prescribedRpe}) — increasing volume by 10%`;
+  } else {
+    intensityNote = `RPE on track (${avgRpe.toFixed(1)} vs prescribed ${prescribedRpe}) — maintaining plan`;
+  }
+
+  const adjustedSets = Math.max(2, Math.round((we.prescribedSets || 3) * volumeAdjustment));
+
+  res.json({
+    adjustment: volumeAdjustment !== 1.0 ? 'modified' : 'none',
+    reason: intensityNote,
+    original: { sets: we.prescribedSets, reps: we.prescribedReps, rpe: we.prescribedRpe },
+    adjusted: { sets: adjustedSets, reps: we.prescribedReps, rpe: we.prescribedRpe },
+    avgRpe: Math.round(avgRpe * 10) / 10,
+    dataPoints: recentSets.length,
+  });
+}));
+
+trainingRouter.get('/progression/:exerciseId', requireRole(['client']), asyncHandler(async (req: AuthenticatedRequest, res) => {
+  const userId = req.user!.sub;
+  const { exerciseId } = req.params;
+  const since90d = new Date(Date.now() - 90 * 86400000);
+
+  const wes = await prisma.workoutExercise.findMany({
+    where: { exerciseId },
+    select: { id: true },
+  });
+  const weIds = wes.map(w => w.id);
+  if (weIds.length === 0) { res.json({ history: [] }); return; }
+
+  const sessions = await prisma.workoutSession.findMany({
+    where: { clientUserId: userId, startedAt: { gte: since90d }, status: 'completed' },
+    include: { sets: { where: { workoutExerciseId: { in: weIds } }, orderBy: { createdAt: 'asc' } } },
+    orderBy: { startedAt: 'asc' },
+  });
+
+  const history = sessions
+    .filter(s => s.sets.length > 0)
+    .map(s => {
+      const bestSet = s.sets.reduce((best, set) => {
+        if (!set.reps || !set.weight) return best;
+        const e1rm = set.rpe && set.rpe > 0 ? set.weight * (1 + set.reps * 0.0333) : set.weight * (1 + set.reps / 30);
+        return e1rm > best.e1rm ? { e1rm, weight: set.weight, reps: set.reps, date: s.startedAt } : best;
+      }, { e1rm: 0, weight: 0, reps: 0, date: null as Date | null });
+      return { date: bestSet.date, estimated1RM: Math.round(bestSet.e1rm), weight: bestSet.weight, reps: bestSet.reps };
+    })
+    .filter(h => h.estimated1RM > 0);
+
+  res.json({ history });
 }));

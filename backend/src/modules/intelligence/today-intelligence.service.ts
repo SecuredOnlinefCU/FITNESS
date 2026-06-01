@@ -124,10 +124,31 @@ export async function getClientToday(actor: Actor) {
     ? Math.round((snapshot.habitsCompleted / snapshot.habitTarget) * 100)
     : 0;
 
+  const clientUserId = actor.userId;
+  const [streakData, todayWorkout] = await Promise.all([
+    prisma.dailyClientSnapshot.findMany({
+      where: { clientUserId },
+      orderBy: { snapshotDate: 'desc' },
+      take: 30,
+    }),
+    prisma.workoutAssignment.findFirst({
+      where: { clientUserId, assignedForDate: todayStart() },
+      include: { workout: { include: { exercises: true } } },
+    }),
+  ]);
+
+  const streak = streakData.filter(s => s.habitsCompleted >= (s.habitTarget || 1)).length;
+
   return {
     snapshot,
     recommendations,
     completionScore,
+    streak,
+    todayWorkout: todayWorkout?.workout ? {
+      title: todayWorkout.workout.title,
+      exerciseCount: todayWorkout.workout.exercises?.length ?? 0,
+      estimatedDuration: Math.round((todayWorkout.workout.exercises?.length ?? 0) * 5),
+    } : null,
   };
 }
 

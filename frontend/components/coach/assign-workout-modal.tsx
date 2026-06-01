@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { trainingApi } from '@/lib/api/modules/training';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 
 export function AssignWorkoutModal({ workoutId, onClose, onAssigned, assignedForDate: defaultDate }: { workoutId: string; onClose: () => void; onAssigned: () => void; assignedForDate?: string }) {
   const [clients, setClients] = useState<{ id: string; firstName: string; lastName: string; email: string }[]>([]);
@@ -12,7 +13,7 @@ export function AssignWorkoutModal({ workoutId, onClose, onAssigned, assignedFor
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    trainingApi.listCoachClients().then(r => setClients(r.items)).catch(() => {});
+    trainingApi.listCoachClients().then(r => setClients(r.items)).catch(() => toast.error('Failed to load clients'));
   }, []);
 
   async function handleAssign() {

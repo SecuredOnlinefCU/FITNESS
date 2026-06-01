@@ -1,7 +1,10 @@
 import { apiFetch } from '@/lib/api/client';
 
 interface RiskScanResult {
+  clientsScanned: number;
   flagsCreated: number;
+  flagsUpdated: number;
+  items: any[];
 }
 
 export interface RiskScanFullResult {

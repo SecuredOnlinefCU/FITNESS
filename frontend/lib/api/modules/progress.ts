@@ -30,4 +30,10 @@ export const progressApi = {
   listCoachClients() {
     return apiFetch<ApiList<{ id: string; firstName: string; lastName: string; email: string }>>('/api/training/coach-clients');
   },
+  logMetric(input: { metricType: string; value: number; unit?: string }) {
+    return apiFetch<MetricEntry>('/api/progress/metrics', { method: 'POST', body: JSON.stringify(input) });
+  },
+  uploadPhoto(input: { photoType: string; notes?: string; mediaAssetId?: string }) {
+    return apiFetch<ProgressPhoto>('/api/progress/photos', { method: 'POST', body: JSON.stringify(input) });
+  },
 };

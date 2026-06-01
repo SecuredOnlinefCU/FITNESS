@@ -8,7 +8,7 @@ import { ProgressClientSelector } from '@/components/coach/progress/progress-cli
 import { MetricsDashboard } from '@/components/metrics/metrics-dashboard';
 import { ProgressPhotoGrid } from '@/components/coach/progress/progress-photo-grid';
 import { ProgressCheckinList } from '@/components/coach/progress/progress-checkin-list';
-import { Camera, ClipboardCheck, BarChart3 } from 'lucide-react';
+import { BarChart3 } from 'lucide-react';
 
 export default function CoachProgressPage() {
   const [selectedClientId, setSelectedClientId] = useState('');

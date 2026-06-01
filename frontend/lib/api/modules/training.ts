@@ -76,4 +76,13 @@ export const trainingApi = {
   updateSessionReview(sessionId: string, coachReview: string) {
     return apiFetch<WorkoutSession>(`/api/training/sessions/${sessionId}/review`, { method: 'PATCH', body: JSON.stringify({ coachReview }) });
   },
+  getSubstitutions(exerciseId: string) {
+    return apiFetch<{ items: Exercise[] }>(`/api/training/exercises/substitutions?exerciseId=${encodeURIComponent(exerciseId)}`);
+  },
+  getAdaptiveAdjustment(workoutExerciseId: string) {
+    return apiFetch<{ adjustment: string; reason: string; original: { sets: number | null; reps: string | null; rpe: number | null }; adjusted: { sets: number; reps: string | null; rpe: number | null }; avgRpe: number; dataPoints: number }>(`/api/training/adaptive-adjustment?workoutExerciseId=${encodeURIComponent(workoutExerciseId)}`);
+  },
+  getProgression(exerciseId: string) {
+    return apiFetch<{ history: { date: string | null; estimated1RM: number; weight: number; reps: number }[] }>(`/api/training/progression/${encodeURIComponent(exerciseId)}`);
+  },
 };

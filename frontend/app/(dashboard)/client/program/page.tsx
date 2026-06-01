@@ -8,7 +8,7 @@ import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { programsApi } from '@/lib/api/modules/programs';
-import { BookOpen, MessageSquare, FileText, Calendar } from 'lucide-react';
+import { BookOpen, MessageSquare, FileText, Calendar, CheckCircle2, ChevronRight } from 'lucide-react';
 
 export default function ClientProgramPage() {
   const result = useAsyncData(() => programsApi.listPrograms(), []);
@@ -39,6 +39,31 @@ export default function ClientProgramPage() {
               </p>
             </CardContent>
           </Card>
+        )}
+
+        {program?.weeks && program.weeks.length > 0 && (
+          <div className="mt-5 space-y-3">
+            <h2 className="text-lg font-black">Program timeline</h2>
+            <div className="space-y-2">
+              {program.weeks.sort((a, b) => a.weekIndex - b.weekIndex).map((week) => (
+                <Card key={week.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-bold">Week {week.weekIndex + 1}</p>
+                        {week.phaseLabel && <p className="text-sm text-muted-foreground">{week.phaseLabel}</p>}
+                        {week.focus && <p className="text-xs text-muted-foreground mt-1">{week.focus}</p>}
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <Calendar className="h-4 w-4" />
+                        {week.workouts?.length ?? 0} workouts
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
         )}
 
         <div className="mt-5 grid gap-4 md:grid-cols-3">

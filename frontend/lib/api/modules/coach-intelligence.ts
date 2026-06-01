@@ -17,4 +17,7 @@ export const coachIntelligenceApi = {
   resolveRiskFlag(flagId: string) {
     return apiFetch(`/api/coach-intelligence/risk-flags/${flagId}/resolve`, { method: 'POST' });
   },
+  recommendations() {
+    return apiFetch<{ items: any[] }>('/api/coach-intelligence/client-health/recommendations/list');
+  },
 };

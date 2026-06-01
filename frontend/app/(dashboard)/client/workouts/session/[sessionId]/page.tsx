@@ -11,8 +11,9 @@ import { ErrorState } from '@/components/states/error-state';
 import { Button } from '@/components/ui/button';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { trainingApi } from '@/lib/api/modules/training';
-import { Dumbbell, CheckCircle, Plus, X, Video, Info } from 'lucide-react';
+import { Dumbbell, CheckCircle, Plus, X, Video, Info, Zap, TrendingUp, TrendingDown } from 'lucide-react';
 import { RestTimer } from '@/components/workout/rest-timer';
+import { VideoPlayerModal } from '@/components/exercise/video-player-modal';
 
 const SET_TYPE_OPTIONS = [
   { value: 'warmup', label: 'Warm-up' },
@@ -39,6 +40,8 @@ export default function WorkoutSessionPage() {
   const [timerDuration, setTimerDuration] = useState(90);
   const [guidedMode, setGuidedMode] = useState(false);
   const [currentExerciseIdx, setCurrentExerciseIdx] = useState(0);
+  const [adjustments, setAdjustments] = useState<Record<string, { adjustment: string; reason: string; adjusted: { sets: number; reps: string | null; rpe: number | null } }>>({});
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
 
   const session = sessionResult.data;
   const loading = sessionResult.loading;
@@ -50,6 +53,22 @@ export default function WorkoutSessionPage() {
     const logged = session?.sets?.filter((s: any) => s.workoutExerciseId === we.id) ?? [];
     return logged.length >= (we.prescribedSets ?? 3);
   }).length;
+
+  const sessionRpe = (() => {
+    const allSets = session?.sets ?? [];
+    if (allSets.length === 0) return null;
+    const rpeSets = allSets.filter(s => s.rpe != null);
+    if (rpeSets.length === 0) return null;
+    return Math.round(rpeSets.reduce((sum, s) => sum + (s.rpe || 0), 0) / rpeSets.length * 10) / 10;
+  })();
+
+  const fetchAdjustment = useCallback(async (workoutExerciseId: string) => {
+    if (adjustments[workoutExerciseId]) return;
+    try {
+      const result = await trainingApi.getAdaptiveAdjustment(workoutExerciseId);
+      setAdjustments(prev => ({ ...prev, [workoutExerciseId]: result }));
+    } catch { /* ignore */ }
+  }, [adjustments]);
 
   const handleLogSet = useCallback(async (workoutExerciseId: string, restSeconds?: number) => {
     if (!session) return;
@@ -115,9 +134,19 @@ export default function WorkoutSessionPage() {
                     style={{ width: `${(completedExercises / totalExercises) * 100}%` }}
                   />
                 </div>
-                <p className="text-xs text-muted-foreground mt-1 text-right">
-                  {Math.round((completedExercises / totalExercises) * 100)}% complete
-                </p>
+                <div className="mt-1 flex items-center justify-between">
+                  <p className="text-xs text-muted-foreground">
+                    {Math.round((completedExercises / totalExercises) * 100)}% complete
+                  </p>
+                  {sessionRpe != null && (
+                    <div className="flex items-center gap-1.5">
+                      <Zap className={`h-3 w-3 ${sessionRpe >= 8 ? 'text-pulse' : sessionRpe >= 6 ? 'text-energy' : 'text-flow'}`} />
+                      <span className={`text-xs font-bold ${sessionRpe >= 8 ? 'text-pulse' : sessionRpe >= 6 ? 'text-energy' : 'text-flow'}`}>
+                        Session RPE: {sessionRpe}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
 
@@ -153,9 +182,9 @@ export default function WorkoutSessionPage() {
                           </div>
                           <div className="flex items-center gap-1">
                             {we.exercise?.demoVideoUrl && (
-                              <a href={we.exercise.demoVideoUrl} target="_blank" rel="noopener noreferrer" className="rounded-lg p-1.5 text-primary hover:bg-primary/10 transition" aria-label="Watch demo video">
+                              <button onClick={() => setVideoUrl(we.exercise!.demoVideoUrl!)} className="rounded-lg p-1.5 text-primary hover:bg-primary/10 transition" aria-label="Watch demo video">
                                 <Video className="h-4 w-4" />
-                              </a>
+                              </button>
                             )}
                             {we.exercise?.coachCues && (
                               <div className="group relative">
@@ -171,6 +200,7 @@ export default function WorkoutSessionPage() {
                             <Dumbbell className="h-5 w-5 text-muted-foreground" />
                           </div>
                         </div>
+
                         {loggedSets.length > 0 && (
                           <div className="space-y-1">
                             {loggedSets.map((set) => (
@@ -187,20 +217,34 @@ export default function WorkoutSessionPage() {
                             ))}
                           </div>
                         )}
+
+                        {adjustments[we.id] && adjustments[we.id].adjustment === 'modified' && (
+                          <div className="flex items-start gap-2 rounded-lg bg-flow/5 border border-flow/20 p-2">
+                            {adjustments[we.id].adjusted.sets < (we.prescribedSets ?? 3) ? (
+                              <TrendingDown className="mt-0.5 h-3.5 w-3.5 text-flow shrink-0" />
+                            ) : (
+                              <TrendingUp className="mt-0.5 h-3.5 w-3.5 text-flow shrink-0" />
+                            )}
+                            <div>
+                              <p className="text-[11px] font-bold text-flow">Adaptive adjustment</p>
+                              <p className="text-[11px] text-muted-foreground">{adjustments[we.id].reason}</p>
+                              <p className="text-[11px] font-bold text-foreground mt-0.5">
+                                {adjustments[we.id].adjusted.sets}\u00d7{adjustments[we.id].adjusted.reps} (was {we.prescribedSets}\u00d7{we.prescribedReps})
+                              </p>
+                            </div>
+                          </div>
+                        )}
+
                         {isLogging ? (
                           <div className="space-y-2 rounded-lg border border-border p-3">
-                            <div className="grid grid-cols-4 gap-2">
+                            <div className="grid grid-cols-3 gap-2">
                               <div>
                                 <label className="text-xs text-muted-foreground">Reps</label>
-                                <input type="number" min={0} value={logForm.reps} onChange={e => setLogForm(f => ({ ...f, reps: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="Reps" />
+                                <input type="number" min={0} value={logForm.reps} onChange={e => setLogForm(f => ({ ...f, reps: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-base text-center" aria-label="Reps" />
                               </div>
                               <div>
                                 <label className="text-xs text-muted-foreground">Weight</label>
-                                <input type="number" min={0} step={0.5} value={logForm.weight} onChange={e => setLogForm(f => ({ ...f, weight: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="Weight" />
-                              </div>
-                              <div>
-                                <label className="text-xs text-muted-foreground">RPE</label>
-                                <input type="number" min={1} max={10} value={logForm.rpe} onChange={e => setLogForm(f => ({ ...f, rpe: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm text-center" aria-label="RPE rating" />
+                                <input type="number" min={0} step={0.5} value={logForm.weight} onChange={e => setLogForm(f => ({ ...f, weight: Number(e.target.value) }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-base text-center" aria-label="Weight" />
                               </div>
                               <div>
                                 <label className="text-xs text-muted-foreground">Type</label>
@@ -209,16 +253,40 @@ export default function WorkoutSessionPage() {
                                 </select>
                               </div>
                             </div>
-                            <input placeholder="Notes (optional)" value={logForm.notes} onChange={e => setLogForm(f => ({ ...f, notes: e.target.value }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-sm" aria-label="Optional notes" />
+                            <div>
+                              <label className="text-xs text-muted-foreground">RPE (how hard was it?)</label>
+                              <div className="mt-1 flex gap-1">
+                                {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map(r => (
+                                  <button
+                                    key={r}
+                                    type="button"
+                                    onClick={() => setLogForm(f => ({ ...f, rpe: r }))}
+                                    className={`flex-1 min-h-[44px] rounded-lg py-2 text-xs font-bold transition ${
+                                      logForm.rpe === r
+                                        ? r <= 3 ? 'bg-flow text-primary-foreground' : r <= 6 ? 'bg-energy text-primary-foreground' : 'bg-pulse text-primary-foreground'
+                                        : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                    }`}
+                                  >
+                                    {r}
+                                  </button>
+                                ))}
+                              </div>
+                              <div className="mt-1 flex justify-between text-[10px] text-muted-foreground">
+                                <span>Easy</span>
+                                <span>Moderate</span>
+                                <span>Max effort</span>
+                              </div>
+                            </div>
+                            <input placeholder="Notes (optional)" value={logForm.notes} onChange={e => setLogForm(f => ({ ...f, notes: e.target.value }))} className="w-full rounded-lg border border-border bg-card p-1.5 text-base" aria-label="Optional notes" />
                             <div className="flex justify-end gap-2">
-                              <button type="button" onClick={() => setLoggingExercise(null)} className="text-xs text-muted-foreground hover:text-foreground" aria-label="Cancel logging set"><X className="h-4 w-4" /></button>
-                              <button type="button" onClick={() => handleLogSet(we.id, we.prescribedRestSeconds ?? undefined)} className="rounded-xl bg-primary px-3 py-1 text-xs font-bold text-primary-foreground">Log set</button>
+                              <button type="button" onClick={() => setLoggingExercise(null)} className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-muted-foreground hover:text-foreground" aria-label="Cancel logging set"><X className="h-4 w-4" /></button>
+                              <button type="button" onClick={() => handleLogSet(we.id, we.prescribedRestSeconds ?? undefined)} className="min-h-[44px] rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">Log set</button>
                             </div>
                           </div>
                         ) : (
                           <button
                             type="button"
-                            onClick={() => setLoggingExercise(we.id)}
+                            onClick={() => { setLoggingExercise(we.id); fetchAdjustment(we.id); }}
                             className="flex w-full items-center justify-center gap-2 rounded-xl border border-dashed border-border py-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition"
                           >
                             <Plus className="h-4 w-4" /> Log set {loggedSets.length + 1}
@@ -270,6 +338,10 @@ export default function WorkoutSessionPage() {
           />
         )}
       </AnimatePresence>
+
+      {videoUrl && (
+        <VideoPlayerModal videoUrl={videoUrl} onClose={() => setVideoUrl(null)} />
+      )}
     </ProtectedRoute>
   );
 }

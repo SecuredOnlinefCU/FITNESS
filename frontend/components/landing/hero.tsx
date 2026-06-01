@@ -21,7 +21,7 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden">
+    <section className="relative min-h-dvh flex items-center overflow-hidden">
       <div className="absolute inset-0">
         <HologramCanvas />
         <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_70%_30%,rgba(215,255,47,0.08),transparent_60%)]" />

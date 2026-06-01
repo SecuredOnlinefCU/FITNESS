@@ -1,6 +1,6 @@
 'use client';
 
-import { Sparkles, Dumbbell, MessageSquare, Moon, Footprints, Heart, Calendar, ChevronRight } from 'lucide-react';
+import { Sparkles, Dumbbell, MessageSquare, Moon, Footprints, Heart, Calendar, ChevronRight, Flame } from 'lucide-react';
 import { useClientToday } from '@/hooks/intelligence/use-client-today';
 import { Card, CardContent } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/states/skeleton';
@@ -28,6 +28,7 @@ export function LiveClientToday() {
   const score = today.data?.completionScore ?? 0;
   const recommendations = today.data?.recommendations || [];
   const snapshot = today.data?.snapshot;
+  const streak = today.data?.streak ?? 0;
 
   return (
     <div className="space-y-5">
@@ -35,6 +36,13 @@ export function LiveClientToday() {
         <p className="text-sm font-bold uppercase tracking-wide text-primary">{greeting}</p>
         <h1 className="mt-1 text-3xl font-black tracking-tight md:text-4xl">{d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</h1>
       </div>
+
+      {streak > 0 && (
+        <div className="flex items-center gap-2">
+          <Flame className="h-5 w-5 text-energy" />
+          <span className="text-sm font-bold text-energy">{streak} day streak</span>
+        </div>
+      )}
 
       <Card className="relative overflow-hidden border-primary/20">
         <div className="absolute right-0 top-0 h-32 w-32 rounded-full bg-primary/5 blur-3xl" />
@@ -94,10 +102,22 @@ export function LiveClientToday() {
                 <p className="text-sm text-muted-foreground">Preview your assigned training</p>
               </div>
             </div>
-            <div className="rounded-2xl bg-muted p-4 text-center">
-              <p className="font-bold">No workout scheduled</p>
-              <p className="text-sm text-muted-foreground">Rest day or check your program</p>
-            </div>
+            {today.data?.todayWorkout ? (
+              <div className="rounded-2xl bg-muted p-4">
+                <p className="font-bold">{today.data.todayWorkout.title}</p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  {today.data.todayWorkout.exerciseCount} exercises &bull; {today.data.todayWorkout.estimatedDuration} min
+                </p>
+                <a href="/client/workouts" className="mt-3 inline-block text-xs font-bold text-primary hover:underline">
+                  Start workout &rarr;
+                </a>
+              </div>
+            ) : (
+              <div className="rounded-2xl bg-muted p-4 text-center">
+                <p className="font-bold">No workout scheduled</p>
+                <p className="text-sm text-muted-foreground">Rest day or check your program</p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -148,12 +168,15 @@ export function LiveClientToday() {
             <h2 className="text-xl font-black">Weekly consistency</h2>
           </div>
           <div className="flex gap-2">
-            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => (
-              <div key={day} className="flex flex-1 flex-col items-center gap-2">
-                <p className="text-xs text-muted-foreground">{day}</p>
-                <div className={`h-12 w-full rounded-lg ${i < d.getDay() ? 'bg-primary/30' : 'bg-muted'}`} />
-              </div>
-            ))}
+            {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((day, i) => {
+              const dayIndex = d.getDay() === 0 ? 6 : d.getDay() - 1;
+              return (
+                <div key={day} className="flex flex-1 flex-col items-center gap-2">
+                  <p className="text-xs text-muted-foreground">{day}</p>
+                  <div className={`h-12 w-full rounded-lg ${i < dayIndex ? 'bg-primary/30' : 'bg-muted'}`} />
+                </div>
+              );
+            })}
           </div>
         </CardContent>
       </Card>

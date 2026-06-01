@@ -6,17 +6,32 @@ import { CoachPageHeader } from '@/components/coach/coach-page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { CardSkeleton } from '@/components/states/skeleton';
-import { ErrorState } from '@/components/states/error-state';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { workoutWarningsApi } from '@/lib/api/modules/workout-warnings';
 import { recoveryApi as clientRecovery } from '@/lib/api/modules/recovery';
-import { RefreshCcw, Watch, AlertTriangle, Users, TrendingUp, Activity, ShieldCheck } from 'lucide-react';
+import type { RecoverySnapshot } from '@/lib/types/domain';
+import { RefreshCcw, Watch, AlertTriangle, Users, TrendingUp, Activity } from 'lucide-react';
+
+type WarningItem = { id: string; title: string; body?: string; severity: string; clientUserId: string; createdAt: string };
 
 export default function CoachRecoveryPage() {
   const warnings = useAsyncData(() => workoutWarningsApi.list(), []);
   const recoveryData = useAsyncData(() => clientRecovery.today(), []);
-  const warningItems = warnings.data?.items ?? [];
-  const recoveryItems = recoveryData.data?.items ?? [];
+  const historyData = useAsyncData(() => clientRecovery.history(30), []);
+  const warningItems: WarningItem[] = warnings.data?.items ?? [];
+  const recoveryItems: RecoverySnapshot[] = recoveryData.data?.items ?? [];
+  const historyItems: RecoverySnapshot[] = historyData.data?.items ?? [];
+
+  const atRiskCount = warningItems.filter(w => w.severity === 'HIGH' || w.severity === 'CRITICAL').length;
+  const wearableCount = recoveryItems.filter(r => r.provider !== 'MANUAL').length;
+  const wearablePct = recoveryItems.length > 0 ? Math.round((wearableCount / recoveryItems.length) * 100) : 0;
+  const avgReadiness = recoveryItems.length > 0
+    ? Math.round(recoveryItems.reduce((s, r) => s + (r.readinessScore ?? 0), 0) / recoveryItems.length)
+    : null;
+
+  const avgSleepScore = historyItems.length > 0
+    ? Math.round(historyItems.reduce((s, r) => s + (r.sleepScore ?? 0), 0) / historyItems.length)
+    : null;
 
   return (
     <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
@@ -47,22 +62,20 @@ export default function CoachRecoveryPage() {
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">At-risk clients</p>
-                <p className="mt-1 text-2xl font-black text-pulse">{warningItems.filter((w: any) => w.severity === 'HIGH' || w.severity === 'CRITICAL').length}</p>
+                <p className="mt-1 text-2xl font-black text-pulse">{atRiskCount}</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Wearable coverage</p>
-                <p className="mt-1 text-2xl font-black text-flow">{recoveryItems.length > 0 ? `${Math.round((recoveryItems.filter((r: any) => r.provider !== 'MANUAL').length / recoveryItems.length) * 100)}%` : '0%'}</p>
+                <p className="mt-1 text-2xl font-black text-flow">{wearablePct}%</p>
               </CardContent>
             </Card>
             <Card>
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground">Avg readiness</p>
                 <p className="mt-1 text-2xl font-black">
-                  {recoveryItems.length > 0
-                    ? `${Math.round(recoveryItems.reduce((s: number, r: any) => s + (r.readinessScore ?? 0), 0) / recoveryItems.length)}%`
-                    : '--%'}
+                  {avgReadiness !== null ? `${avgReadiness}%` : '--%'}
                 </p>
               </CardContent>
             </Card>
@@ -83,7 +96,7 @@ export default function CoachRecoveryPage() {
                 </div>
               ) : (
                 <div className="space-y-3">
-                  {warningItems.map((w: any) => (
+                  {warningItems.map(w => (
                     <div key={w.id} className="flex items-center justify-between rounded-2xl border border-border p-4">
                       <div>
                         <p className="font-bold">{w.title}</p>
@@ -106,7 +119,18 @@ export default function CoachRecoveryPage() {
                   <Users className="h-5 w-5 text-primary" />
                   <h2 className="text-lg font-black">At-risk recovery clients</h2>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">Clients with declining readiness or sleep scores will be listed here.</p>
+                {atRiskCount > 0 ? (
+                  <ul className="mt-3 space-y-2">
+                    {warningItems.filter(w => w.severity === 'HIGH' || w.severity === 'CRITICAL').slice(0, 5).map(w => (
+                      <li key={w.id} className="flex items-center justify-between rounded-xl border border-border bg-pulse/5 p-3 text-sm">
+                        <span className="font-bold">{w.title}</span>
+                        <span className="text-pulse">{w.severity}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">No clients with critical recovery flags.</p>
+                )}
               </CardContent>
             </Card>
             <Card>
@@ -115,7 +139,19 @@ export default function CoachRecoveryPage() {
                   <Watch className="h-5 w-5 text-flow" />
                   <h2 className="text-lg font-black">Wearable sync coverage</h2>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">Percentage of clients with active wearable data syncing in the last 48 hours.</p>
+                {recoveryItems.length > 0 ? (
+                  <div className="mt-3">
+                    <div className="mb-1 flex items-baseline justify-between">
+                      <span className="text-sm text-muted-foreground">{wearableCount} of {recoveryItems.length} clients</span>
+                      <span className="text-lg font-black text-flow">{wearablePct}%</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-full rounded-full bg-flow" style={{ width: `${wearablePct}%` }} />
+                    </div>
+                  </div>
+                ) : (
+                  <p className="mt-2 text-sm text-muted-foreground">No wearable data available yet.</p>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -128,7 +164,28 @@ export default function CoachRecoveryPage() {
                 <TrendingUp className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-black">Sleep trends</h2>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">Average sleep duration and quality trends across your client roster.</p>
+              {historyItems.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-muted-foreground">30-day avg sleep score</span>
+                    <span className="text-xl font-black">{avgSleepScore ?? '--'}/100</span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-muted-foreground">30-day avg sleep duration</span>
+                    <span className="text-xl font-black">
+                      {(() => {
+                        const valid = historyItems.filter(r => r.sleepMinutes);
+                        if (valid.length === 0) return '-- min';
+                        const avg = valid.reduce((s, r) => s + (r.sleepMinutes ?? 0), 0) / valid.length;
+                        return `${Math.round(avg / 60)}h ${Math.round(avg % 60)}m`;
+                      })()}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Across {historyItems.length} recorded days</p>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">No sleep data collected yet.</p>
+              )}
             </CardContent>
           </Card>
           <Card>
@@ -137,7 +194,30 @@ export default function CoachRecoveryPage() {
                 <Activity className="h-5 w-5 text-primary" />
                 <h2 className="text-lg font-black">Readiness trends</h2>
               </div>
-              <p className="mt-2 text-sm text-muted-foreground">Aggregated readiness scores to spot population-level recovery patterns.</p>
+              {historyItems.length > 0 ? (
+                <div className="mt-3 space-y-2">
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-muted-foreground">30-day avg readiness</span>
+                    <span className="text-xl font-black">
+                      {avgReadiness !== null ? `${avgReadiness}%` : '--%'}
+                    </span>
+                  </div>
+                  <div className="flex items-baseline justify-between">
+                    <span className="text-sm text-muted-foreground">Avg HRV</span>
+                    <span className="text-xl font-black">
+                      {(() => {
+                        const valid = historyItems.filter(r => r.hrvMs);
+                        if (valid.length === 0) return '-- ms';
+                        const avg = valid.reduce((s, r) => s + (r.hrvMs ?? 0), 0) / valid.length;
+                        return `${Math.round(avg)} ms`;
+                      })()}
+                    </span>
+                  </div>
+                  <p className="mt-1 text-xs text-muted-foreground">Across {historyItems.length} recorded days</p>
+                </div>
+              ) : (
+                <p className="mt-2 text-sm text-muted-foreground">No readiness data collected yet.</p>
+              )}
             </CardContent>
           </Card>
         </div>

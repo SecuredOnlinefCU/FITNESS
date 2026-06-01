@@ -49,4 +49,13 @@ export const nutritionApi = {
   getHydration() {
     return apiFetch<ApiList<HydrationLog>>('/api/nutrition/hydration');
   },
+  logMeal(input: { mealType: string; title?: string; calories?: number; protein?: number; carbs?: number; fat?: number; notes?: string }) {
+    return apiFetch<MealLog>('/api/nutrition/meal-logs', { method: 'POST', body: JSON.stringify(input) });
+  },
+  logHydration(amountMl: number) {
+    return apiFetch<HydrationLog>('/api/nutrition/hydration', { method: 'POST', body: JSON.stringify({ amountMl }) });
+  },
+  getMacroTargets() {
+    return apiFetch<{ protein: number; carbs: number; fat: number; calories: number }>('/api/nutrition/macro-targets');
+  },
 };

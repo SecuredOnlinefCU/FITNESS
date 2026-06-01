@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { programsApi } from '@/lib/api/modules/programs';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 
@@ -19,7 +20,7 @@ export function ProgramBuilderShell({ editId }: { editId?: string }) {
     programsApi.getProgram(editId).then((p: any) => {
       setName(p.name ?? '');
       setDescription(p.description ?? '');
-    }).catch(() => {});
+    }).catch(() => toast.error('Failed to load program'));
   }, [editId]);
 
   async function handleSubmit(event: React.FormEvent) {

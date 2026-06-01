@@ -7,36 +7,56 @@ import { useAsyncData } from '@/hooks/data/use-async-data';
 import { Card, CardContent } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
-import { MessageSquare, AlertTriangle, Bell, Activity, Eye } from 'lucide-react';
+import type { Thread } from '@/lib/types/domain';
+import { MessageSquare, AlertTriangle, Bell, Activity, Eye, Clock } from 'lucide-react';
+
+type QueueItem = {
+  id: string;
+  clientUserId: string;
+  score: number;
+  severity: string;
+  missedCheckins: number;
+  openTasks: number;
+  unreadMessages: number;
+  inactiveDays: number;
+  riskFlagsOpen: number;
+  snapshotDate: string;
+};
 
 async function loadCoachHome() {
+  type Q = { items: QueueItem[] };
   const [queue, riskFlagsResult, warnings, threads] = await Promise.allSettled([
-    coachIntelligenceApi.attentionQueue().catch(() => ({ items: [] })),
-    coachIntelligenceApi.riskFlags().catch(() => ({ items: [] })),
-    workoutWarningsApi.list().catch(() => ({ items: [] })),
-    messagingApi.listThreads().catch(() => ({ items: [] })),
+    coachIntelligenceApi.attentionQueue() as Promise<Q>,
+    coachIntelligenceApi.riskFlags() as Promise<{ items: unknown[] }>,
+    workoutWarningsApi.list() as Promise<{ items: unknown[] }>,
+    messagingApi.listThreads() as Promise<{ items: Thread[] }>,
   ]);
 
-  const queueItems = queue.status === 'fulfilled' ? queue.value.items : [];
+  const queueItems: QueueItem[] = queue.status === 'fulfilled' ? queue.value.items : [];
   const riskFlagItems = riskFlagsResult.status === 'fulfilled' ? riskFlagsResult.value.items : [];
   const warningItems = warnings.status === 'fulfilled' ? warnings.value.items : [];
-  const threadItems = threads.status === 'fulfilled' ? threads.value.items : [];
+  const threadItems: Thread[] = threads.status === 'fulfilled' ? threads.value.items : [];
 
-  const activeClients = new Set(threadItems.map((t: any) => t.clientUserId)).size;
-  const unreadCount = threadItems.filter((t: any) => {
+  const activeClients = new Set(threadItems.map((t) => t.clientUserId)).size;
+  const unreadCount = threadItems.filter((t) => {
     const msgs = t.messages || [];
     return msgs.length > 0 && msgs[msgs.length - 1]?.senderUserId !== 'coach';
   }).length;
 
+  const recent = [...queueItems]
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 5);
+
   return {
     activeClients,
-    dueCheckins: queueItems.filter((i: any) => i.missedCheckins > 0).length,
+    dueCheckins: queueItems.filter((i) => i.missedCheckins > 0).length,
     unread: unreadCount,
     riskFlags: riskFlagItems.length,
     recoveryWarnings: warningItems.length,
     queueItems,
     riskFlagItems,
     warningItems,
+    recent,
   };
 }
 
@@ -54,6 +74,15 @@ export function LiveCoachHome() {
   if (result.error) return <ErrorState message={result.error} onRetry={result.reload} />;
 
   const data = result.data!;
+
+  const severityColor = (s: string) => {
+    switch (s) {
+      case 'CRITICAL': return 'text-pulse';
+      case 'HIGH': return 'text-energy';
+      case 'MEDIUM': return 'text-flow';
+      default: return 'text-muted-foreground';
+    }
+  };
 
   return (
     <>
@@ -122,8 +151,29 @@ export function LiveCoachHome() {
         <div className="space-y-4">
           <Card>
             <CardContent className="p-5">
-              <h2 className="text-lg font-black">Recent activity</h2>
-              <p className="mt-2 text-sm text-muted-foreground">Client activity timeline will appear here.</p>
+              <h2 className="mb-3 flex items-center gap-2 text-lg font-black">
+                <Clock className="h-5 w-5 text-primary" />
+                Recent activity
+              </h2>
+              {data.recent.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No recent activity to review.</p>
+              ) : (
+                <div className="space-y-3">
+                  {data.recent.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between rounded-xl border border-border p-3 text-sm">
+                      <div className="min-w-0 flex-1">
+                        <p className="truncate font-medium">Client {item.clientUserId.slice(0, 8)}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {item.missedCheckins > 0 && `${item.missedCheckins} missed check-ins`}
+                          {item.openTasks > 0 && (item.missedCheckins > 0 ? ' · ' : '') + `${item.openTasks} open tasks`}
+                          {!item.missedCheckins && !item.openTasks && `Score ${item.score}`}
+                        </p>
+                      </div>
+                      <span className={`shrink-0 text-xs font-bold ${severityColor(item.severity)}`}>{item.severity}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

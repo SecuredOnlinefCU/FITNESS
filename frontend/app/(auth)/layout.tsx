@@ -10,14 +10,14 @@ const taglines = [
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-dvh">
-      <div className="relative hidden w-1/2 md:block">
+    <div className="flex min-h-dvh flex-col md:flex-row">
+      <div className="relative hidden w-full md:block md:w-1/2 md:min-h-dvh">
         <Image
           src="/images/auth-hero.png"
           alt=""
           fill
           className="object-cover"
-          sizes="50vw"
+          sizes="(max-width: 768px) 100vw, 50vw"
           priority
           aria-hidden="true"
         />
@@ -37,12 +37,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </div>
         </div>
       </div>
-      <div className="flex w-full flex-col items-center justify-center bg-background px-4 md:w-1/2">
-        <div className="mb-10 md:hidden">
+      <div className="flex min-h-dvh w-full flex-col items-center justify-center bg-background px-4 py-10 md:min-h-0 md:w-1/2 md:py-4">
+        <div className="mb-8 md:hidden">
           <LevelFitLogo size={36} />
         </div>
         {children}
-        <p className="relative mt-10 text-xs text-muted-foreground">&copy; 2026 LevelFit. All rights reserved.</p>
+        <p className="mt-8 text-xs text-muted-foreground md:mt-10">&copy; 2026 LevelFit. All rights reserved.</p>
       </div>
     </div>
   );

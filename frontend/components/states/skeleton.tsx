@@ -1,7 +1,7 @@
 import { cn } from '@/lib/utils';
 
-export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn('animate-pulse rounded-2xl bg-muted', className)} />;
+export function Skeleton({ className, ...props }: any) {
+  return <div className={cn('animate-pulse rounded-2xl bg-muted', className)} {...props} />;
 }
 
 export function CardSkeleton() {
@@ -30,4 +30,18 @@ export function ListSkeleton({ rows = 4 }: { rows?: number }) {
       ))}
     </div>
   );
+}
+
+// Enhanced skeleton variants
+export function AvatarSkeleton({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+  const sizeMap = { sm: 'h-8 w-8', md: 'h-10 w-10', lg: 'h-12 w-12' }[size];
+  return (
+    <div className="flex items-center">
+      <div className={`${sizeMap} animate-pulse`} />
+    </div>
+  );
+}
+
+export function TextLineSkeleton({ width = '1/2' }: { width?: string }) {
+  return <div className={`h-3 w-${width} animate-pulse`} />;
 }

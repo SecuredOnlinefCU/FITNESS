@@ -10,6 +10,8 @@ import { ErrorState } from '@/components/states/error-state';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { trainingApi } from '@/lib/api/modules/training';
 import { TrainingCalendar } from '@/components/workout/training-calendar';
+import { toast } from 'sonner';
+import type { Exercise, WorkoutAssignment, WorkoutSession } from '@/lib/types/domain';
 import { Dumbbell, Timer, Trophy, Play, ChevronRight, CalendarDays, List as ListIcon } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -24,17 +26,33 @@ export default function ClientWorkoutsPage() {
   const loading = history.loading || assignments.loading;
   const error = history.error || assignments.error;
   const completedCount = history.data?.items?.length ?? 0;
-  const activeAssignments = assignments.data?.items?.filter((a: any) =>
-    a.status !== 'completed' && !a.sessions?.some((s: any) => s.status === 'in_progress')
+  const bestStreak = (() => {
+    const dates = history.data?.items?.map(s => s.completedAt).filter(Boolean) as string[] | undefined;
+    if (!dates?.length) return 0;
+    const unique = [...new Set(dates.map(d => d.slice(0, 10)))].sort().reverse();
+    let streak = 1, max = 1;
+    for (let i = 1; i < unique.length; i++) {
+      const diff = (new Date(unique[i - 1]).getTime() - new Date(unique[i]).getTime()) / 86400000;
+      if (diff === 1) { streak++; max = Math.max(max, streak); }
+      else streak = 1;
+    }
+    return max;
+  })();
+  const activeAssignments = assignments.data?.items?.filter((a: WorkoutAssignment) =>
+    a.status !== 'completed' && !a.sessions?.some((s: WorkoutSession) => s.status === 'in_progress')
   ) ?? [];
-  const inProgress = assignments.data?.items?.filter((a: any) =>
-    a.sessions?.some((s: any) => s.status === 'in_progress')
+  const inProgress = assignments.data?.items?.filter((a: WorkoutAssignment) =>
+    a.sessions?.some((s: WorkoutSession) => s.status === 'in_progress')
   ) ?? [];
   const exerciseList = exercises.data?.items?.slice(0, 10) ?? [];
 
   async function handleStart(assignmentId: string) {
-    const session = await trainingApi.startSession(assignmentId);
-    router.push(`/client/workouts/session/${session.id}`);
+    try {
+      const session = await trainingApi.startSession(assignmentId);
+      router.push(`/client/workouts/session/${session.id}`);
+    } catch {
+      toast.error('Failed to start session');
+    }
   }
 
   return (
@@ -63,7 +81,7 @@ export default function ClientWorkoutsPage() {
                       <Dumbbell className="h-4 w-4" />{exerciseList.length} exercises
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Trophy className="h-4 w-4" />Best streak
+                      <Trophy className="h-4 w-4" />{bestStreak > 0 ? `${bestStreak} streak` : 'Best streak'}
                     </div>
                   </div>
                 </div>
@@ -94,8 +112,8 @@ export default function ClientWorkoutsPage() {
                 {inProgress.length > 0 && (
                   <div className="mt-4 space-y-2">
                     <h3 className="text-sm font-bold text-primary">In progress</h3>
-                    {inProgress.map((a: any) => {
-                      const session = a.sessions?.find((s: any) => s.status === 'in_progress');
+                {inProgress.map((a: WorkoutAssignment) => {
+                  const session = a.sessions?.find((s: WorkoutSession) => s.status === 'in_progress');
                       return (
                         <Link key={a.id} href={`/client/workouts/session/${session?.id}`}>
                           <Card className="border-primary/30 transition hover:bg-muted">
@@ -116,12 +134,12 @@ export default function ClientWorkoutsPage() {
                 {activeAssignments.length > 0 && (
                   <div className="mt-4 space-y-2">
                     <h3 className="text-sm font-bold text-foreground">Assigned workouts</h3>
-                    {activeAssignments.slice(0, 5).map((a: any, i: number) => (
+                    {activeAssignments.slice(0, 5).map((a: WorkoutAssignment, i: number) => (
                       <Card key={a.id}>
                         <CardContent className="flex items-center justify-between p-4">
                           <div>
                             <p className="font-bold">Workout #{i + 1}</p>
-                            <p className="text-sm text-muted-foreground">Assigned {new Date(a.createdAt).toLocaleDateString()}</p>
+                            <p className="text-sm text-muted-foreground">Assigned {new Date(a.createdAt ?? new Date()).toLocaleDateString()}</p>
                           </div>
                           <button
                             className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition"
@@ -139,7 +157,7 @@ export default function ClientWorkoutsPage() {
                   <details className="mt-4">
                     <summary className="cursor-pointer text-sm font-bold text-primary">View recent sessions</summary>
                     <div className="mt-3 space-y-2">
-                      {history.data!.items.slice(0, 5).map((session: any, i: number) => {
+                      {(history.data?.items ?? []).slice(0, 5).map((session: WorkoutSession, i: number) => {
                         const workoutTitle = session.assignment?.workout?.title;
                         return (
                           <div key={session.id || i} className="rounded-2xl border border-border p-3 text-sm text-muted-foreground">
@@ -155,7 +173,7 @@ export default function ClientWorkoutsPage() {
                 {exerciseList.length > 0 && (
                   <div className="mt-5 space-y-3">
                     <h3 className="text-lg font-black">Exercise library</h3>
-                    {exerciseList.map((exercise: any, i: number) => (
+                    {exerciseList.map((exercise: Exercise, i: number) => (
                       <Card key={exercise.id}>
                         <CardContent className="flex items-center justify-between p-4">
                           <div className="flex items-center gap-3">

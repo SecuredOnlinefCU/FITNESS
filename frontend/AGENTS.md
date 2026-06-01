@@ -1,5 +1,185 @@
 # LevelFITness — Agent Memory
 
+## 2026-06-01 — Client Dossier System (invite flow, intelligence, premium coach view)
+
+**Goal:** Build a complete client dossier system with two-step invite approval, momentum scoring, plateau detection, churn prediction, smart action engine, and a 7-tab premium coach dossier page.
+
+**Approach:** 4-layer implementation: (1) Schema extensions (ClientProfile fields, ClientGoal, MomentumScore, CoachInvite.status), (2) Backend intelligence services (momentum, plateaus, churn, action engine), (3) API routes (13 new endpoints), (4) Frontend (invite dialog, accept page, client list fix, 7-tab dossier).
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `backend/prisma/schema.prisma` | Extended ClientProfile (DOB, gender, height, weight, goal, phase, communication, discipline); added ClientGoal model; added MomentumScore model; added `status` field to CoachInvite |
+| Added | `backend/prisma/migrations/20260531_add_invite_status_and_client_notes/migration.sql` | Migration: CoachInvite.status + CoachClientNote table |
+| Added | `backend/prisma/migrations/20260531_client_dossier_intelligence/migration.sql` | Migration: ClientProfile extensions + ClientGoal + MomentumScore |
+| Added | `backend/src/modules/clients/clients.routes.ts` | 13 endpoints: dossier, pending invites, approve/decline/cancel, notes CRUD, momentum history, plateaus, overtraining, churn risk, smart actions, profile update, goals CRUD |
+| Added | `backend/src/modules/clients/clients.service.ts` | Dossier aggregation, invite management, notes, ownership verification |
+| Added | `backend/src/modules/clients/momentum.service.ts` | Composite momentum scoring (performance 35%, behavior 25%, engagement 25%, recovery 15%) with trend detection |
+| Added | `backend/src/modules/clients/plateau-detector.service.ts` | 90-day strength analysis per exercise (PLATEAU/IMPROVING/DECLINING) + overtraining risk (sessions + readiness + RPE) |
+| Added | `backend/src/modules/clients/churn-predictor.service.ts` | 6-factor churn prediction: declining workouts, missed checkins, low habits, declining recovery, multiple flags, no communication |
+| Added | `backend/src/modules/clients/action-engine.service.ts` | Priority-scored smart actions: check-in reminders, workout reviews, deload suggestions, milestone celebrations |
+| Modified | `backend/src/modules/auth/auth.routes.ts` | Implemented `POST /invites/accept` (was 501 stub): validates token, creates user, sets ACCEPTED, returns tokens |
+| Modified | `backend/src/app.ts` | Mounted clientsRouter on `/api/clients` |
+| Modified | `backend/scripts/start.sh` | Fixed: runs `prisma db push` BEFORE server start (was after) |
+| Added | `frontend/lib/api/modules/clients.ts` | Typed API client: dossier, invites, notes, momentum, plateaus, overtraining, churn, actions, profile, goals |
+| Modified | `frontend/lib/types/domain.ts` | Added ClientGoal, MomentumScore, PlateauResult, ChurnRisk, SmartAction, ProgramMembership types |
+| Modified | `frontend/app/(dashboard)/coach/clients/page.tsx` | Full rewrite: real names, clickable cards, search, pending invites section, invite button, fallback when queue empty |
+| Added | `frontend/app/(dashboard)/coach/clients/[clientId]/page.tsx` | 7-tab premium dossier: Overview (actions + momentum + flags), Performance (plateaus + overtraining + churn), Intelligence (health breakdown + momentum trend), Programs, Workouts, Progress, Notes |
+| Added | `frontend/components/coach/invite-client-dialog.tsx` | Modal: email/name input → sends invite → shows copy-able accept URL |
+| Added | `frontend/app/(auth)/accept-invite/page.tsx` | Accept invite page: validates token, creates account, stores tokens, redirects to dashboard |
+| Modified | `frontend/components/coach/coach-page-header.tsx` | Added `onAction` callback prop for dialog triggers |
+| Fixed | `frontend/components/onboarding/onboarding-wizard.tsx` | Fixed pre-existing build errors: duplicate className attributes, invalid `size` prop |
+| Fixed | `frontend/app/(dashboard)/client/workouts/session/[sessionId]/page.tsx` | Fixed pre-existing JSX syntax error (stray `);`) |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    INVITE[Coach: Invite client] --> EMAIL[Email sent with token]
+    EMAIL --> ACCEPT[Client: /accept-invite]
+    ACCEPT --> USER[User created + tokens stored]
+    USER --> PENDING[Coach: Pending requests]
+    PENDING --> APPROVE[Coach: Approve]
+    APPROVE --> THREAD[Thread created]
+    THREAD --> ROSTER[Client appears in roster]
+    ROSTER --> DOSSIER[7-tab dossier page]
+    DOSSIER --> OVERVIEW[Overview: actions + momentum + flags]
+    DOSSIER --> PERF[Performance: plateaus + overtraining + churn]
+    DOSSIER --> INTEL[Intelligence: health + momentum trend]
+    DOSSIER --> NOTES[Notes: timeline CRUD]
+    MOMENTUM[Momentum service] --> PERF
+    PLATEAU[Plateau detector] --> PERF
+    CHURN[Churn predictor] --> PERF
+    ACTIONS[Action engine] --> OVERVIEW
+```
+
+### ADR-011 — Two-step invite approval (2026-06-01)
+
+- **Context:** Coach needs to vet clients before they appear in their roster. Single-step invite (client accepts → immediately linked) gives coach no control.
+- **Options considered:** A) Two-step: client accepts → coach approves (chosen). B) Single-step: client accepts → auto-linked. C) Three-step: client accepts → coach approves → client confirms.
+- **Decision:** Option A — client acceptance creates user + sets ACCEPTED, coach approval creates Thread + APPROVED.
+- **Why:** Gives coach control over who enters their roster while keeping client flow simple (one click). Three-step is over-engineered. Single-step removes coach agency.
+- **Consequences:** Client is invisible to coach between accept and approve. Pending invites section on client list bridges this gap.
+
+### ADR-012 — Momentum scoring algorithm (2026-06-01)
+
+- **Context:** Need a single composite score that captures overall client progress and engagement, replacing the fragmented health score.
+- **Options considered:** A) Weighted 4-component composite (chosen). B) Simple completion rate. C) ML prediction.
+- **Decision:** Option A — performance (35%) + behavior (25%) + engagement (25%) + recovery (15%) - risk penalty.
+- **Why:** Covers all dimensions of coaching success. Weighted by impact: performance matters most, recovery matters least for retention. ML needs too much data volume.
+- **Consequences:** Score updates daily on dossier load. Trend detection compares to previous snapshot. Used by action engine and churn predictor.
+
+### Status: Complete
+- Backend type-check: ✅ `tsc --noEmit` — 0 errors
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors (our files; 2 pre-existing errors in feed/onboarding)
+- Railway deploy: ✅ Database in sync, server running, health check passing
+- Vercel deploy: ✅ Build successful, production ready
+- Files: 12 new, 10 modified
+- Invite flow: end-to-end working (create → email → accept → tokens → approve → Thread → roster)
+- Coach dossier: 7-tab premium layout with momentum, plateaus, churn, actions, notes
+- Client experience: 12 pages fully functional after accepting invite
+
+---
+
+## 2026-06-01 — Feed feature Phase 1: client post feed + coach post management
+
+**Goal:** Replace stubbed feed pages (raw `apiFetch`, `any` types, no post rendering) with a working feed where clients can view/react/save/comment on posts and coaches can create/edit/hide/delete posts.
+
+**Approach:** 3-layer implementation: backend routes (author info, saves, reaction delete, PATCH/DELETE), frontend foundation (domain types + typed API module), shared components (PostCard, ReactionButton, SaveButton, CommentSection, CreatePostDialog), then page rewrites.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `backend/src/modules/feed/feed.routes.ts` | Added `enrich()` helper injecting `author`, `currentUserReacted`, `currentUserSaved` on every post; added GET /posts/:postId/comments (with author), GET /posts/:postId, PATCH /posts/:postId (ownership check), DELETE /posts/:postId (cascade), DELETE /reactions (toggle), POST/DELETE /saves; ordered by `pinnedAt desc, createdAt desc` |
+| Modified | `frontend/lib/types/domain.ts` | Fixed `FeedPost`: removed non-existent `postType`/`title`, changed `media` to `FeedMedia[]`, added `pinnedAt`/`updatedAt`/`_count`/`author`/`currentUserReacted`/`currentUserSaved`/`comments`/`reactions`/`saves`; added `FeedComment`, `FeedReaction`, `FeedSave`, `ContentReport` types; removed redundant `FeedPostWithCounts` |
+| Added | `frontend/lib/api/modules/feed.ts` | Typed `feedApi` singleton with 12 methods: `listProgramPosts`, `getPost`, `createPost`, `updatePost`, `deletePost`, `listComments`, `addComment`, `upsertReaction`, `deleteReaction`, `savePost`, `unsavePost`, `createReport` |
+| Added | `frontend/components/feed/reaction-button.tsx` | Heart icon toggle with optimistic update — filled/outline on `hasReacted`, API revert on failure |
+| Added | `frontend/components/feed/save-button.tsx` | Bookmark icon toggle with optimistic update — flow-colored when saved |
+| Added | `frontend/components/feed/comment-section.tsx` | Expandable lazy-loaded comment list with author names + inline post form (Enter to submit) |
+| Added | `frontend/components/feed/post-card.tsx` | Composed card: author avatar placeholder + name + relative date + body text + media grid (1-4 images) + action bar (reaction/save/comment) + optional coach actions menu (edit/hide/delete) |
+| Added | `frontend/components/feed/create-post-dialog.tsx` | Coach-only dialog: textarea + tag input + image upload (via existing `mediaApi.uploadFile`) + preview thumbnails with remove |
+| Rewrote | `app/(dashboard)/client/feed/page.tsx` | Uses `feedApi` + typed `FeedPost`; stat cards with local saved count tracking; post list via `<PostCard>` with optimistic reaction/save toggle; loading/error/empty states |
+| Rewrote | `app/(dashboard)/coach/feed/page.tsx` | Uses `feedApi` + typed `FeedPost`; stat cards; "+ New post" button → `<CreatePostDialog>`; post list via `<PostCard>` with `isOwner` detection via `useAuth()`; edit dialog (inline modal) + hide/delete actions |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    BACKEND[feed.routes.ts] -->|enrich helper + 4 new routes| FRONTEND
+    TYPES[domain.ts FeedPost fix + 4 new types] --> API[feed.ts API module]
+    API -->|typed methods| PAGES[client + coach feed pages]
+    API -->|optimistic calls| COMPONENTS[5 feed components]
+    COMPONENTS -->|PostCard| CLIENT[client/feed/page.tsx]
+    COMPONENTS -->|PostCard + CreatePostDialog| COACH[coach/feed/page.tsx]
+```
+
+### ADR-009 — Feed Phase 1 scope (2026-06-01)
+
+- **Context:** The feed feature had stubbed pages with `any` types, no post rendering, and unused backend routes. Needed to deliver a functional MVP without overscoping.
+- **Options considered:** A) Shared components + role-specific compositions (chosen). B) Monolithic inline everything. C) Headless hooks + render-props.
+- **Decision:** Option A — shared `PostCard`, `ReactionButton`, `SaveButton`, `CommentSection` components with role-specific actions via optional props (`isOwner`, `onEdit`, `onDelete`, `onHide`).
+- **Why:** Matches the existing codebase pattern (TaskSubmitDialog, workout-builder-shell). Coach page gets extra features without complicating client page. All interaction components are independently testable.
+- **Consequences:** Deferred to Phase 2: pagination (50-post limit fine for now), video playback, real-time updates, content moderation dashboard, nested comment replies, `pinnedAt` UI.
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 new errors (3 pre-existing `size` prop errors in `onboarding-wizard.tsx`)
+- Frontend build: ✅ Compiled successfully in 74s
+- Backend type-check: ✅ 0 new errors
+- Client feed: stat cards (posts/announcements/saved), post list with reactions/saves/comments, all 4 states
+- Coach feed: stat cards, create/edit/hide/delete posts, post list with owner detection
+- Not in Phase 1: pagination, video playback, real-time updates, moderation dashboard, nested replies
+
+## 2026-05-31 — Client task dashboard + submission flow + coach review queue
+
+**Goal:** Close the biggest UX gap in the task system — clients had no actionable task list and no way to submit work. Coaches had a broken review page (wrong field names, no review queue).
+
+**Approach:** Three-tier fix: foundation (types + API), client experience (task list grouped by status + per-type submission dialog), coach pipeline (fixed review bugs + inline approve/reject queue).
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `lib/types/domain.ts` | Added `TaskFeedback` type, `dueAt`/`recurrenceRule`/`clientUser` on `TaskAssignment`, `bodyText`/`submittedAt`/`feedback` on `TaskSubmission`, `assignments?` on `Task` |
+| Modified | `lib/api/modules/tasks.ts` | Replaced all `any` with proper typed responses; added `submitTask()` API method |
+| Added | `components/client/task-submit-dialog.tsx` | Per-type submission modal: checkmark for HABIT, textarea+upload placeholder for VIDEO, textarea for FORM/REVIEWABLE |
+| Rewrote | `app/(dashboard)/client/tasks/page.tsx` | Actionable task list with stat cards + grouped sections (Overdue/Due/Submitted/Feedback) + task cards with type badges, due dates, submission state, coach feedback, and submit buttons |
+| Rewrote | `app/(dashboard)/coach/tasks/review/page.tsx` | Fixed `s.status` → `s.reviewStatus` bug (counts always 0); added inline review queue with approve/reject buttons + feedback textarea; typed all data structures |
+| Fixed | `app/(dashboard)/coach/tasks/[id]/page.tsx` | `clientUser?.name` → `firstName + lastName` (was showing "Unknown client" for all); replaced `any` with `Task`/`TaskAssignment`/`TaskSubmission` types |
+| Fixed | `components/client/live/live-client-home.tsx` | Task status filter now uses `assigned` (lowercase, matches Prisma default); proper cast to `TaskAssignment[]` |
+| Fixed | `components/coach/workout-builder-shell.tsx` | 3 pre-existing build blockers: missing `Dumbbell` import, invalid `size` prop on Button, invalid `variant` prop on Button |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    DOMAIN[domain.ts types] -->|TaskFeedback + field fixes| API[tasks.ts API module]
+    API -->|typed responses| CLIENT_PAGE[client/tasks/page.tsx]
+    API -->|submitTask| DIALOG[TaskSubmitDialog]
+    DIALOG -->|HABIT/VIDEO/FORM/REVIEWABLE| SUBMIT[POST /assignments/:id/submissions]
+    API -->|typed responses| COACH_REVIEW[coach/tasks/review/page.tsx]
+    COACH_REVIEW -->|inline approve/reject| REVIEW_SUBMIT[POST /submissions/:id/review]
+    COACH_REVIEW -->|fixed reviewStatus| BUG_FIX[Counts now correct]
+    COACH_DETAIL[coach/tasks/[id]/page.tsx] -->|firstName+lastName| BUG_FIX2[Client names display correctly]
+```
+
+### ADR-008 — Inline review vs full-page redirect (2026-05-31)
+
+- **Context:** The coach review page needs an actionable queue but the existing `coach/tasks/[id]/feedback` page provides a full-page review flow. Should the review queue redirect to that page or inline the review?
+- **Options considered:** A) Inline review with expand/collapse + approve/reject buttons on the queue page (chosen). B) Redirect to feedback page for each submission (more clicks). C) Split view with queue + detail panel.
+- **Decision:** Option A — inline review in the queue, with a "Full page" link as fallback.
+- **Why:** The inline pattern minimizes clicks for the common case (quick approve with optional feedback text). The existing full-page feedback route is kept for complex reviews. Both paths share the same API endpoint.
+- **Consequences:** Coach can review 5 submissions in ~10 seconds without page navigation. The `coach/tasks/[id]/feedback` page remains for full-context reviews.
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 new errors (4 pre-existing)
+- Frontend build: ✅ `next build` — 48 pages, 0 errors
+- Client experience: grouped task list, per-type submission UI, coach feedback display
+- Coach review: inline approve/reject queue, fixed broken stat counts
+- Coach task detail: client names render correctly
+- Remaining: Video upload pipeline (placeholder currently), revision cycles (single-shot only), task templates library
+
 ## 2026-05-31 — Coach workout enhancements: program periodization, 1RM tracking, exercise video/cues, RPE/supersets, set types, builder edit mode
 
 **Goal:** Close 7 strategic gaps in the coach workout system — program periodization (ProgramWeek model), 1RM estimation, exercise demo videos + coach cues, RPE prescription + superset grouping, set types (warmup/working/drop/failure), builder edit mode, and semantic workout naming.

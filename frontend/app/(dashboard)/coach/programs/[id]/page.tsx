@@ -10,8 +10,12 @@ import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { programsApi } from '@/lib/api/modules/programs';
+import type { ProgramWeek } from '@/lib/types/domain';
 import { Layers, Users, FileText, ArrowLeft, Pencil, Trash2, Plus, Calendar } from 'lucide-react';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+
+type WorkoutBrief = { id: string; title: string; dayIndex?: number | null; exercises?: { id: string }[] };
 
 export default function ProgramDetailPage() {
   const params = useParams();
@@ -20,12 +24,12 @@ export default function ProgramDetailPage() {
   const result = useAsyncData(() => programsApi.getProgram(id), [id]);
   const program = result.data;
 
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
   const [showWeekForm, setShowWeekForm] = useState(false);
   const [weekForm, setWeekForm] = useState({ weekIndex: (program?.weeks?.length ?? 0) + 1, phaseLabel: '', focus: '' });
   const [addingWeek, setAddingWeek] = useState(false);
 
   async function handleDelete() {
-    if (!confirm('Delete this program and all associated content?')) return;
     await programsApi.deleteProgram(id);
     router.push('/coach/programs');
   }
@@ -43,7 +47,14 @@ export default function ProgramDetailPage() {
     result.reload();
   }
 
-  const weeks = (program as any)?.weeks ?? [];
+  const weeks: ProgramWeek[] = program?.weeks ?? [];
+  const memberships = program?.memberships ?? [];
+
+  function getMemberName(m: { clientUser?: { firstName?: string | null; lastName?: string | null; email?: string | null } | null }): string {
+    const u = m.clientUser;
+    if (!u) return 'Unknown';
+    return `${u.firstName || ''} ${u.lastName || ''}`.trim() || u.email || 'Unknown';
+  }
 
   return (
     <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
@@ -80,7 +91,7 @@ export default function ProgramDetailPage() {
                     <div className="rounded-2xl bg-muted p-3 text-primary"><Users className="h-5 w-5" /></div>
                     <div>
                       <p className="text-sm text-muted-foreground">Members</p>
-                      <p className="text-lg font-black">{program.memberships?.length ?? 0}</p>
+                      <p className="text-lg font-black">{memberships.length}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -137,7 +148,7 @@ export default function ProgramDetailPage() {
                 )}
 
                 <div className="mt-3 space-y-2">
-                  {weeks.map((w: any) => (
+                  {weeks.map(w => (
                     <div key={w.id}>
                       <div className="flex items-center justify-between rounded-xl border border-border p-3">
                         <div className="flex items-center gap-3">
@@ -152,13 +163,16 @@ export default function ProgramDetailPage() {
                       </div>
                       {w.workouts && w.workouts.length > 0 && (
                         <div className="ml-11 mt-1 space-y-1">
-                          {w.workouts.map((wo: any) => (
-                            <div key={wo.id} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-sm">
-                              <span className="text-xs text-muted-foreground">Day {wo.dayIndex ?? '?'}</span>
-                              <span className="font-medium">{wo.title}</span>
-                              <span className="text-xs text-muted-foreground">({wo.exercises?.length ?? 0} exercises)</span>
-                            </div>
-                          ))}
+                          {w.workouts.map(wo => {
+                            const wb = wo as unknown as WorkoutBrief;
+                            return (
+                              <div key={wb.id} className="flex items-center gap-2 rounded-lg bg-muted px-3 py-1.5 text-sm">
+                                <span className="text-xs text-muted-foreground">Day {wb.dayIndex ?? '?'}</span>
+                                <span className="font-medium">{wb.title}</span>
+                                <span className="text-xs text-muted-foreground">({wb.exercises?.length ?? 0} exercises)</span>
+                              </div>
+                            );
+                          })}
                         </div>
                       )}
                     </div>
@@ -167,15 +181,15 @@ export default function ProgramDetailPage() {
               </CardContent>
             </Card>
 
-            {program.memberships && program.memberships.length > 0 && (
+            {memberships.length > 0 && (
               <Card className="mt-4">
                 <CardContent className="p-5">
                   <h2 className="text-lg font-black">Members</h2>
                   <div className="mt-3 space-y-2">
-                    {program.memberships.map((m: any) => (
+                    {memberships.map(m => (
                       <div key={m.id} className="flex items-center justify-between rounded-xl border border-border p-3">
                         <div>
-                          <p className="font-bold">{m.clientUser?.name ?? 'Unknown'}</p>
+                          <p className="font-bold">{getMemberName(m)}</p>
                           <p className="text-sm text-muted-foreground">{m.clientUser?.email}</p>
                         </div>
                         <span className="rounded-full bg-primary/10 px-3 py-0.5 text-xs font-bold text-primary">{m.status}</span>
@@ -197,7 +211,21 @@ export default function ProgramDetailPage() {
 
             <div className="mt-5 flex gap-3">
               <Link href={`/coach/programs/${id}/edit`} className="inline-flex items-center gap-2 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition"><Pencil className="h-4 w-4" />Edit program</Link>
-              <button onClick={handleDelete} className="inline-flex items-center gap-2 rounded-xl border border-pulse/30 px-5 py-2.5 text-sm font-bold text-pulse hover:bg-pulse/5 transition"><Trash2 className="h-4 w-4" />Delete</button>
+              <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+                <AlertDialogTrigger asChild>
+                  <button className="inline-flex items-center gap-2 rounded-xl border border-pulse/30 px-5 py-2.5 text-sm font-bold text-pulse hover:bg-pulse/5 transition"><Trash2 className="h-4 w-4" />Delete</button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete program</AlertDialogTitle>
+                    <AlertDialogDescription>This will permanently delete "{program.name}" and all associated content. This cannot be undone.</AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction className="bg-pulse hover:bg-pulse/90" onClick={handleDelete}>Delete</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </>
         ) : null}

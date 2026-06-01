@@ -11,6 +11,7 @@ import { ErrorState } from '@/components/states/error-state';
 import { Button } from '@/components/ui/button';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { tasksApi } from '@/lib/api/modules/tasks';
+import type { Task, TaskAssignment, TaskSubmission } from '@/lib/types/domain';
 import { TaskAssignDialog } from '@/components/coach/task-assign-dialog';
 import { ArrowLeft, UserPlus, CheckSquare, Clock, MessageSquare } from 'lucide-react';
 import Link from 'next/link';
@@ -22,7 +23,7 @@ export default function TaskDetailPage() {
   const params = useParams();
   const id = params.id as string;
   const result = useAsyncData(() => tasksApi.getTask(id), [id]);
-  const task = result.data;
+  const task = result.data as Task | undefined;
   const [showAssign, setShowAssign] = useState(false);
 
   return (
@@ -71,7 +72,7 @@ export default function TaskDetailPage() {
                     <div className="rounded-2xl bg-muted p-3 text-primary"><MessageSquare className="h-5 w-5" /></div>
                     <div>
                       <p className="text-sm text-muted-foreground">Pending review</p>
-                      <p className="text-lg font-black">{task.assignments?.reduce((a: number, as: any) => a + (as.submissions?.filter((s: any) => s.reviewStatus === 'PENDING').length ?? 0), 0) ?? 0}</p>
+                      <p className="text-lg font-black">{task.assignments?.reduce((a: number, as: TaskAssignment) => a + (as.submissions?.filter((s: TaskSubmission) => s.reviewStatus === 'PENDING').length ?? 0), 0) ?? 0}</p>
                     </div>
                   </div>
                 </CardContent>
@@ -85,12 +86,12 @@ export default function TaskDetailPage() {
             {task.assignments && task.assignments.length > 0 && (
               <div className="mt-5 space-y-3">
                 <h2 className="text-lg font-black">Assignments</h2>
-                {task.assignments.map((a: any) => (
+                {task.assignments.map((a: TaskAssignment) => (
                   <Card key={a.id}>
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between">
                         <div>
-                          <p className="font-bold">{a.clientUser?.name ?? 'Unknown client'}</p>
+                          <p className="font-bold">{a.clientUser ? `${a.clientUser.firstName} ${a.clientUser.lastName}` : 'Unknown client'}</p>
                           <div className="mt-1 flex flex-wrap gap-2 text-xs text-muted-foreground">
                             <span>Status: {a.status}</span>
                             {a.dueAt && <span>Due: {new Date(a.dueAt).toLocaleDateString()}</span>}
@@ -103,15 +104,15 @@ export default function TaskDetailPage() {
                       </div>
                       {a.submissions && a.submissions.length > 0 && (
                         <div className="mt-3 space-y-2 border-t border-border pt-3">
-                          {a.submissions.map((s: any) => (
+                          {a.submissions.map((s: TaskSubmission) => (
                             <div key={s.id} className="flex items-center justify-between rounded-xl bg-muted p-3">
                               <div className="min-w-0 flex-1">
                                 <p className="text-sm truncate">{s.bodyText ?? 'No text'}</p>
-                                <p className="text-xs text-muted-foreground">{new Date(s.submittedAt).toLocaleString()}</p>
+                                <p className="text-xs text-muted-foreground">{new Date(s.submittedAt ?? s.createdAt ?? '').toLocaleString()}</p>
                               </div>
                               <div className="flex items-center gap-2 shrink-0 ml-3">
                                 <span className={`rounded-full px-2.5 py-0.5 text-xs font-bold ${s.reviewStatus === 'PENDING' ? 'bg-energy/10 text-energy' : s.reviewStatus === 'APPROVED' ? 'bg-success/10 text-success' : 'bg-pulse/10 text-pulse'}`}>
-                                  {REVIEW_LABELS[s.reviewStatus] ?? s.reviewStatus}
+                                  {REVIEW_LABELS[s.reviewStatus ?? ''] ?? s.reviewStatus}
                                 </span>
                                 <Link href={`/coach/tasks/${id}/feedback?submissionId=${s.id}`} className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground hover:bg-primary/90 transition">
                                   Review

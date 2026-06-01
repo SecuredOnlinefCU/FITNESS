@@ -44,7 +44,7 @@ function CallbackHandler() {
     } else {
       authApi.me().then((me: any) => {
         const role = me?.roles?.[0]?.role?.name || me?.role || 'client';
-        const home = role === 'coach' ? '/coach/home' : role === 'admin' ? '/admin' : '/client/home';
+        const home = role === 'coach' ? '/coach/home' : role === 'super_admin' ? '/admin' : '/client/home';
         router.push(home);
       }).catch(() => router.push('/client/home'));
     }
@@ -55,7 +55,7 @@ function CallbackHandler() {
 
 export default function AuthCallbackPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center">
+    <div className="flex min-h-dvh items-center justify-center">
       <Suspense fallback={<p className="text-sm text-muted-foreground">Completing sign-in\u2026</p>}>
         <CallbackHandler />
       </Suspense>

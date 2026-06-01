@@ -114,7 +114,7 @@ export const clientsApi = {
   },
 
   acceptInvite(token: string) {
-    return apiFetch<{ user: { id: string; email: string; role: string }; accessToken: string; refreshToken: string; inviteId: string; coachUserId: string }>(
+    return apiFetch<{ user: { id: string; email: string; role: string; firstName: string | null; lastName: string | null }; accessToken: string; refreshToken: string; inviteId: string; coachUserId: string; isNewUser: boolean }>(
       '/api/auth/invites/accept',
       { method: 'POST', auth: false, body: JSON.stringify({ token }) },
     );

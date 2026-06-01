@@ -13,9 +13,9 @@ export type Task = { id: ID; coachUserId: ID; title: string; description?: strin
 export type CoachingPackage = { id: ID; coachUserId: ID; title: string; priceCents: number; currency: string; billingType: 'ONE_TIME' | 'RECURRING'; interval?: 'MONTH' | 'YEAR' | null };
 export type MetricEntry = { id: ID; clientUserId: ID; metricType: string; value: number; unit?: string | null; recordedAt?: ISODate };
 export type MetricSummary = { metricType: string; label: string; unit: string; latestValue: number; previousValue: number | null; changePercent: number; count: number; category: string };
-export type MealLog = { id: ID; clientUserId: ID; mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK' | 'OTHER'; title?: string | null; calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null };
+export type MealLog = { id: ID; clientUserId: ID; mealType: 'BREAKFAST' | 'LUNCH' | 'DINNER' | 'SNACK' | 'OTHER'; title?: string | null; calories?: number | null; protein?: number | null; carbs?: number | null; fat?: number | null; mealTime?: string | null; notes?: string | null; createdAt?: ISODate };
 export type Exercise = { id: ID; coachUserId?: ID | null; name: string; instructions?: string | null; demoVideoUrl?: string | null; coachCues?: string | null };
-export type Workout = { id: ID; coachUserId: ID; title: string; description?: string | null; programId?: ID | null; weekId?: ID | null; dayIndex?: number | null };
+export type Workout = { id: ID; coachUserId: ID; title: string; description?: string | null; programId?: ID | null; weekId?: ID | null; dayIndex?: number | null; createdAt?: ISODate | null };
 export type IntegrationProvider = 'APPLE_HEALTH' | 'HEALTH_CONNECT' | 'FITBIT' | 'GARMIN' | 'OURA' | 'MYFITNESSPAL' | 'CRONOMETER';
 
 // Workout & Training
@@ -84,6 +84,7 @@ export type RecoverySnapshot = {
   steps?: number | null;
   caloriesBurned?: number | null;
   readinessScore?: number | null;
+  streakDays?: number | null;
 };
 
 // Nutrition
@@ -280,11 +281,27 @@ export type ProgressPhoto = {
   coachNotes?: unknown[];
 };
 
+export type AnalyticsSummary = {
+  clients: { total: number; active: number; growthByMonth: { month: string; count: number }[] };
+  revenue: { mrr: number; totalRevenue: number; revenueByMonth: { month: string; amountCents: number }[] };
+  adherence: { avgAdherence: number; distribution: { high: number; medium: number; low: number } };
+  momentum: { averageScore: number; distribution: { high: number; medium: number; low: number } };
+  riskFlags: { total: number; bySeverity: { critical: number; high: number; medium: number; low: number } };
+  topExercises: { exerciseName: string; count: number }[];
+  completionRate: number;
+};
+
 // Intelligence
 export type TodayIntelligence = {
   snapshot: RecoverySnapshot | null;
   recommendations: TodayRecommendation[];
   completionScore: number;
+  streak?: number;
+  todayWorkout?: {
+    title: string;
+    exerciseCount: number;
+    estimatedDuration: number;
+  } | null;
 };
 
 export type TodayRecommendation = {

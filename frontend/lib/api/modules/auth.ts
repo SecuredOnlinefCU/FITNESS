@@ -38,4 +38,10 @@ export const authApi = {
       body: JSON.stringify({ code, state }),
     });
   },
+  setPassword(password: string) {
+    return apiFetch<{ success: true }>('/api/auth/set-password', {
+      method: 'POST',
+      body: JSON.stringify({ password }),
+    });
+  },
 };

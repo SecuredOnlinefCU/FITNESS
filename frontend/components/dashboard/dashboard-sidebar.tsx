@@ -26,6 +26,7 @@ const clientLinks: NavItem[] = [
 
 const coachLinks: NavItem[] = [
   { label: 'Command center', href: '/coach/home', icon: Home },
+  { label: 'Analytics', href: '/coach/analytics', icon: BarChart3 },
   { label: 'Client dossiers', href: '/coach/clients', icon: Users },
   { label: 'Recovery', href: '/coach/recovery', icon: Activity },
   { label: 'Intelligence', href: '/coach/intelligence', icon: Brain },

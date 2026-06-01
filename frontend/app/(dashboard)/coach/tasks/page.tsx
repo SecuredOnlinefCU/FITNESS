@@ -13,6 +13,7 @@ import { TaskCreateForm } from '@/components/coach/task-create-form';
 import { TaskAssignDialog } from '@/components/coach/task-assign-dialog';
 import { CheckSquare, Repeat, Clock, Trash2, UserPlus, Eye } from 'lucide-react';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
 interface TaskAssignmentItem {
   id: string;
@@ -35,18 +36,23 @@ interface TaskListResponse {
 }
 
 const TYPE_LABELS: Record<string, string> = { HABIT: 'Habit', VIDEO: 'Video', FORM: 'Form', REVIEWABLE: 'Reviewable' };
+const TYPE_OPTIONS = ['All', 'HABIT', 'VIDEO', 'FORM', 'REVIEWABLE'] as const;
 
 export default function CoachTasksPage() {
   const result = useAsyncData(() => tasksApi.listTasks() as Promise<TaskListResponse>, []);
-  const tasks = result.data?.items ?? [];
+  const tasks: TaskItem[] = result.data?.items ?? [];
   const [showCreate, setShowCreate] = useState(false);
   const [assignTarget, setAssignTarget] = useState<string | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [typeFilter, setTypeFilter] = useState<string>('All');
 
   async function handleDelete(id: string) {
-    if (!window.confirm('Delete this task?')) return;
     await tasksApi.deleteTask(id);
+    setDeleteTarget(null);
     result.reload();
   }
+
+  const filteredTasks = typeFilter === 'All' ? tasks : tasks.filter(t => t.taskType === typeFilter);
 
   return (
     <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
@@ -71,7 +77,7 @@ export default function CoachTasksPage() {
                 <div className="rounded-2xl bg-muted p-3 text-primary"><Clock className="h-5 w-5" /></div>
                 <div>
                   <p className="text-sm text-muted-foreground">Active assignments</p>
-                  <p className="text-2xl font-black">{tasks.reduce((s: number, t: TaskItem) => s + (t.assignments?.filter((a: TaskAssignmentItem) => a.status === 'assigned').length ?? 0), 0)}</p>
+                  <p className="text-2xl font-black">{tasks.reduce((s, t) => s + (t.assignments?.filter(a => a.status === 'assigned').length ?? 0), 0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -82,7 +88,7 @@ export default function CoachTasksPage() {
                 <div className="rounded-2xl bg-muted p-3 text-primary"><Repeat className="h-5 w-5" /></div>
                 <div>
                   <p className="text-sm text-muted-foreground">Pending review</p>
-                  <p className="text-2xl font-black">{tasks.reduce((s: number, t: TaskItem) => s + (t.assignments?.reduce((a: number, as: TaskAssignmentItem) => a + (as.submissions?.filter((su: { reviewStatus: string }) => su.reviewStatus === 'PENDING').length ?? 0), 0) ?? 0), 0)}</p>
+                  <p className="text-2xl font-black">{tasks.reduce((s, t) => s + (t.assignments?.reduce((a, asg) => a + (asg.submissions?.filter(su => su.reviewStatus === 'PENDING').length ?? 0), 0) ?? 0), 0)}</p>
                 </div>
               </div>
             </CardContent>
@@ -106,10 +112,25 @@ export default function CoachTasksPage() {
           </div>
         ) : (
           <div className="mt-5 space-y-3">
-            <h3 className="text-lg font-black">Your tasks</h3>
-            {tasks.map((t: TaskItem) => {
-              const activeAssignments = t.assignments?.filter((a: TaskAssignmentItem) => a.status === 'assigned').length ?? 0;
-              const pendingReview = t.assignments?.reduce((a: number, as: TaskAssignmentItem) => a + (as.submissions?.filter((s: { reviewStatus: string }) => s.reviewStatus === 'PENDING').length ?? 0), 0) ?? 0;
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-black">Your tasks</h3>
+              <div className="flex gap-1 rounded-xl bg-muted p-1">
+                {TYPE_OPTIONS.map(opt => (
+                  <button
+                    key={opt}
+                    onClick={() => setTypeFilter(opt)}
+                    className={`rounded-lg px-3 py-1 text-xs font-bold transition ${
+                      typeFilter === opt ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground'
+                    }`}
+                  >
+                    {opt === 'All' ? 'All' : TYPE_LABELS[opt] ?? opt}
+                  </button>
+                ))}
+              </div>
+            </div>
+            {filteredTasks.map(t => {
+              const activeAssignments = t.assignments?.filter(a => a.status === 'assigned').length ?? 0;
+              const pendingReview = t.assignments?.reduce((a, asg) => a + (asg.submissions?.filter(s => s.reviewStatus === 'PENDING').length ?? 0), 0) ?? 0;
               return (
                 <Card key={t.id}>
                   <CardContent className="flex items-center justify-between p-4">
@@ -129,7 +150,21 @@ export default function CoachTasksPage() {
                     <div className="flex items-center gap-1 shrink-0 ml-3">
                       <Link href={`/coach/tasks/${t.id}`} className="rounded-xl p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition" title="View task"><Eye className="h-4 w-4" /></Link>
                       <button className="rounded-xl p-2 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition" onClick={() => setAssignTarget(t.id)} title="Assign to client"><UserPlus className="h-4 w-4" /></button>
-                      <button className="rounded-xl p-2 text-sm text-muted-foreground hover:bg-muted hover:text-pulse transition" onClick={() => handleDelete(t.id)} title="Delete task"><Trash2 className="h-4 w-4" /></button>
+                      <AlertDialog open={deleteTarget === t.id} onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}>
+                        <AlertDialogTrigger asChild>
+                          <button className="rounded-xl p-2 text-sm text-muted-foreground hover:bg-muted hover:text-pulse transition" onClick={() => setDeleteTarget(t.id)} title="Delete task"><Trash2 className="h-4 w-4" /></button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Delete task</AlertDialogTitle>
+                            <AlertDialogDescription>This will permanently delete "{t.title}" and all its submissions. This cannot be undone.</AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction className="bg-pulse hover:bg-pulse/90" onClick={() => handleDelete(t.id)}>Delete</AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </div>
                   </CardContent>
                 </Card>

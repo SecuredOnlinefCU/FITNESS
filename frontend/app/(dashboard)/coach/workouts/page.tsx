@@ -13,10 +13,12 @@ import { AssignWorkoutModal } from '@/components/coach/assign-workout-modal';
 import { TrainingCalendar } from '@/components/workout/training-calendar';
 import { CreateExerciseDialog } from '@/components/exercise/create-exercise-dialog';
 import { VideoPlayerModal } from '@/components/exercise/video-player-modal';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogAction, AlertDialogCancel } from '@/components/ui/alert-dialog';
 import { Dumbbell, Library, ClipboardList, Plus, Trash2, UserPlus, Eye, CalendarDays, List as ListIcon, Video } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import type { WorkoutAssignment } from '@/lib/types/domain';
+import type { WorkoutAssignment, WorkoutExercise } from '@/lib/types/domain';
+type WorkoutWithExercises = { id: string; coachUserId: string; title: string; description?: string | null; programId?: string | null; weekId?: string | null; dayIndex?: number | null; createdAt?: string | null; exercises?: { id: string }[] };
 
 export default function CoachWorkoutsPage() {
   const router = useRouter();
@@ -47,7 +49,6 @@ export default function CoachWorkoutsPage() {
   for (const w of data) workoutTitles[w.id] = w.title;
 
   async function handleDelete(id: string) {
-    if (!confirm('Delete this workout?')) return;
     await trainingApi.deleteWorkout(id);
     workouts.reload();
   }
@@ -166,7 +167,7 @@ export default function CoachWorkoutsPage() {
               </Link>
             ) : (
               <div className="space-y-3">
-                {data.map((w: any) => (
+                {data.map((w: WorkoutWithExercises) => (
                   <Card key={w.id}>
                     <CardContent className="flex items-center justify-between p-5">
                       <div className="min-w-0 flex-1">
@@ -175,7 +176,7 @@ export default function CoachWorkoutsPage() {
                           <span className="rounded-full bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">{w.exercises?.length ?? 0} exercises</span>
                         </div>
                         {w.description && <p className="mt-1.5 text-sm text-muted-foreground line-clamp-2">{w.description}</p>}
-                        <p className="mt-1.5 text-xs text-muted-foreground/60">Created {new Date(w.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
+                        <p className="mt-1.5 text-xs text-muted-foreground/60">Created {new Date(w.createdAt ?? new Date()).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</p>
                       </div>
                       <div className="flex items-center gap-2 shrink-0 ml-4">
                         <button
@@ -192,13 +193,26 @@ export default function CoachWorkoutsPage() {
                         >
                           <Eye className="h-4 w-4" />
                         </Link>
-                        <button
-                          className="rounded-xl p-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-pulse transition"
-                          onClick={() => handleDelete(w.id)}
-                          title="Delete workout"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <button
+                              className="rounded-xl p-2.5 text-sm text-muted-foreground hover:bg-muted hover:text-pulse transition"
+                              title="Delete workout"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete workout</AlertDialogTitle>
+                              <AlertDialogDescription>This will permanently delete "{w.title}" and all its exercises. This cannot be undone.</AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(w.id)} className="bg-pulse hover:bg-pulse/90">Delete</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </div>
                     </CardContent>
                   </Card>

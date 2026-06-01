@@ -1,6 +1,5 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import nodemailer from "nodemailer";
 import { env } from "../../config/env";
 
 const templates: Record<string, string> = {};
@@ -20,30 +19,64 @@ function fill(template: string, vars: Record<string, string>): string {
   return html;
 }
 
-function getTransporter() {
-  if (!env.SMTP_HOST || !env.SMTP_USER || !env.SMTP_PASS) return null;
-  return nodemailer.createTransport({
-    host: env.SMTP_HOST,
-    port: env.SMTP_PORT,
-    secure: env.SMTP_PORT === 465,
-    auth: { user: env.SMTP_USER, pass: env.SMTP_PASS },
+async function getGraphToken(): Promise<string | null> {
+  if (!env.MS_GRAPH_TENANT_ID || !env.MS_GRAPH_CLIENT_ID || !env.MS_GRAPH_CLIENT_SECRET) {
+    console.warn("[email] MS Graph not configured");
+    return null;
+  }
+  const body = new URLSearchParams({
+    client_id: env.MS_GRAPH_CLIENT_ID,
+    client_secret: env.MS_GRAPH_CLIENT_SECRET,
+    scope: "https://graph.microsoft.com/.default",
+    grant_type: "client_credentials",
   });
+  const resp = await fetch(`https://login.microsoftonline.com/${env.MS_GRAPH_TENANT_ID}/oauth2/v2.0/token`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+  if (!resp.ok) {
+    console.error("[email] token failed:", resp.status, await resp.text());
+    return null;
+  }
+  const data = await resp.json() as { access_token: string };
+  return data.access_token;
+}
+
+async function sendViaGraph(to: string, subject: string, htmlContent: string): Promise<void> {
+  const token = await getGraphToken();
+  if (!token) return;
+  const sender = env.MS_GRAPH_SENDER || "Noreply@Onlinefcu.com";
+  const payload = {
+    message: {
+      subject,
+      body: { contentType: "HTML", content: htmlContent },
+      toRecipients: [{ emailAddress: { address: to } }],
+    },
+    saveToSentItems: false,
+  };
+  const resp = await fetch(`https://graph.microsoft.com/v1.0/users/${encodeURIComponent(sender)}/sendMail`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!resp.ok) {
+    console.error("[email] send failed:", resp.status, await resp.text());
+    throw new Error("Graph send failed");
+  }
 }
 
 async function send(template: string, to: string, vars: Record<string, string>, subject: string): Promise<void> {
-  const t = getTransporter();
-  if (!t) return;
   if (!templates.welcome) loadTemplates();
-  await t.sendMail({
-    from: env.SMTP_FROM,
-    to,
-    subject,
-    html: fill(templates[template], { ...vars, unsubscribeUrl: "#" }),
-  });
+  const html = fill(templates[template], { ...vars, unsubscribeUrl: "#" });
+  await sendViaGraph(to, subject, html);
 }
 
 export async function sendWelcomeEmail(email: string, firstName: string): Promise<void> {
-  await send("welcome", email, { firstName, dashboardUrl: `${env.APP_BASE_URL || "http://localhost:3000"}/login` }, "Welcome to LevelFit");
+  await send("welcome", email, { firstName, dashboardUrl: `${env.APP_BASE_URL}/login` }, "Welcome to LevelFit");
 }
 
 export async function sendInviteEmail(email: string, inviterName: string, acceptUrl: string, expiresInDays: number): Promise<void> {
@@ -55,5 +88,5 @@ export async function sendPasswordResetEmail(email: string, firstName: string, r
 }
 
 export async function sendPaymentReceiptEmail(email: string, firstName: string, vars: { packageName: string; coachName: string; amount: string; date: string }): Promise<void> {
-  await send("payment-receipt", email, { firstName, ...vars, dashboardUrl: `${env.APP_BASE_URL || "http://localhost:3000"}/billing` }, "Payment confirmed — LevelFit");
+  await send("payment-receipt", email, { firstName, ...vars, dashboardUrl: `${env.APP_BASE_URL}/billing` }, "Payment confirmed — LevelFit");
 }

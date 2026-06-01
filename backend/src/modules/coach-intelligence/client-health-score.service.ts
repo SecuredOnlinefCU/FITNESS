@@ -104,7 +104,12 @@ export async function getClientHealthScores(actor: Actor) {
   requireCoach(actor);
   const snapshotDate = startOfToday();
   const existing = await prisma.clientHealthScoreSnapshot.findMany({ where: { coachUserId: actor.userId, snapshotDate }, orderBy: { score: 'asc' } });
-  if (existing.length) return existing;
+  if (existing.length) {
+    const clientIds = [...new Set(existing.map(s => s.clientUserId))];
+    const users = await prisma.user.findMany({ where: { id: { in: clientIds } }, select: { id: true, firstName: true, lastName: true, email: true } });
+    const userMap = new Map(users.map(u => [u.id, u]));
+    return existing.map(s => ({ ...s, clientUser: userMap.get(s.clientUserId) ?? null }));
+  }
   return refreshClientHealthScores(actor);
 }
 

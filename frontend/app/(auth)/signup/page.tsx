@@ -78,7 +78,7 @@ export default function SignupPage() {
             <div role="alert" className="rounded-2xl border border-pulse/20 bg-pulse/10 px-4 py-3 text-sm text-pulse">{error}</div>
           )}
 
-          <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
             <div>
               <label htmlFor="signup-first" className="mb-1.5 block text-sm font-bold text-foreground">First name</label>
               <input
@@ -90,7 +90,7 @@ export default function SignupPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
               />
             </div>
             <div>
@@ -104,17 +104,17 @@ export default function SignupPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
               />
             </div>
           </div>
 
           <div>
-            <label htmlFor="signup-role" className="mb-1.5 block text-sm font-bold text-foreground">Account type</label>
-            <div className="grid grid-cols-2 gap-3">
-              <button type="button" role="tab" id="signup-role" aria-selected={role === 'client'} onClick={() => setRole('client')}
+            <div className="mb-1.5 block text-sm font-bold text-foreground" id="signup-role-label">Account type</div>
+            <div role="radiogroup" aria-labelledby="signup-role-label" className="grid grid-cols-2 gap-3">
+              <button type="button" role="radio" aria-checked={role === 'client'} onClick={() => setRole('client')}
                 className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors ${role === 'client' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Client</button>
-              <button type="button" role="tab" aria-selected={role === 'coach'} onClick={() => setRole('coach')}
+              <button type="button" role="radio" aria-checked={role === 'coach'} onClick={() => setRole('coach')}
                 className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors ${role === 'coach' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Coach</button>
             </div>
           </div>
@@ -130,7 +130,7 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
 
@@ -145,7 +145,7 @@ export default function SignupPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
 
@@ -156,11 +156,11 @@ export default function SignupPage() {
               name="confirmPassword"
               type="password"
               autoComplete="new-password"
-              placeholder="Re-enter your password"
+              placeholder="Re-enter password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
             />
           </div>
 
