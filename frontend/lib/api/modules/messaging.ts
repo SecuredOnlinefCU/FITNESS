@@ -8,7 +8,7 @@ export const messagingApi = {
   listMessages(threadId: string) {
     return apiFetch<ApiList<Message>>(`/api/messaging/threads/${threadId}/messages`);
   },
-  sendMessage(threadId: string, input: { bodyText: string; messageType?: string }) {
+  sendMessage(threadId: string, input: { bodyText?: string; messageType?: string; mediaAssetId?: string; durationMs?: number }) {
     return apiFetch<Message>(`/api/messaging/threads/${threadId}/messages`, {
       method: 'POST',
       body: JSON.stringify(input),

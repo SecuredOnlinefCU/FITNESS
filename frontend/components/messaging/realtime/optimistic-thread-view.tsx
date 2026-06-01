@@ -4,7 +4,33 @@ import { Card, CardContent } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 import { useOptimisticThread } from '@/hooks/messaging/use-optimistic-thread';
 import { OptimisticMessageComposer } from './optimistic-message-composer';
+import { VoiceMessagePlayer, VideoMessagePlayer, ImageMessageView } from '../media-player';
 import type { Message } from '@/lib/types/domain';
+
+function MessageBubble({ message, mine }: { message: Message; mine: boolean }) {
+  return (
+    <div key={message.id} className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
+      <div className={cn(
+        'max-w-[80%] space-y-2 rounded-2xl px-4 py-3 text-sm shadow-sm',
+        mine ? 'bg-primary text-primary-foreground' : 'border border-border bg-card',
+        (message as any).failed ? 'border-red-300 bg-red-50 text-red-700' : '',
+      )}>
+        {message.messageType === 'VOICE' ? (
+          <VoiceMessagePlayer mediaAssetId={message.mediaAssetId || ''} durationMs={(message as any).durationMs} mine={mine} />
+        ) : message.messageType === 'VIDEO' ? (
+          <VideoMessagePlayer mediaAssetId={message.mediaAssetId || ''} mine={mine} />
+        ) : message.messageType === 'IMAGE' ? (
+          <ImageMessageView mediaAssetId={message.mediaAssetId || ''} mine={mine} />
+        ) : (
+          <p>{message.bodyText}</p>
+        )}
+        <p className={cn('mt-1 text-[11px]', mine ? 'text-white/70' : 'text-muted-foreground')}>
+          {(message as any).failed ? 'Failed to send' : (message as any).optimistic ? 'Sending...' : 'Sent'}
+        </p>
+      </div>
+    </div>
+  );
+}
 
 export function OptimisticThreadView({
   threadId,
@@ -26,25 +52,15 @@ export function OptimisticThreadView({
         </div>
 
         <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl bg-muted/40 p-4">
-          {thread.messages.length ? thread.messages.map((message: any) => {
-            const mine = message.senderUserId === currentUserId || message.senderUserId === 'me';
-            return (
-              <div key={message.id} className={cn('flex', mine ? 'justify-end' : 'justify-start')}>
-                <div className={cn('max-w-[80%] rounded-2xl px-4 py-3 text-sm shadow-sm', mine ? 'bg-primary text-primary-foreground' : 'border border-border bg-card', message.failed ? 'border-red-300 bg-red-50 text-red-700' : '')}>
-                  <p>{message.bodyText}</p>
-                  <p className={cn('mt-1 text-[11px]', mine ? 'text-white/70' : 'text-muted-foreground')}>
-                    {message.failed ? 'Failed to send' : message.optimistic ? 'Sending...' : 'Sent'}
-                  </p>
-                </div>
-              </div>
-            );
-          }) : (
+          {thread.messages.length ? thread.messages.map((message: any) => (
+            <MessageBubble key={message.id} message={message} mine={message.senderUserId === currentUserId || message.senderUserId === 'me'} />
+          )) : (
             <div className="flex h-full items-center justify-center text-center text-sm text-muted-foreground">No messages yet. Start the conversation below.</div>
           )}
         </div>
 
         <div className="mt-4">
-          <OptimisticMessageComposer onSend={thread.sendText} status={thread.status} />
+          <OptimisticMessageComposer onSend={thread.sendText} onSendMedia={thread.sendMedia} status={thread.status} />
         </div>
       </CardContent>
     </Card>

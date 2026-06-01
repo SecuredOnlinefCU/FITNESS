@@ -8,6 +8,7 @@ import type { Message } from '@/lib/types/domain';
 type OptimisticMessage = Message & {
   optimistic?: boolean;
   failed?: boolean;
+  durationMs?: number;
 };
 
 export function useOptimisticThread({
@@ -77,10 +78,38 @@ export function useOptimisticThread({
     }
   }
 
+  async function sendMedia(messageType: 'VOICE' | 'VIDEO', mediaAssetId: string, durationMs?: number, bodyText?: string) {
+    const tempId = `temp-${Date.now()}`;
+    const optimistic: OptimisticMessage = {
+      id: tempId,
+      threadId,
+      senderUserId: currentUserId || 'me',
+      messageType,
+      mediaAssetId,
+      durationMs,
+      bodyText,
+      createdAt: new Date().toISOString(),
+      optimistic: true,
+    };
+
+    setMessages((existing) => [...existing, optimistic]);
+    setStatus('Sending...');
+
+    try {
+      const saved = await messagingApi.sendMessage(threadId, { messageType, mediaAssetId, durationMs, bodyText });
+      setMessages((existing) => existing.map((message) => message.id === tempId ? saved : message));
+      setStatus('');
+    } catch (error: any) {
+      setMessages((existing) => existing.map((message) => message.id === tempId ? { ...message, failed: true, optimistic: false } : message));
+      setStatus(error.message || 'Message failed.');
+    }
+  }
+
   return {
     messages: sorted,
     status,
     sendText,
+    sendMedia,
     refresh,
   };
 }

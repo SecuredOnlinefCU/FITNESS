@@ -9,6 +9,7 @@ import type { Message } from '@/lib/types/domain';
 type LiveMessage = Message & {
   clientMessageId?: string;
   deliveryStatus?: MessageDeliveryStatus;
+  durationMs?: number;
 };
 
 function clientId() {
@@ -114,6 +115,39 @@ export function useWebSocketThread({
     }
   }, [client, connectionStatus, currentUserId, threadId]);
 
+  const sendMedia = useCallback(async (messageType: 'VOICE' | 'VIDEO', mediaAssetId: string, durationMs?: number, bodyText?: string) => {
+    const clientMessageId = clientId();
+    const optimistic: LiveMessage = {
+      id: clientMessageId,
+      clientMessageId,
+      threadId,
+      senderUserId: currentUserId || 'me',
+      messageType,
+      mediaAssetId,
+      durationMs,
+      bodyText,
+      createdAt: new Date().toISOString(),
+      deliveryStatus: connectionStatus === 'open' ? 'sent' : 'queued',
+    };
+
+    pendingByClientId.current.set(clientMessageId, optimistic);
+    setMessages((existing) => [...existing, optimistic]);
+    setError(null);
+
+    const sentOverSocket = client.send({ type: 'message.send', clientMessageId, threadId, messageType, mediaAssetId, durationMs });
+    setMessages((existing) => existing.map((message) => message.clientMessageId === clientMessageId ? { ...message, deliveryStatus: sentOverSocket ? 'sent' : 'queued' } : message));
+
+    if (!sentOverSocket) {
+      try {
+        const saved = await messagingApi.sendMessage(threadId, { messageType, mediaAssetId, durationMs, bodyText });
+        setMessages((existing) => existing.map((message) => message.clientMessageId === clientMessageId ? { ...saved, clientMessageId, deliveryStatus: 'delivered' } : message));
+      } catch (err: any) {
+        setError(err?.message || 'Message failed.');
+        setMessages((existing) => existing.map((message) => message.clientMessageId === clientMessageId ? { ...message, deliveryStatus: 'failed' } : message));
+      }
+    }
+  }, [client, connectionStatus, currentUserId, threadId]);
+
   const markRead = useCallback((messageId: string) => {
     client.send({ type: 'message.read', messageId, threadId });
   }, [client, threadId]);
@@ -123,6 +157,7 @@ export function useWebSocketThread({
     connectionStatus,
     error,
     sendText,
+    sendMedia,
     markRead,
   };
 }

@@ -1,5 +1,21 @@
 import { apiFetch } from '@/lib/api/client';
 
+export async function uploadChatMedia(file: Blob, fileName: string, mimeType: string, messageType: 'VOICE' | 'VIDEO'): Promise<{ webUrl: string; mediaAssetId: string }> {
+  const reader = new FileReader();
+  const base64 = await new Promise<string>((resolve, reject) => {
+    reader.onload = () => {
+      const result = reader.result as string;
+      resolve(result.split(',')[1]);
+    };
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+  return apiFetch<{ webUrl: string; mediaAssetId: string }>('/api/media/upload-chat-media', {
+    method: 'POST',
+    body: JSON.stringify({ fileName, mimeType, data: base64, messageType }),
+  });
+}
+
 export async function getUploadUrl(fileName: string, mimeType: string) {
   const params = new URLSearchParams({ fileName, mimeType });
   return apiFetch<{ uploadUrl: string; publicUrl: string; key: string }>(`/api/media/upload-url?${params}`);

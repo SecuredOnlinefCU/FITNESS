@@ -35,12 +35,11 @@ async function getSiteId(token: string, retries = 2): Promise<string> {
   throw new Error("Failed to resolve SharePoint site ID");
 }
 
-const FOLDER_PATH = "ExerciseVideos";
-
 export async function uploadToSharepoint(
   fileName: string,
   mimeType: string,
-  fileBuffer: Buffer
+  fileBuffer: Buffer,
+  folder = "ExerciseVideos"
 ): Promise<{ webUrl: string }> {
   const token = await getToken();
   if (!token) throw new Error("Microsoft Graph not configured");
@@ -48,7 +47,7 @@ export async function uploadToSharepoint(
   const siteId = await getSiteId(token);
 
   const uploadResp = await fetch(
-    `${GRAPH_BASE}/sites/${siteId}/drive/root:/${FOLDER_PATH}/${fileName}:/content`,
+    `${GRAPH_BASE}/sites/${siteId}/drive/root:/${folder}/${fileName}:/content`,
     {
       method: "PUT",
       headers: {

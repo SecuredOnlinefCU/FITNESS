@@ -33,3 +33,18 @@ mediaRouter.post("/upload-sharepoint", asyncHandler(async (req: AuthenticatedReq
   const result = await uploadToSharepoint(b.fileName, b.mimeType, buf);
   res.json(result);
 }));
+
+const chatMediaUploadSchema = z.object({
+  fileName: z.string().min(1),
+  mimeType: z.string().min(1),
+  data: z.string().min(1),
+  messageType: z.enum(["VOICE", "VIDEO"]),
+});
+
+mediaRouter.post("/upload-chat-media", asyncHandler(async (req: AuthenticatedRequest, res) => {
+  const b = chatMediaUploadSchema.parse(req.body);
+  const buf = Buffer.from(b.data, "base64");
+  const folder = `ChatMedia/${req.user!.sub}`;
+  const result = await uploadToSharepoint(b.fileName, b.mimeType, buf, folder);
+  res.json({ webUrl: result.webUrl, mediaAssetId: result.webUrl });
+}));

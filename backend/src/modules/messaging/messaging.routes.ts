@@ -20,7 +20,7 @@ messagingRouter.post('/threads', asyncHandler(async (req, res) =>
 ));
 
 messagingRouter.post('/threads/:threadId/messages', asyncHandler(async (req: AuthenticatedRequest, res) =>
-  res.status(201).json(await prisma.message.create({ data: { threadId: req.params.threadId, senderUserId: req.user!.sub, messageType: 'TEXT', ...req.body } }))
+  res.status(201).json(await prisma.message.create({ data: { threadId: req.params.threadId, senderUserId: req.user!.sub, ...req.body } }))
 ));
 
 messagingRouter.patch('/messages/:messageId/flags', asyncHandler(async (req: AuthenticatedRequest, res) =>

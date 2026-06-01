@@ -4,7 +4,7 @@ export type ClientRealtimeEvent =
   | { type: 'auth'; accessToken: string }
   | { type: 'thread.join'; threadId: string }
   | { type: 'thread.leave'; threadId: string }
-  | { type: 'message.send'; clientMessageId: string; threadId: string; bodyText: string; messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'VOICE' }
+  | { type: 'message.send'; clientMessageId: string; threadId: string; bodyText?: string; messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'VOICE'; mediaAssetId?: string; durationMs?: number }
   | { type: 'message.delivered'; messageId: string; threadId: string }
   | { type: 'message.read'; messageId: string; threadId: string };
 

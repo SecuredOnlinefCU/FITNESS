@@ -1,7 +1,7 @@
 export type ID = string; export type ISODate = string; export type ApiList<T> = { items: T[] };
 export type RoleName = 'super_admin' | 'coach' | 'assistant_coach' | 'client';
 export type MessageDeliveryStatus = 'queued' | 'connecting' | 'sent' | 'delivered' | 'read' | 'failed';
-export type Message = { id: ID; threadId: ID; senderUserId: ID; messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'VOICE' | 'SYSTEM'; bodyText?: string | null; mediaAssetId?: string | null; createdAt?: ISODate; deliveryStatus?: MessageDeliveryStatus };
+export type Message = { id: ID; threadId: ID; senderUserId: ID; messageType: 'TEXT' | 'IMAGE' | 'VIDEO' | 'VOICE' | 'SYSTEM'; bodyText?: string | null; mediaAssetId?: string | null; durationMs?: number | null; createdAt?: ISODate; deliveryStatus?: MessageDeliveryStatus };
 export type Thread = { id: ID; coachUserId: ID; clientUserId: ID; status?: string; messages?: Message[] };
 export type MediaAsset = { id: ID; ownerUserId: ID; assetType: 'FEED_IMAGE' | 'FEED_VIDEO' | 'TASK_VIDEO' | 'PROGRESS_PHOTO' | 'EXERCISE_VIDEO' | 'VOICE_NOTE' | 'CHAT_MEDIA'; storageKey?: string; blobUrl?: string | null; mimeType?: string | null; privacyScope?: 'PRIVATE' | 'PROGRAM' | 'PUBLIC'; uploadStatus?: string };
 export type FeedMedia = { id: ID; postId: ID; ownerUserId: ID; assetType: string; storageKey: string; cdnUrl?: string | null; thumbnailUrl?: string | null; mimeType?: string | null; };
