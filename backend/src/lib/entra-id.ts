@@ -29,8 +29,8 @@ async function getSigningKey(kid: string, tenantId: string): Promise<string> {
   }
   const jwk = cached.keys.find((k) => k.kid === kid);
   if (!jwk) throw new Error("No signing key found for kid: " + kid);
-  const pubKey = crypto.createPublicKey({ format: "jwk", key: { kty: jwk.kty, n: jwk.n, e: jwk.e } });
-  return pubKey.export({ format: "pem", type: "spki" });
+  const pubKey = crypto.createPublicKey({ format: "jwk", key: { kty: jwk.kty, n: jwk.n, e: jwk.e } }) as crypto.KeyObject;
+  return pubKey.export({ format: "pem", type: "spki" }).toString();
 }
 
 export async function validateMicrosoftToken(

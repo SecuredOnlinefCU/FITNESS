@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useMemo, useState } from '
 import { useRouter } from 'next/navigation';
 import { clearTokens, getAccessToken, setTokens } from '@/lib/auth/token-storage';
 import { authApi } from '@/lib/api/modules/auth';
+import { getMsalInstance } from '@/lib/auth/msal-config';
 import type { AuthUser, SignUpInput } from '@/lib/types/auth';
 
 type AuthContextValue = {
@@ -13,6 +14,7 @@ type AuthContextValue = {
   signUp: (input: SignUpInput) => Promise<void>;
   signOut: () => void;
   googleSignIn: () => Promise<void>;
+  microsoftSignIn: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -67,6 +69,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     clearTokens();
     setUser(null);
     if (typeof window !== 'undefined') localStorage.removeItem('levelfit_onboarding_complete');
+    const msal = getMsalInstance();
+    msal.logoutPopup().catch(() => {});
     router.push('/login');
   }
 
@@ -75,8 +79,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     window.location.href = url;
   }
 
+  async function microsoftSignIn() {
+    const msal = getMsalInstance();
+    const response = await msal.loginPopup({
+      scopes: ['openid', 'profile', 'email'],
+    });
+    const idToken = response.idToken;
+    if (!idToken) throw new Error('No ID token received from Microsoft');
+    const session = await authApi.microsoft(idToken);
+    setTokens(session.accessToken, session.refreshToken);
+    setUser(session.user);
+    if (session.user.role === 'client' && session.isNewUser) {
+      router.push('/onboarding');
+    } else {
+      router.push(getHomePath(session.user.role));
+    }
+  }
+
   const value = useMemo(
-    () => ({ user, loading, signIn, signUp, signOut, googleSignIn }),
+    () => ({ user, loading, signIn, signUp, signOut, googleSignIn, microsoftSignIn }),
     [user, loading],
   );
 

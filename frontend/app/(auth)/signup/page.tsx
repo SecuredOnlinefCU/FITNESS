@@ -16,8 +16,19 @@ function GoogleIcon() {
   );
 }
 
+function MicrosoftIcon() {
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 23 23">
+      <rect x="1" y="1" width="9.9" height="9.9" fill="#F25022" />
+      <rect x="12.1" y="1" width="9.9" height="9.9" fill="#7FBA00" />
+      <rect x="1" y="12.1" width="9.9" height="9.9" fill="#00A4EF" />
+      <rect x="12.1" y="12.1" width="9.9" height="9.9" fill="#FFB900" />
+    </svg>
+  );
+}
+
 export default function SignupPage() {
-  const { signUp, googleSignIn } = useAuth();
+  const { signUp, googleSignIn, microsoftSignIn } = useAuth();
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
@@ -61,10 +72,21 @@ export default function SignupPage() {
         <button
           type="button"
           onClick={googleSignIn}
-          className="mt-6 flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-background text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          aria-label="Sign up with Google"
+          className="mt-6 flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-background text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <GoogleIcon />
           Continue with Google
+        </button>
+
+        <button
+          type="button"
+          onClick={microsoftSignIn}
+          aria-label="Sign up with Microsoft"
+          className="mt-3 flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-background text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <MicrosoftIcon />
+          Continue with Microsoft
         </button>
 
         <div className="mt-5 flex items-center gap-3">

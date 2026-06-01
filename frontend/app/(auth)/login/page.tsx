@@ -16,8 +16,19 @@ function GoogleIcon() {
   );
 }
 
+function MicrosoftIcon() {
+  return (
+    <svg aria-hidden="true" className="h-5 w-5" viewBox="0 0 23 23">
+      <rect x="1" y="1" width="9.9" height="9.9" fill="#F25022" />
+      <rect x="12.1" y="1" width="9.9" height="9.9" fill="#7FBA00" />
+      <rect x="1" y="12.1" width="9.9" height="9.9" fill="#00A4EF" />
+      <rect x="12.1" y="12.1" width="9.9" height="9.9" fill="#FFB900" />
+    </svg>
+  );
+}
+
 export default function LoginPage() {
-  const { signIn, googleSignIn } = useAuth();
+  const { signIn, googleSignIn, microsoftSignIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -43,10 +54,21 @@ export default function LoginPage() {
         <button
           type="button"
           onClick={googleSignIn}
-          className="mt-6 flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-background text-sm font-semibold text-foreground transition-colors hover:bg-muted"
+          aria-label="Sign in with Google"
+          className="mt-6 flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-background text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <GoogleIcon />
           Continue with Google
+        </button>
+
+        <button
+          type="button"
+          onClick={microsoftSignIn}
+          aria-label="Sign in with Microsoft"
+          className="mt-3 flex h-12 w-full items-center justify-center gap-3 rounded-2xl border border-border bg-background text-sm font-semibold text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <MicrosoftIcon />
+          Continue with Microsoft
         </button>
 
         <div className="mt-5 flex items-center gap-3">
@@ -57,7 +79,7 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
           {error && (
-            <div role="alert" className="rounded-2xl border border-pulse/20 bg-pulse/10 px-4 py-3 text-sm text-pulse">{error}</div>
+            <div id="login-error" role="alert" className="rounded-2xl border border-pulse/20 bg-pulse/10 px-4 py-3 text-sm text-pulse">{error}</div>
           )}
 
           <div>
@@ -71,14 +93,15 @@ export default function LoginPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              aria-describedby={error ? 'login-error' : undefined}
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             />
           </div>
 
           <div>
             <div className="mb-1.5 flex items-center justify-between">
               <label htmlFor="login-password" className="text-sm font-bold text-foreground">Password</label>
-              <Link href="/forgot-password" className="text-xs text-muted-foreground transition-colors hover:text-foreground">Forgot?</Link>
+              <Link href="/forgot-password" className="text-xs text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded">Forgot?</Link>
             </div>
             <input
               id="login-password"
@@ -89,7 +112,8 @@ export default function LoginPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              aria-describedby={error ? 'login-error' : undefined}
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             />
           </div>
 
