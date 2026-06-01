@@ -31,13 +31,13 @@ export default function Navbar() {
       className={"fixed top-0 left-0 right-0 z-50 transition-all duration-300"}
     >
       <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3 md:px-6 md:py-4">
-        <Link href="/" className="flex items-center">
+        <Link href="/" className="flex items-center focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md">
           <LevelFitLogo size={28} />
         </Link>
 
         <nav aria-label="Main navigation" className="hidden md:flex items-center gap-8 text-sm text-bone-mute">
           {navLinks.map(l => (
-            <a key={l.href} href={l.href} className="hover:text-bone transition-colors">{l.label}</a>
+            <a key={l.href} href={l.href} className="hover:text-bone transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md">{l.label}</a>
           ))}
         </nav>
 
