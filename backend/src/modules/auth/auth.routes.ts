@@ -233,7 +233,70 @@ authRouter.post(
 authRouter.post(
   "/invites/accept",
   asyncHandler(async (req, res) => {
-    res.status(501).json({ todo: "Invite acceptance wiring pending final hardening" });
+    const { token } = z.object({ token: z.string().min(1) }).parse(req.body);
+    const tokenHash = sha(token);
+
+    const invite = await prisma.coachInvite.findUnique({
+      where: { tokenHash },
+    });
+
+    if (!invite) throw new HttpError(400, "Invalid invite token");
+    if (invite.acceptedAt) throw new HttpError(400, "Invite already accepted");
+    if (invite.expiresAt < new Date()) throw new HttpError(400, "Invite has expired");
+
+    // Check if user already exists
+    let user = await prisma.user.findUnique({
+      where: { email: invite.email.toLowerCase() },
+      include: { roles: { include: { role: true } } },
+    });
+
+    if (!user) {
+      // Create new user account
+      const displayName = invite.displayName;
+      const clientRoleId = await roleId("client");
+      user = await prisma.user.create({
+        data: {
+          email: invite.email.toLowerCase(),
+          passwordHash: "", // No password — invite-based signup
+          firstName: displayName.split(" ")[0] || null,
+          lastName: displayName.split(" ").slice(1).join(" ") || null,
+          roles: { create: [{ roleId: clientRoleId }] },
+          clientProfile: { create: { displayName } },
+        },
+        include: { roles: { include: { role: true } } },
+      });
+    }
+
+    // Mark invite as accepted
+    await prisma.coachInvite.update({
+      where: { id: invite.id },
+      data: {
+        acceptedAt: new Date(),
+        status: "ACCEPTED",
+      },
+    });
+
+    // Generate tokens for the user
+    const payload = { sub: user.id, email: user.email, role: user.roles[0]?.role?.name || "client" };
+    const accessToken = signAccessToken(payload);
+    const refreshToken = signRefreshToken(payload);
+    await prisma.refreshSession.create({
+      data: { userId: user.id, tokenHash: sha(refreshToken) },
+    });
+
+    res.json({
+      user: {
+        id: user.id,
+        email: user.email,
+        role: payload.role,
+        firstName: user.firstName,
+        lastName: user.lastName,
+      },
+      accessToken,
+      refreshToken,
+      inviteId: invite.id,
+      coachUserId: invite.coachUserId,
+    });
   }),
 );
 

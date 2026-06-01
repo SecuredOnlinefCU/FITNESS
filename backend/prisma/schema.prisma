@@ -29,6 +29,7 @@ model User {
   coachThreads   Thread[]              @relation("CoachThreads")
   roles          UserRole[]
   passwordResetTokens PasswordResetToken[]
+  fitnessBlueprint FitnessBlueprint?
 }
 
 model Role {
@@ -71,11 +72,60 @@ model CoachProfile {
 }
 
 model ClientProfile {
-  userId      String   @id
-  displayName String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId          String    @id
+  displayName     String
+  dateOfBirth     DateTime?
+  gender          String?
+  heightCm        Float?
+  startingWeight  Float?
+  currentGoal     String?
+  goalTimeline    String?
+  currentPhase    String?    @default("ONBOARDING")
+  communicationStyle String?
+  disciplineLevel String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goals           ClientGoal[]
+  momentumScores  MomentumScore[]
+}
+
+model ClientGoal {
+  id             String        @id @default(uuid())
+  clientUserId   String
+  goalType       String
+  title          String
+  targetValue    Float?
+  targetUnit     String?
+  currentValue   Float?
+  startDate      DateTime      @default(now())
+  targetDate     DateTime?
+  status         String        @default("ACTIVE")
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  clientProfile  ClientProfile @relation(fields: [clientUserId], references: [userId], onDelete: Cascade)
+
+  @@index([clientUserId, status])
+}
+
+model MomentumScore {
+  id             String        @id @default(uuid())
+  clientUserId   String
+  coachUserId    String
+  score          Int           @default(50)
+  trend          String        @default("STABLE")
+  performanceScore Int         @default(50)
+  behaviorScore    Int         @default(50)
+  engagementScore  Int         @default(50)
+  recoveryScore    Int         @default(50)
+  evidenceJson   Json          @default("{}")
+  snapshotDate   DateTime
+  createdAt      DateTime      @default(now())
+  clientProfile  ClientProfile @relation(fields: [clientUserId], references: [userId], onDelete: Cascade)
+
+  @@unique([clientUserId, coachUserId, snapshotDate])
+  @@index([coachUserId, snapshotDate])
+  @@index([clientUserId, snapshotDate])
 }
 
 model RefreshSession {
@@ -145,11 +195,22 @@ model CoachInvite {
   email       String
   displayName String
   tokenHash   String    @unique
+  status      String    @default("PENDING")
   createdAt   DateTime  @default(now())
   expiresAt   DateTime
   acceptedAt  DateTime?
   coach       User      @relation("CoachInvites", fields: [coachUserId], references: [id], onDelete: Cascade)
   program     Program?  @relation(fields: [programId], references: [id])
+}
+
+model CoachClientNote {
+  id           String   @id @default(uuid())
+  coachUserId  String
+  clientUserId String
+  content      String
+  createdAt    DateTime @default(now())
+
+  @@index([coachUserId, clientUserId])
 }
 
 model ProgramGuideline {
@@ -165,10 +226,13 @@ model FeedPost {
   authorUserId String
   scopeType    FeedScopeType
   scopeId      String
+  type         FeedPostType    @default(COACH_MESSAGE)
   bodyText     String?
   tag          String?
   status       String          @default("ACTIVE")
   pinnedAt     DateTime?
+  scheduledAt  DateTime?
+  metaJson     Json            @default("{}")
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
   reports      ContentReport[] @relation("PostReports")
@@ -176,6 +240,9 @@ model FeedPost {
   media        FeedMedia[]
   reactions    FeedReaction[]
   saves        FeedSave[]
+
+  @@index([scopeType, scopeId, status, type])
+  @@index([authorUserId, type, createdAt])
 }
 
 model FeedMedia {
@@ -1102,6 +1169,39 @@ model TodayRecommendation {
   @@index([clientUserId, createdAt])
 }
 
+model FitnessBlueprint {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  goal              String
+  trainingStyle     String
+  level             String
+  levelConfidence   Float    @default(0.5)
+  equipment         String
+  daysPerWeek       Int
+  sessionLength     Int
+  split             String
+  injuryExclusions  Json     @default("[]")
+  weeklyVolume      Json     @default("{}")
+  periodization     String
+  recoveryProfile   Json     @default("{}")
+  estimatedTimeline String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model WorkoutTemplate {
+  id          String   @id @default(uuid())
+  coachUserId String
+  name        String
+  description String?
+  splitType   String?
+  exercises   Json     @default("[]")
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model PasswordResetToken {
   id        String    @id @default(uuid())
   userId    String
@@ -1126,6 +1226,17 @@ enum FeedScopeType {
   PROGRAM
   COACH_PRIVATE
   CHALLENGE
+}
+
+enum FeedPostType {
+  COACH_MESSAGE
+  MILESTONE
+  CHECK_IN_PROMPT
+  RECOVERY_ALERT
+  WORKOUT_ASSIGNED
+  CHALLENGE_UPDATE
+  NUTRITION_HACK
+  PROGRESS_SPOTLIGHT
 }
 
 enum MessageType {

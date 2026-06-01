@@ -7,8 +7,9 @@ export type MediaAsset = { id: ID; ownerUserId: ID; assetType: 'FEED_IMAGE' | 'F
 export type FeedMedia = { id: ID; postId: ID; ownerUserId: ID; assetType: string; storageKey: string; cdnUrl?: string | null; thumbnailUrl?: string | null; mimeType?: string | null; };
 export type Notification = { id: ID; userId: ID; type: string; title: string; body?: string | null; openedAt?: ISODate | null; createdAt?: ISODate };
 export type Program = { id: ID; coachUserId: ID; name: string; description?: string | null };
+export type ProgramMembership = { id: ID; programId: ID; clientUserId: ID; status: string; joinedAt: ISODate; program?: Program | null };
 export type ProgramWeek = { id: ID; programId: ID; weekIndex: number; phaseLabel?: string | null; focus?: string | null; workouts?: Workout[] };
-export type Task = { id: ID; coachUserId: ID; title: string; description?: string | null; taskType: string };
+export type Task = { id: ID; coachUserId: ID; title: string; description?: string | null; taskType: string; assignments?: TaskAssignment[] };
 export type CoachingPackage = { id: ID; coachUserId: ID; title: string; priceCents: number; currency: string; billingType: 'ONE_TIME' | 'RECURRING'; interval?: 'MONTH' | 'YEAR' | null };
 export type MetricEntry = { id: ID; clientUserId: ID; metricType: string; value: number; unit?: string | null; recordedAt?: ISODate };
 export type MetricSummary = { metricType: string; label: string; unit: string; latestValue: number; previousValue: number | null; changePercent: number; count: number; category: string };
@@ -126,18 +127,79 @@ export type HydrationLog = {
 };
 
 // Feed
+export type FeedPostType = 'COACH_MESSAGE' | 'MILESTONE' | 'CHECK_IN_PROMPT' | 'RECOVERY_ALERT' | 'WORKOUT_ASSIGNED' | 'CHALLENGE_UPDATE' | 'NUTRITION_HACK' | 'PROGRESS_SPOTLIGHT';
+
+export type FeedPostAction = {
+  type: string;
+  label: string;
+  href?: string;
+  apiEndpoint?: string;
+};
+
 export type FeedPost = {
   id: ID;
   authorUserId: ID;
   scopeType: 'PROGRAM' | 'COACH_PRIVATE' | 'CHALLENGE';
   scopeId: string;
-  postType?: string | null;
+  type: FeedPostType;
   bodyText?: string | null;
-  title?: string | null;
   tag?: string | null;
   status?: string | null;
+  pinnedAt?: ISODate | null;
+  scheduledAt?: ISODate | null;
   createdAt?: ISODate;
-  media?: MediaAsset[];
+  updatedAt?: ISODate;
+  media?: FeedMedia[];
+  comments?: FeedComment[];
+  reactions?: FeedReaction[];
+  saves?: FeedSave[];
+  _count?: { comments: number; reactions: number; saves: number };
+  author?: { firstName: string; lastName: string } | null;
+  currentUserReacted?: boolean;
+  currentUserSaved?: boolean;
+  primaryAction?: FeedPostAction | null;
+};
+
+export type FeedComment = {
+  id: ID;
+  postId: ID;
+  authorUserId: ID;
+  parentCommentId?: string | null;
+  bodyText: string;
+  status?: string | null;
+  createdAt?: ISODate;
+  author?: { firstName: string; lastName: string } | null;
+};
+
+export type FeedReaction = {
+  id: ID;
+  postId: ID;
+  userId: ID;
+  reactionType: string;
+  createdAt?: ISODate;
+};
+
+export type FeedSave = {
+  id: ID;
+  postId: ID;
+  userId: ID;
+  createdAt?: ISODate;
+};
+
+export type MomentumComponent = { label: string; value: number; max: number; color: string };
+export type MomentumData = { score: number; components: MomentumComponent[]; trend: 'up' | 'down' | 'stable'; change: number };
+export type CoachNudge = { type: string; title: string; message: string; priority: 'high' | 'medium' | 'low'; action?: { label: string; href?: string; apiEndpoint?: string } };
+export type PostAnalytics = { postId: string; views: number; reactions: number; comments: number; saves: number; engagementRate: number };
+
+export type ContentReport = {
+  id: ID;
+  reporterUserId: ID;
+  targetType: string;
+  targetId: string;
+  reasonCode: string;
+  notes?: string | null;
+  status: string;
+  createdAt?: ISODate;
 };
 
 // Tasks
@@ -146,16 +208,32 @@ export type TaskAssignment = {
   taskId: ID;
   clientUserId: ID;
   status?: string;
+  dueAt?: string | null;
+  recurrenceRule?: string | null;
   createdAt?: ISODate;
   task?: Task | null;
   submissions?: TaskSubmission[];
+  clientUser?: { id: ID; firstName: string; lastName: string; email: string } | null;
 };
 
 export type TaskSubmission = {
   id: ID;
   assignmentId: ID;
   clientUserId: ID;
+  bodyText?: string | null;
+  mediaAssetId?: string | null;
+  submittedAt?: string;
   reviewStatus?: string;
+  createdAt?: ISODate;
+  feedback?: TaskFeedback[];
+};
+
+export type TaskFeedback = {
+  id: ID;
+  submissionId: ID;
+  coachUserId: ID;
+  feedbackText?: string | null;
+  feedbackMediaAssetId?: string | null;
   createdAt?: ISODate;
 };
 
@@ -217,7 +295,138 @@ export type TodayRecommendation = {
   priority?: number;
 };
 
-// FeedPost type helper
-export type FeedPostWithCounts = FeedPost & {
-  _count?: { comments: number; reactions: number; saves: number };
+// Client Dossier
+export type ClientDossierUser = {
+  id: ID;
+  firstName: string | null;
+  lastName: string | null;
+  email: string;
+  avatarUrl: string | null;
+  createdAt: ISODate;
+  clientProfile?: { userId: ID; displayName: string } | null;
+};
+
+export type ClientHealthScore = {
+  score: number;
+  healthStatus: string;
+  adherenceScore: number;
+  progressScore: number;
+  engagementScore: number;
+  paymentScore: number;
+};
+
+export type ClientDossier = {
+  user: ClientDossierUser;
+  healthScore: ClientHealthScore | null;
+  riskFlags: { id: ID; flagType: string; severity: string; title: string; body?: string | null; status: string; createdAt: ISODate }[];
+  assignments: WorkoutAssignment[];
+  sessions: WorkoutSession[];
+  metrics: MetricEntry[];
+  notes: CoachClientNote[];
+  programMemberships: ProgramMembership[];
+};
+
+export type CoachClientNote = {
+  id: ID;
+  coachUserId: ID;
+  clientUserId: ID;
+  content: string;
+  createdAt: ISODate;
+};
+
+export type CoachInvite = {
+  id: ID;
+  coachUserId: ID;
+  email: string;
+  displayName: string;
+  programId?: ID | null;
+  status: string;
+  createdAt: ISODate;
+  expiresAt: ISODate;
+  acceptedAt?: ISODate | null;
+};
+
+export type ClientGoal = {
+  id: ID;
+  clientUserId: ID;
+  goalType: string;
+  title: string;
+  targetValue?: number | null;
+  targetUnit?: string | null;
+  currentValue?: number | null;
+  startDate: ISODate;
+  targetDate?: ISODate | null;
+  status: string;
+};
+
+export type MomentumScore = {
+  id: ID;
+  clientUserId: ID;
+  coachUserId: ID;
+  score: number;
+  trend: "RISING" | "FALLING" | "STABLE";
+  performanceScore: number;
+  behaviorScore: number;
+  engagementScore: number;
+  recoveryScore: number;
+  snapshotDate: ISODate;
+};
+
+export type PlateauResult = {
+  exerciseId: ID;
+  exerciseName: string;
+  status: "PLATEAU" | "DECLINING" | "IMPROVING";
+  currentMax: number;
+  previousMax: number;
+  changePercent: number;
+  weeksAtLevel: number;
+};
+
+export type ChurnRisk = {
+  level: "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
+  score: number;
+  factors: { factor: string; weight: number; detail: string }[];
+};
+
+export type SmartAction = {
+  id: ID;
+  type: "CHECKIN" | "MESSAGE" | "WORKOUT_ADJUST" | "NUTRITION_ADJUST" | "RECOVERY" | "MILESTONE";
+  priority: number;
+  title: string;
+  body: string;
+  actionHref: string;
+  reason: string;
+};
+
+// Fitness Blueprint
+export type FitnessBlueprint = {
+  id: ID;
+  userId: ID;
+  goal: string;
+  trainingStyle: string;
+  level: string;
+  levelConfidence: number;
+  equipment: string;
+  daysPerWeek: number;
+  sessionLength: number;
+  split: string;
+  injuryExclusions: string[];
+  weeklyVolume: Record<string, number>;
+  periodization: string;
+  recoveryProfile: {
+    sleepHours: number;
+    stressLevel: number;
+    activityLevel: string;
+    recommendation: string;
+  };
+  estimatedTimeline: string | null;
+  createdAt: ISODate;
+  updatedAt: ISODate;
+};
+
+export type OnboardingBlueprintResult = {
+  blueprint: FitnessBlueprint;
+  split: { name: string; focus: string; muscleGroups: string[] }[];
+  recoveryProfile: FitnessBlueprint['recoveryProfile'];
+  estimatedTimeline: string;
 };
