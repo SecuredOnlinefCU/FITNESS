@@ -170,10 +170,11 @@ fitness app/
 │       │   ├── admin/               # Admin dashboard
 │       │   └── email/               # Email service
 │       ├── common/                  # Middleware, errors, utils
-│       └── lib/                     # Prisma client, env config
+│       └── lib/                     # Prisma client, env config, storage, Power Automate
 ├── archive/                         # Historical files, debug logs
 ├── docs/                            # Documentation
-│   └── levelfit-product-design.md   # Complete product design document
+│   ├── levelfit-product-design.md   # Complete product design document
+│   └── power-automate-flows.md      # Power Automate flow specifications
 ├── .github/workflows/               # CI/CD
 │   ├── ci.yml
 │   └── datadog-synthetics.yml
@@ -222,10 +223,10 @@ fitness app/
 | Backend | Express.js, TypeScript, Prisma ORM |
 | Database | PostgreSQL |
 | Auth | JWT + Entra ID (Microsoft SSO - planned Phase 2) |
-| Email | Microsoft Graph API (OAuth 2.0 client credentials, no SMTP) |
+| Email | Power Automate flows (primary, via HTTP webhook); Microsoft Graph API (fallback, OAuth 2.0) |
 | Identity Provider | Entra ID (Azure AD) - `LevelFITness API` app registration |
-| Storage | Railway S3-compatible buckets (current); SharePoint (planned Phase 3) |
-| Automation | Power Automate (planned Phase 4) |
+| Storage | Railway S3-compatible buckets (feed/progress photos); SharePoint (exercise demo videos via Graph API) |
+| Automation | Power Automate flows (welcome, invite, password reset, payment receipts, scheduled reminders) |
 | Analytics | Power BI (planned Phase 5) |
 | Deployment | Vercel (frontend), Railway (backend + DB + env vars) |
 | Testing | Playwright E2E (71 tests) |
@@ -241,18 +242,19 @@ graph LR
         BE --> S3[(S3 Buckets)]
     end
     subgraph "Microsoft 365 (Enterprise)"
-        BE -->|Graph API /mail| EXO[Exchange Online]
-        BE -->|MSAL / OIDC| AAD[Entra ID]
-        FE -->|MSAL.js| AAD
-        AAD -->|app-only token| GRAPH[Microsoft Graph]
+        BE -->|POST /welcome| PA[Power Automate Flows]
+        BE -->|POST /invite| PA
+        BE -->|POST /reset| PA
+        PA -->|Office 365 connector| EXO[Exchange Online]
+        FE -->|POST /upload-sharepoint| BE
+        BE -->|PUT /sites/{id}/drive/root| SPO[SharePoint ExerciseVideos]
+        AAD[Entra ID] -->|app-only token| GRAPH[Microsoft Graph]
         GRAPH --> EXO
-        GRAPH --> SPO[SharePoint]
+        GRAPH --> SPO
         EXO -->|noreply@levelfitcoach.com| MAIL[Transactional Email]
     end
     subgraph "Platform Roadmap"
         SSO[Entra ID SSO - Phase 2]
-        SPO2[SharePoint Storage - Phase 3]
-        PA[Power Automate - Phase 4]
         PBI[Power BI - Phase 5]
     end
 ```

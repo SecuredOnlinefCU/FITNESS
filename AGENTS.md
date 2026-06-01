@@ -653,13 +653,65 @@ graph TD
 - No infra changes needed — all Microsoft services are consumed via HTTPS (Graph API)
 
 ### Status: Complete
-- Backend type-check: need to run
-- Frontend type-check: not affected
+- Backend type-check: ✅ 0 errors
+- Frontend type-check: ✅ 0 errors
 - Full tenant audit done (users, domains, licenses, service plans)
-- Entra ID app registration created + Mail.Send consented
+- Entra ID app registration created + Mail.Send consented + Sites.ReadWrite.All consented
 - Client credentials flow tested successfully (email sent from Noreply@levelfitcoach.com)
 - SMTP removed entirely from codebase
 - Platform architecture documented with 5-phase roadmap
+
+---
+
+## 2026-06-01 — Phase 3: SharePoint video hosting (demoVideoUrl storage)
+
+**Goal:** Replace S3 (Railway object storage) with Microsoft SharePoint for exercise demo video hosting. Coaches upload videos → backend stores in SharePoint Documents/ExerciseVideos → returns SharePoint web URL.
+
+**Approach:** Added `Sites.ReadWrite.All` to Entra ID app registration. Created `sharepoint.ts` lib (Graph API client credentials → upload file via PUT to default site/root:/ExerciseVideos). Added `POST /api/media/upload-sharepoint` endpoint (accepts base64-encoded file in JSON body, Express 50MB limit). Updated frontend `create-exercise-dialog.tsx` to call new SharePoint endpoint instead of S3.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|------|
+| Added | `backend/src/lib/sharepoint.ts` | Graph API client credentials + site resolution + PUT file to SharePoint ExerciseVideos folder |
+| Modified | `backend/src/modules/media/media.routes.ts` | Added `POST /upload-sharepoint` route (zod-validated: fileName, mimeType, base64 data) |
+| Modified | `frontend/lib/api/modules/media.ts` | Added `uploadToSharepoint(file)` — reads file as base64, calls new endpoint, returns SharePoint webUrl |
+| Modified | `frontend/components/exercise/create-exercise-dialog.tsx` | Replaced `uploadFile()` (S3) with `uploadToSharepoint()` for demo video uploads |
+| Modified | (Azure Entra ID) | Added `Sites.ReadWrite.All` application permission + admin consent granted |
+| Modified | (Railway env) | Added `MS_GRAPH_*` env vars, removed old SMTP vars |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    FRONTEND[CreateExerciseDialog] -->|read file as base64| API[POST /api/media/upload-sharepoint]
+    API -->|client_credentials| AAD[Entra ID]
+    AAD -->|token with Sites.ReadWrite.All| GRAPH[Microsoft Graph]
+    GRAPH -->|PUT /sites/{id}/drive/root:/ExerciseVideos/{file}:/content| SPO[SharePoint Online]
+    SPO -->|returns webUrl| API
+    API -->|webUrl as demoVideoUrl| FRONTEND
+    FRONTEND -->|POST /exercises| EXERCISE[Exercise.demoVideoUrl stored]
+```
+
+### ADR-019 — Base64 proxy over upload session for SharePoint video upload (2026-06-01)
+
+- **Context:** Exercise demo videos need to upload to SharePoint instead of S3. Two patterns available: backend proxy (file bytes through backend) or upload session (direct browser-to-SharePoint).
+- **Options considered:** A) Backend proxy via base64 in JSON (chosen — no new deps, Express already has 50MB JSON limit). B) Create SharePoint upload session + direct browser PUT (avoids backend bytes but needs two-step flow + upload session expiry management). C) multer multipart proxy (standard but adds multer dependency).
+- **Decision:** Option A — frontend reads file as base64, sends to `POST /api/media/upload-sharepoint`, backend decodes and PUTs to SharePoint via Graph API.
+- **Why:** Exercise demo videos are typically short clips <20MB. The 50MB Express JSON limit is adequate. No new dependencies (multer, busboy, etc.). Single request from frontend → done. Base64 overhead (~33%) is acceptable for this use case.
+- **Consequences:** File bytes pass through backend memory — acceptable for exercise videos (not massive 4K files). Can migrate to upload sessions later if larger files become common (e.g., full workout recordings).
+
+### Railway integration notes
+- `MS_GRAPH_CLIENT_ID`, `MS_GRAPH_CLIENT_SECRET`, `MS_GRAPH_TENANT_ID`, `MS_GRAPH_SENDER` set in production env
+- Old SMTP vars (`SMTP_HOST`, `SMTP_PORT`, `SMTP_USER`, `SMTP_PASS`, `SMTP_FROM`) removed
+- S3 (`RAILWAY_BUCKET_*`) still available for feed media and progress photos
+
+### Status: Complete
+- Backend type-check: ✅ 0 errors
+- Frontend type-check: ✅ 0 errors
+- SharePoint Graph API upload tested: ✅ test-upload.txt created at `Shared Documents/ExerciseVideos/`
+- Entra ID app now has: Mail.Send + Sites.ReadWrite.All + admin consent
+- Railway: pushed to master (auto-deploys), env vars set
 
 ## ADR-016 — AlertDialog via Radix over native confirm (2026-06-01)
 
@@ -678,3 +730,57 @@ graph TD
 - Removed native `confirm()` calls: 3 pages → AlertDialog
 - Replaced `any` type casts: 14 instances across 6 pages → typed interfaces
 - Removed unused imports: 3 (`ErrorState`, `ShieldCheck`, `Camera`, `ClipboardCheck`)
+
+---
+
+## 2026-06-01 — Phase 4: Power Automate email offloading
+
+**Goal:** Offload transactional email delivery from the Railway backend to Power Automate flows. Backend triggers flows via HTTPS webhooks instead of sending emails directly. Falls back to direct Graph API email if Power Automate is not configured.
+
+**Approach:** Created `backend/src/lib/power-automate.ts` — generic flow trigger helper that POSTs to Power Automate HTTP webhook URLs. Added 4 env vars (`PA_FLOW_*_URL`) to `env.ts`. Updated `auth.routes.ts` to try Power Automate first, fall back to direct email. Created `docs/power-automate-flows.md` with 6 flow specifications (4 HTTP-triggered, 2 scheduled) for manual creation in the Power Automate portal.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|------|
+| Added | `backend/src/lib/power-automate.ts` | Generic `triggerFlow()` + 4 factory functions (welcome, invite, passwordReset, paymentReceipt). POSTs JSON payload to configured webhook URLs. Logs errors, returns `false` if URL not configured or request fails. |
+| Modified | `backend/src/config/env.ts` | Added `PA_FLOW_WELCOME_URL`, `PA_FLOW_INVITE_URL`, `PA_FLOW_PASSWORD_RESET_URL`, `PA_FLOW_PAYMENT_RECEIPT_URL` — all optional (string). |
+| Modified | `backend/src/modules/auth/auth.routes.ts` | Imported PA trigger functions. Each email call now tries Power Automate first, falls back to direct Graph API email if the flow URL is not configured or the request fails. |
+| Added | `docs/power-automate-flows.md` | Specs for 6 flows: welcome, invite, password reset, payment receipt, workout reminder (scheduled), re-engagement nudge (scheduled). Includes trigger schemas, HTML templates, and step-by-step Power Automate portal setup instructions. |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    subgraph "Before (all in backend)"
+        SIGNUP[Signup] --> EMAIL[email.service.ts]
+        INVITE[Invite] --> EMAIL
+        RESET[Forgot Password] --> EMAIL
+        EMAIL -->|Graph API| EXO[Exchange Online]
+    end
+    subgraph "After (Power Automate offload)"
+        SIGNUP2[Signup] -->|POST /welcome| PA1[PA Flow: Welcome]
+        INVITE2[Invite] -->|POST /invite| PA2[PA Flow: Invite]
+        RESET2[Forgot Password] -->|POST /reset| PA3[PA Flow: Password Reset]
+        PA1 -->|Office 365 connector| EXO2[Exchange Online]
+        PA2 --> EXO2
+        PA3 --> EXO2
+        PA1 -.->|fallback| FALLBACK[email.service.ts]
+    end
+```
+
+### ADR-020 — Power Automate as primary email channel with backend fallback (2026-06-01)
+
+- **Context:** Transactional emails (welcome, invite, password reset) are sent directly from the backend via Graph API. This burns Railway CPU on email delivery and requires the backend to handle templating, retries, and tracking. Power Automate can handle all of this natively with the Office 365 Outlook connector.
+- **Options considered:** A) Power Automate as primary + backend fallback (chosen — zero-downtime migration). B) Power Automate-only (PA outage = no emails). C) Keep backend-only (no offload benefit).
+- **Decision:** Option A — backend tries Power Automate first via HTTP webhook. If PA is not configured or the request fails, falls back to direct Graph API email via the existing `email.service.ts`.
+- **Why:** The fallback ensures zero downtime during migration. Once all 4 flows are created and tested in the Power Automate portal, the backend email code can be removed. Staged adoption avoids breaking existing email delivery.
+- **Consequences:** PA flow URLs are env vars — set them in Railway when flows are created. If a flow URL is empty, the backend silently falls back to direct email. Backend email service remains as fallback until flows are fully validated.
+
+### Status: Complete
+- Backend type-check: ✅ `tsc --noEmit` — 0 errors
+- Files added: 2 (`backend/src/lib/power-automate.ts`, `docs/power-automate-flows.md`)
+- Files modified: 2 (`backend/src/config/env.ts`, `backend/src/modules/auth/auth.routes.ts`)
+- Flow specs: 6 documented (4 HTTP-triggered, 2 scheduled)
+- Integration: PA-first, email-fallback for all 3 auth email triggers
+- Next step: Create flows in Power Automate portal → set `PA_FLOW_*_URL` in Railway → remove `email.service.ts`

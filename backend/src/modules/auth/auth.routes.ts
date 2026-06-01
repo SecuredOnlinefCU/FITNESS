@@ -9,6 +9,7 @@ import { requireAuth, AuthenticatedRequest, requireRole } from "../../common/mid
 import { HttpError } from "../../common/errors/http-error";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./auth.tokens";
 import { sendWelcomeEmail, sendInviteEmail, sendPasswordResetEmail } from "../email/email.service";
+import { triggerWelcomeFlow, triggerInviteFlow, triggerPasswordResetFlow } from "../../lib/power-automate";
 
 export const authRouter = Router();
 const sha = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
@@ -66,7 +67,9 @@ authRouter.post(
     const refresh = signRefreshToken(payload);
     await prisma.refreshSession.create({ data: { userId: user.id, tokenHash: sha(refresh) } });
 
-    sendWelcomeEmail(user.email, user.firstName || "").catch((err) => console.error("[email] welcome send failed:", err));
+    triggerWelcomeFlow(user.email, user.firstName || "")
+      .then((sent) => { if (!sent) sendWelcomeEmail(user.email, user.firstName || ""); })
+      .catch((err) => console.error("[email] welcome send failed:", err));
     res.status(201).json({
       user: { id: user.id, email: user.email, role: payload.role, firstName: user.firstName, lastName: user.lastName },
       accessToken: signAccessToken(payload),
@@ -166,7 +169,9 @@ authRouter.post(
       },
     });
     const resetUrl = `${env.APP_BASE_URL}/reset-password?token=${token}`;
-    sendPasswordResetEmail(user.email, user.firstName || "there", resetUrl).catch((err) => console.error("[email] reset send failed:", err));
+    triggerPasswordResetFlow(user.email, user.firstName || "there", resetUrl)
+      .then((sent) => { if (!sent) sendPasswordResetEmail(user.email, user.firstName || "there", resetUrl); })
+      .catch((err) => console.error("[email] reset send failed:", err));
     res.json({ success: true, message: "If that email exists, a reset link was sent." });
   }),
 );
@@ -220,7 +225,9 @@ authRouter.post(
     const coach = await prisma.user.findUnique({ where: { id: req.user!.sub } });
     const acceptUrl = `${env.APP_BASE_URL}/accept-invite?token=${token}`;
     if (coach) {
-      sendInviteEmail(body.email, coach.firstName || "Your coach", acceptUrl, body.expiresInDays).catch((err) => console.error("[email] invite send failed:", err));
+      triggerInviteFlow(body.email, body.firstName, coach.firstName || "Your coach", acceptUrl, body.expiresInDays)
+        .then((sent) => { if (!sent) sendInviteEmail(body.email, coach.firstName || "Your coach", acceptUrl, body.expiresInDays); })
+        .catch((err) => console.error("[email] invite send failed:", err));
     }
     res.status(201).json({
       inviteId: invite.id,
