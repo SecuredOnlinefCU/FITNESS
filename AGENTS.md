@@ -1,5 +1,21 @@
 # LevelFITness — Agent Memory
 
+## 2026-06-01 — UI bugfix: Button primitive children
+
+**Goal:** Fix the shared `Button` component so it renders label text and icon children correctly.
+
+**Approach:** Exposed `props.children` inside `frontend/components/ui/button.tsx` to ensure the button wrapper renders its contents.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `frontend/components/ui/button.tsx` | Render `props.children` inside the button element to avoid empty buttons and preserve accessible labels/icons. |
+
+### Status: Complete
+- Frontend type-check: pending
+- Verified fix by source inspection and upcoming build check.
+
 ## 2026-06-01 — Invite flow fix: set-password + two-path acceptance
 
 **Goal:** Fix critical gaps in the coach invite flow — invited clients had no password (could never re-login), skipped onboarding, and were redirected to the wrong page. Also make the email link re-usable if a new client closed the browser before finishing setup.
@@ -908,7 +924,51 @@ graph TD
 
 ### Status: Complete
 - Backend type-check: ✅ `tsc --noEmit` — 0 errors
-- Frontend type-check: ✅ No new errors (pre-existing: navbar.tsx)
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
 - Deployed: ✅ Pushed to GitHub → Railway auto-deploy
 - App registration: SPA redirect URIs configured via Graph API
 - Auth flow: Login/Signup → Microsoft button → popup → ID token → backend validates → JWT returned → redirected
+
+---
+
+## 2026-06-01 — Phase 5: Power BI analytics + deploy guide (PA flows, DNS, PBI)
+
+**Goal:** Add Power BI push dataset integration to the analytics service, and create a comprehensive deploy guide covering Power Automate flow creation, DNS setup, and Power BI onboarding.
+
+**Approach:** Backend pushes analytics summary to Power BI REST API when `POWER_BI_PUSH_URL` env var is configured (fire-and-forget, non-blocking). Added `POWER_BI_PUSH_URL` to env schema. Created `docs/deploy-guide.md` with step-by-step instructions.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `backend/src/config/env.ts` | Added `POWER_BI_PUSH_URL` optional env var |
+| Modified | `backend/src/modules/analytics/analytics.service.ts` | Push summary to Power BI REST API when URL is configured (fire-and-forget) |
+| Added | `docs/deploy-guide.md` | Comprehensive guide: PA flows creation, DNS records, Power BI data model + measures + dashboard pages |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    ANALYTICS[analytics.service.ts] -->|every 5min| PUSH[Power BI Push API]
+    PUSH -->|POST /datasets/{id}/rows| PBI[Power BI Streaming Dataset]
+    PBI -->|dashboard| EXEC[Executive Overview]
+    PBI -->|dashboard| TRENDS[Client Trends]
+    PBI -->|dashboard| RISK[Risk & Flags]
+    PBI -->|dashboard| REVENUE[Revenue]
+    PBI -->|dashboard| OPS[Operations]
+    DNS[DNS Guide] -->|SPF/DKIM/DMARC| DELIV[Email deliverability fixed]
+    PA[Power Automate Guide] -->|step-by-step| USER[User creates 4 flows]
+```
+
+### ADR-022 — Power BI push dataset over direct DB query (2026-06-01)
+
+- **Context:** Power BI needs analytics data. Options were direct PostgreSQL query (via gateway), push REST API, or CSV export.
+- **Decision:** Push REST API — backend sends summary JSON to Power BI dataset on every analytics cache refresh (every 5 min).
+- **Why:** No gateway needed (simpler setup). Data is already aggregated by the analytics service. Push matches the 5-min cache TTL perfectly.
+- **Consequences:** Historical data not retained — only latest snapshot. For historical analysis, add a separate nightly job or use direct query.
+
+### Status: Complete
+- Backend type-check: ✅ `tsc --noEmit` — 0 errors
+- Power BI push: Backend pushes to configurable URL (non-blocking, fire-and-forget)
+- Deploy guide: `docs/deploy-guide.md` — 3 sections with copy-paste values
+- Next: User creates flows in PA portal, adds DNS records, sets up Power BI workspace

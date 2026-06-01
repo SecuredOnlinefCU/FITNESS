@@ -1,5 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { getCached, setCache } from '../../common/utils/cache';
+import { env } from '../../config/env';
 
 const CACHE_TTL = 300_000;
 
@@ -170,5 +171,24 @@ export async function getAnalyticsSummary(coachUserId: string): Promise<Analytic
   };
 
   setCache(cacheKey, result, CACHE_TTL);
+
+  if (env.POWER_BI_PUSH_URL) {
+    fetch(env.POWER_BI_PUSH_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        totalClients: result.clients.total,
+        activeClients: result.clients.active,
+        mrrCents: result.revenue.mrr,
+        totalRevenueCents: result.revenue.totalRevenue,
+        avgAdherence: result.adherence.avgAdherence,
+        avgMomentum: result.momentum.averageScore,
+        riskFlags: result.riskFlags.total,
+        completionRate: result.completionRate,
+        timestamp: new Date().toISOString(),
+      }),
+    }).catch(() => {});
+  }
+
   return result;
 }
