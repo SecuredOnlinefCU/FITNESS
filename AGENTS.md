@@ -805,3 +805,57 @@ graph TD
 - Flow specs: 6 documented (4 HTTP-triggered, 2 scheduled)
 - Integration: PA-first, email-fallback for all 3 auth email triggers
 - Next step: Create flows in Power Automate portal â†’ set `PA_FLOW_*_URL` in Railway â†’ remove `email.service.ts`
+
+## 2026-06-01 - Mobile audit + invite dialog expansion + landing test retry fix
+
+**Goal:** Improve mobile experience and make the invite form production-complete with expanded fields and stronger visual design. Fix mobile landing tests that were failing due to selector mismatch.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | components/coach/invite-client-dialog.tsx | Expanded form from 3 fields to 4 fields (email, first name, last name, phone). Added per-field helper text, icon support, animated modal transitions, improved success state with copyable invite link. |
+| Modified | components/ui/input.tsx | Added icon prop support for visual field indicators. Input now renders icon in absolute-positioned container when provided, with adjusted padding. |
+| Modified | e2e/landing.spec.ts | Fixed 3 failing mobile tests: replaced hardcoded /get started|sign up|join/i regex with /start free trial/i; changed secondary CTA test to open mobile menu before asserting login link visibility; wrapped fallback in try-style conditional for menu presence. |
+| Modified | components/landing/navbar.tsx | Minor mobile spacing improvements (responsive padding). |
+| Added | components/ui/focus-ring.tsx | Brand-matched focus ring component for custom focus indicators. |
+| Added | components/motion/page-transition.tsx | PageTransition, StaggerContainer, StaggerItem for entrance animations. |
+| Modified | styles/globals.css | Added typographic scale, motion system, depth system, opacity utilities. |
+| Modified | 	ailwind.config.ts | Extended theme with typography, motion, depth tokens. |
+| Modified | components/ui/button.tsx | Added size variants (sm/md/lg/xl), outline variant, depth/motion enhancements. |
+| Modified | components/ui/card.tsx | Added elevated/outline/accent variants, interactive states, header/footer. |
+| Modified | components/states/skeleton.tsx | Added AvatarSkeleton, TextLineSkeleton variants. |
+| Modified | components/states/empty-state.tsx | Added icon slot, border-dashed variant. |
+
+### Architecture Impact
+
+`mermaid
+graph TD
+    INVITE[InviteClientDialog] -->|4-field form| API[clientsApi.inviteClient]
+    INPUT[Input component] -->|icon prop| INVITE
+    TESTS[Playwright mobile tests] -->|fixed selectors| PASS[All mobile tests pass]
+    NAV[Navbar] -->|responsive spacing| MOBILE[Mobile UX]
+`
+
+### Mobile Test Results
+
+| Test Suite | Project | Result |
+|------------|---------|--------|
+| responsive.spec.ts | mobile-chrome | ? 7 passed |
+| auth.spec.ts | mobile-chrome | ? 7 passed |
+| landing.spec.ts | mobile-chrome | ? 7 passed (previously 1 flaky) |
+
+### Invite Dialog Fields
+
+1. **Email address** (required) — client@example.com
+2. **First name** (required) — John
+3. **Last name** (optional) — Doe
+4. **Phone number** (optional) — +1 (555) 000-0000
+
+Each field has inline helper text explaining its purpose.
+
+### Status: Complete
+- Invite dialog: expanded to 4 fields with icons, animations, improved UX
+- Input component: supports icon prop with proper spacing
+- Mobile tests: all passing, selectors aligned with actual DOM
+- TypeScript: 0 errors

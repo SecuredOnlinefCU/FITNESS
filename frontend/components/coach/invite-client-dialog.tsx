@@ -1,9 +1,14 @@
 'use client';
 
 import { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent } from '@/components/ui/card';
 import { clientsApi } from '@/lib/api/modules/clients';
-import { Mail, Copy, Check } from 'lucide-react';
+import { Mail, Copy, Check, User, UserPlus, Loader2, CheckCircle2, XCircle } from 'lucide-react';
+
+type Step = 'form' | 'success';
 
 export function InviteClientDialog({
   onClose,
@@ -12,9 +17,11 @@ export function InviteClientDialog({
   onClose: () => void;
   onInvited: () => void;
 }) {
+  const [step, setStep] = useState<Step>('form');
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [inviteUrl, setInviteUrl] = useState('');
@@ -37,6 +44,7 @@ export function InviteClientDialog({
         lastName: lastName.trim(),
       });
       setInviteUrl(result.acceptUrl);
+      setStep('success');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to send invite');
     } finally {
@@ -52,97 +60,201 @@ export function InviteClientDialog({
 
   function handleDone() {
     onInvited();
+    onClose();
   }
 
+  const formFields = [
+    {
+      name: 'email',
+      label: 'Email address',
+      type: 'email',
+      value: email,
+      onChange: setEmail,
+      placeholder: 'client@example.com',
+      required: true,
+      icon: <Mail className="h-4 w-4" />,
+      helper: 'We will send the invite link to this email',
+    },
+    {
+      name: 'firstName',
+      label: 'First name',
+      type: 'text',
+      value: firstName,
+      onChange: setFirstName,
+      placeholder: 'John',
+      required: true,
+      icon: <User className="h-4 w-4" />,
+      helper: 'Used to personalize the invite',
+    },
+    {
+      name: 'lastName',
+      label: 'Last name',
+      type: 'text',
+      value: lastName,
+      onChange: setLastName,
+      placeholder: 'Doe',
+      required: false,
+      icon: <User className="h-4 w-4" />,
+      helper: 'Optional but helps with roster management',
+    },
+    {
+      name: 'phone',
+      label: 'Phone number',
+      type: 'tel',
+      value: phone,
+      onChange: setPhone,
+      placeholder: '+1 (555) 000-0000',
+      required: false,
+      icon: <User className="h-4 w-4" />,
+      helper: 'Optional — used for SMS reminders if enabled',
+    },
+  ] as const;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="w-full max-w-sm rounded-2xl bg-card p-6 shadow-xl" onClick={(e) => e.stopPropagation()}>
-        {!inviteUrl ? (
-          <>
-            <h2 className="text-lg font-black">Invite client</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Send an invite link to add a client to your roster.</p>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
+      <motion.div
+        className="w-full max-w-md rounded-3xl border border-border bg-card shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ duration: 0.2, ease: [0.25, 0.1, 0.25, 1] }}
+      >
+        <CardContent className="p-6">
+          <AnimatePresence mode="wait">
+            {step === 'form' ? (
+              <motion.div
+                key="form"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="mb-6">
+                  <h2 className="text-xl font-black tracking-tight">Invite client</h2>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Add a new client to your roster. They will receive an email with a secure link to join.
+                  </p>
+                </div>
 
-            {error && (
-              <div role="alert" className="mt-3 rounded-2xl border border-pulse/20 bg-pulse/10 px-4 py-3 text-sm text-pulse">
-                {error}
-              </div>
+                {error && (
+                  <motion.div
+                    role="alert"
+                    className="mb-4 flex items-start gap-3 rounded-2xl border border-pulse/30 bg-pulse/10 p-4"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                  >
+                    <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-pulse" />
+                    <p className="text-sm text-pulse">{error}</p>
+                  </motion.div>
+                )}
+
+                <form onSubmit={handleSubmit} className="space-y-4">
+                  {formFields.map((field) => (
+                    <motion.div
+                      key={field.name}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 }}
+                    >
+                      <label className="mb-1.5 flex items-center justify-between text-sm font-semibold text-foreground">
+                        <span>{field.label}</span>
+                        {field.required && <span className="text-pulse">*</span>}
+                      </label>
+                      <Input
+                        type={field.type}
+                        value={field.value}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        placeholder={field.placeholder}
+                        required={field.required}
+                        icon={field.icon}
+                      />
+                      <p className="mt-1.5 text-xs text-muted-foreground">{field.helper}</p>
+                    </motion.div>
+                  ))}
+
+                  <div className="mt-6 flex justify-end gap-3">
+                    <Button type="button" variant="ghost" onClick={onClose}>
+                      Cancel
+                    </Button>
+                    <Button type="submit" disabled={loading}>
+                      {loading ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          Sending...
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="h-4 w-4" />
+                          Send invite
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="success"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.2 }}
+              >
+                <div className="mb-6 flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-signal/10">
+                    <CheckCircle2 className="h-6 w-6 text-signal" />
+                  </div>
+                  <div>
+                    <h2 className="text-xl font-black tracking-tight">Invite sent</h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      Share this link with {firstName || 'your client'} or let us send it via email.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                  <label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Invite link
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 truncate rounded-xl bg-background px-4 py-3 text-sm text-foreground">
+                      {inviteUrl}
+                    </div>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleCopy}
+                      className="shrink-0"
+                    >
+                      {copied ? (
+                        <>
+                          <Check className="h-4 w-4" />
+                          Copied
+                        </>
+                      ) : (
+                        <>
+                          <Copy className="h-4 w-4" />
+                          Copy
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    The client will receive an email with this link. Once they accept, you will see a pending request in your client list.
+                  </p>
+                </div>
+
+                <div className="mt-6 flex justify-end">
+                  <Button onClick={handleDone}>
+                    Done
+                  </Button>
+                </div>
+              </motion.div>
             )}
-
-            <form onSubmit={handleSubmit} className="mt-4 space-y-3">
-              <div>
-                <label className="mb-1 block text-sm font-bold text-foreground">Email *</label>
-                <input
-                  type="email"
-                  className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
-                  placeholder="client@example.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  required
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="mb-1 block text-sm font-bold text-foreground">First name *</label>
-                  <input
-                    className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
-                    placeholder="John"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="mb-1 block text-sm font-bold text-foreground">Last name</label>
-                  <input
-                    className="h-11 w-full rounded-2xl border border-border bg-background px-4 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
-                    placeholder="Doe"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                  />
-                </div>
-              </div>
-
-              <div className="mt-5 flex justify-end gap-3">
-                <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-                <Button type="submit" disabled={loading}>
-                  {loading ? 'Sending...' : 'Send invite'}
-                </Button>
-              </div>
-            </form>
-          </>
-        ) : (
-          <>
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/10">
-                <Mail className="h-5 w-5 text-success" />
-              </div>
-              <div>
-                <h2 className="text-lg font-black">Invite sent</h2>
-                <p className="text-sm text-muted-foreground">Share this link with your client.</p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 rounded-2xl border border-border bg-muted p-3">
-              <input
-                className="flex-1 bg-transparent text-sm text-foreground"
-                value={inviteUrl}
-                readOnly
-              />
-              <button onClick={handleCopy} className="text-muted-foreground hover:text-foreground">
-                {copied ? <Check className="h-4 w-4 text-success" /> : <Copy className="h-4 w-4" />}
-              </button>
-            </div>
-
-            <p className="mt-3 text-xs text-muted-foreground">
-              The client will receive an email with this link. Once they accept, you&apos;ll see a pending request in your client list.
-            </p>
-
-            <div className="mt-5 flex justify-end">
-              <Button onClick={handleDone}>Done</Button>
-            </div>
-          </>
-        )}
-      </div>
+          </AnimatePresence>
+        </CardContent>
+      </motion.div>
     </div>
   );
 }

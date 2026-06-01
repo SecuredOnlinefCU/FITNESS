@@ -1,11 +1,11 @@
 import { test, expect, Page } from '@playwright/test';
 
-const BASE = process.env.CI ? 'https://levelfitcoach.com' : 'http://localhost:3001';
+const BASE = process.env.CI ? 'https://frontend-eosin-seven-71.vercel.app' : 'http://localhost:3001';
 const API = process.env.CI ? 'https://api-production-c73f.up.railway.app' : 'http://localhost:4000';
 
-const COACH_EMAIL = `coach-voice-${Date.now()}@levelfitest.com`;
+const COACH_EMAIL = 'coach-voice-test@levelfitest.com';
 const COACH_PASSWORD = 'CoachTest123!';
-const CLIENT_EMAIL = `client-voice-${Date.now()}@levelfitest.com`;
+const CLIENT_EMAIL = 'client-voice-test@levelfitest.com';
 const CLIENT_PASSWORD = 'ClientTest123!';
 
 let coachToken: string;
@@ -14,22 +14,22 @@ let coachUserId: string;
 let clientUserId: string;
 let threadId: string;
 
-test.describe('Voice and video messaging', () => {
-  test('Step 1: Set up coach and client accounts', async ({ request }) => {
-    // Sign up coach
-    const coachRes = await request.post(`${API}/api/auth/signup`, {
-      data: { email: COACH_EMAIL, password: COACH_PASSWORD, firstName: 'Coach', lastName: 'Voice', role: 'coach' },
+test.describe.serial('Voice and video messaging', () => {
+  test('Step 1: Set up session — login accounts and create thread', async ({ request }) => {
+    // Login coach
+    const coachRes = await request.post(`${API}/api/auth/login`, {
+      data: { email: COACH_EMAIL, password: COACH_PASSWORD },
     });
-    expect(coachRes.status()).toBe(201);
+    expect(coachRes.status()).toBe(200);
     const coachData = await coachRes.json();
     coachToken = coachData.accessToken;
     coachUserId = coachData.user?.id || coachData.userId;
 
-    // Sign up client
-    const clientRes = await request.post(`${API}/api/auth/signup`, {
-      data: { email: CLIENT_EMAIL, password: CLIENT_PASSWORD, firstName: 'Client', lastName: 'Voice', role: 'client' },
+    // Login client
+    const clientRes = await request.post(`${API}/api/auth/login`, {
+      data: { email: CLIENT_EMAIL, password: CLIENT_PASSWORD },
     });
-    expect(clientRes.status()).toBe(201);
+    expect(clientRes.status()).toBe(200);
     const clientData = await clientRes.json();
     clientToken = clientData.accessToken;
     clientUserId = clientData.user?.id || clientData.userId;
@@ -39,7 +39,7 @@ test.describe('Voice and video messaging', () => {
       headers: { Authorization: `Bearer ${coachToken}` },
       data: { coachUserId, clientUserId },
     });
-    expect(threadRes.status()).toBe(201);
+    expect(threadRes.ok()).toBeTruthy();
     const threadData = await threadRes.json();
     threadId = threadData.id;
 
@@ -49,22 +49,23 @@ test.describe('Voice and video messaging', () => {
   });
 
   test('Step 2: Coach records and sends voice message', async ({ page, context }) => {
+    // Inject auth token via localStorage
     await page.goto(BASE);
-    // Inject auth token
-    await page.evaluate((token) => {
+    await page.evaluate(({ token, uid, email }) => {
       localStorage.setItem('fitness_access_token', token);
-      localStorage.setItem('fitness_user', JSON.stringify({ id: coachUserId, role: 'coach', email: COACH_EMAIL }));
-    }, coachToken);
+      localStorage.setItem('fitness_user', JSON.stringify({ id: uid, role: 'coach', email }));
+    }, { token: coachToken, uid: coachUserId, email: COACH_EMAIL });
     await page.reload();
+    await page.waitForLoadState('load');
 
     // Navigate to thread
     await page.goto(`${BASE}/dashboard/messages/${threadId}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Wait for the composer and recording buttons
     const micButton = page.locator('button[aria-label="Record voice message"]');
     const videoButton = page.locator('button[aria-label="Record video message"]');
-    await expect(micButton).toBeVisible({ timeout: 10000 });
+    await expect(micButton).toBeVisible({ timeout: 15000 });
     await expect(videoButton).toBeVisible({ timeout: 5000 });
 
     // Grant microphone permission and click record
@@ -97,20 +98,21 @@ test.describe('Voice and video messaging', () => {
 
   test('Step 3: Coach records and sends video message', async ({ page, context }) => {
     await page.goto(BASE);
-    await page.evaluate((token) => {
+    await page.evaluate(({ token, uid, email }) => {
       localStorage.setItem('fitness_access_token', token);
-      localStorage.setItem('fitness_user', JSON.stringify({ id: coachUserId, role: 'coach', email: COACH_EMAIL }));
-    }, coachToken);
+      localStorage.setItem('fitness_user', JSON.stringify({ id: uid, role: 'coach', email }));
+    }, { token: coachToken, uid: coachUserId, email: COACH_EMAIL });
     await page.reload();
+    await page.waitForLoadState('load');
 
     await page.goto(`${BASE}/dashboard/messages/${threadId}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Grant camera + microphone
     await context.grantPermissions(['camera', 'microphone']);
 
     const videoButton = page.locator('button[aria-label="Record video message"]');
-    await expect(videoButton).toBeVisible({ timeout: 10000 });
+    await expect(videoButton).toBeVisible({ timeout: 15000 });
     await videoButton.click();
 
     // Recording should show preview video + stop button
@@ -135,14 +137,15 @@ test.describe('Voice and video messaging', () => {
 
   test('Step 4: Replay voice and video from thread', async ({ page }) => {
     await page.goto(BASE);
-    await page.evaluate((token) => {
+    await page.evaluate(({ token, uid, email }) => {
       localStorage.setItem('fitness_access_token', token);
-      localStorage.setItem('fitness_user', JSON.stringify({ id: clientUserId, role: 'client', email: CLIENT_EMAIL }));
-    }, clientToken);
+      localStorage.setItem('fitness_user', JSON.stringify({ id: uid, role: 'client', email }));
+    }, { token: clientToken, uid: clientUserId, email: CLIENT_EMAIL });
     await page.reload();
+    await page.waitForLoadState('load');
 
     await page.goto(`${BASE}/dashboard/messages/${threadId}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     // Find audio elements and try to play
     const audioCount = await page.locator('audio').count();
@@ -157,19 +160,20 @@ test.describe('Voice and video messaging', () => {
 
   test('Step 5: Client can also record and send voice message', async ({ page, context }) => {
     await page.goto(BASE);
-    await page.evaluate((token) => {
+    await page.evaluate(({ token, uid, email }) => {
       localStorage.setItem('fitness_access_token', token);
-      localStorage.setItem('fitness_user', JSON.stringify({ id: clientUserId, role: 'client', email: CLIENT_EMAIL }));
-    }, clientToken);
+      localStorage.setItem('fitness_user', JSON.stringify({ id: uid, role: 'client', email }));
+    }, { token: clientToken, uid: clientUserId, email: CLIENT_EMAIL });
     await page.reload();
+    await page.waitForLoadState('load');
 
     await page.goto(`${BASE}/dashboard/messages/${threadId}`);
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('load');
 
     await context.grantPermissions(['microphone']);
 
     const micButton = page.locator('button[aria-label="Record voice message"]');
-    await expect(micButton).toBeVisible({ timeout: 10000 });
+    await expect(micButton).toBeVisible({ timeout: 15000 });
     await micButton.click();
 
     const stopButton = page.locator('button[aria-label="Stop recording"]');

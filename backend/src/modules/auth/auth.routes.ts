@@ -10,6 +10,7 @@ import { HttpError } from "../../common/errors/http-error";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "./auth.tokens";
 import { sendWelcomeEmail, sendInviteEmail, sendPasswordResetEmail } from "../email/email.service";
 import { triggerWelcomeFlow, triggerInviteFlow, triggerPasswordResetFlow } from "../../lib/power-automate";
+import { validateMicrosoftToken } from "../../lib/entra-id";
 
 export const authRouter = Router();
 const sha = (v: string) => crypto.createHash("sha256").update(v).digest("hex");
@@ -452,5 +453,98 @@ authRouter.get(
     } catch {
       res.redirect(`${frontendUrl}/auth/callback?error=server_error`);
     }
+  }),
+);
+
+authRouter.post(
+  "/microsoft",
+  asyncHandler(async (req, res) => {
+    if (!env.MS_GRAPH_TENANT_ID || !env.MS_GRAPH_CLIENT_ID) {
+      throw new HttpError(503, "Microsoft SSO not configured");
+    }
+
+    const { idToken } = z.object({ idToken: z.string().min(1) }).parse(req.body);
+
+    let microsoftUser: { oid: string; email: string; name: string };
+    try {
+      microsoftUser = await validateMicrosoftToken(
+        idToken,
+        env.MS_GRAPH_TENANT_ID,
+        env.MS_GRAPH_CLIENT_ID,
+      );
+    } catch {
+      throw new HttpError(401, "Invalid Microsoft token");
+    }
+
+    if (!microsoftUser.email) {
+      throw new HttpError(400, "Microsoft account has no email");
+    }
+
+    const email = microsoftUser.email.toLowerCase();
+
+    const existingAccount = await prisma.account.findUnique({
+      where: { provider_providerAccountId: { provider: "microsoft", providerAccountId: microsoftUser.oid } },
+      include: { user: { include: { roles: { include: { role: true } } } } },
+    });
+
+    let userData: Awaited<ReturnType<typeof tokenPayload>> extends { sub: string } ? { id: string; email: string; roles: { role: { name: string } }[]; firstName: string | null; lastName: string | null; avatarUrl: string | null; passwordHash: string | null } : never;
+    let isNew = false;
+
+    if (existingAccount) {
+      userData = existingAccount.user as any;
+    } else {
+      const existingUser = await prisma.user.findUnique({
+        where: { email },
+        include: { roles: { include: { role: true } } },
+      });
+
+      if (existingUser) {
+        await prisma.account.create({
+          data: {
+            userId: existingUser.id,
+            provider: "microsoft",
+            providerAccountId: microsoftUser.oid,
+          },
+        });
+        userData = existingUser as any;
+      } else {
+        isNew = true;
+        const clientRoleId = await roleId("client");
+        const names = microsoftUser.name.split(" ");
+        const displayName = microsoftUser.name;
+        const newUser = await prisma.user.create({
+          data: {
+            email,
+            passwordHash: "",
+            firstName: names[0] || null,
+            lastName: names.slice(1).join(" ") || null,
+            roles: { create: [{ roleId: clientRoleId }] },
+            clientProfile: { create: { displayName } },
+            accounts: {
+              create: { provider: "microsoft", providerAccountId: microsoftUser.oid },
+            },
+          },
+          include: { roles: { include: { role: true } } },
+        });
+        userData = newUser as any;
+      }
+    }
+
+    const payload = tokenPayload(userData as any);
+    const refresh = signRefreshToken(payload);
+    await prisma.refreshSession.create({ data: { userId: userData.id, tokenHash: sha(refresh) } });
+
+    res.json({
+      user: {
+        id: userData.id,
+        email: userData.email,
+        role: payload.role,
+        firstName: userData.firstName,
+        lastName: userData.lastName,
+      },
+      accessToken: signAccessToken(payload),
+      refreshToken: refresh,
+      isNewUser: !userData.passwordHash,
+    });
   }),
 );

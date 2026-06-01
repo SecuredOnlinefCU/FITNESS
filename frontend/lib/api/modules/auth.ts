@@ -44,4 +44,11 @@ export const authApi = {
       body: JSON.stringify({ password }),
     });
   },
+  microsoft(idToken: string) {
+    return apiFetch<AuthSession & { isNewUser?: boolean }>('/api/auth/microsoft', {
+      method: 'POST',
+      auth: false,
+      body: JSON.stringify({ idToken }),
+    });
+  },
 };
