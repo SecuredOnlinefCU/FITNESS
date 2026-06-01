@@ -1,5 +1,78 @@
 # LevelFITness — Agent Memory
 
+## 2026-06-01 — Voice/video messaging: MediaRecorder components + SharePoint upload + media-aware thread views
+
+**Goal:** Enable clients and coaches to record audio/video messages in chat threads. Audio/video captured via browser MediaRecorder API, uploaded to SharePoint via existing `uploadToSharepoint` lib, stored as media messages in existing Message model.
+
+**Approach:** 3-layer: (1) Backend — sharepoint.ts accepts optional folder param, POST /api/media/upload-chat-media route, POST /threads/:id/messages accepts messageType/mediaAssetId/durationMs from body. (2) Frontend — AudioRecorder, VideoRecorder, MediaPlayer (VoiceMessagePlayer, VideoMessagePlayer, ImageMessageView), sendMedia methods in both hooks. (3) E2E tests — API validation of upload + message creation flow.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `backend/src/lib/sharepoint.ts` | `uploadToSharepoint()` now accepts optional `folder` param (defaults to `"ExerciseVideos"`) |
+| Added | `backend/src/modules/media/media.routes.ts` | `POST /api/media/upload-chat-media` — uploads base64 file to SharePoint `ChatMedia/{userId}/` folder |
+| Modified | `backend/src/modules/messaging/messaging.routes.ts` | Removed hardcoded `messageType: 'TEXT'` — passes through `messageType`, `mediaAssetId`, `durationMs` from body |
+| Modified | `frontend/lib/realtime/message-types.ts` | Extended `ClientRealtimeEvent.message.send` with `bodyText?`, `mediaAssetId?`, `durationMs?` |
+| Modified | `frontend/lib/api/modules/messaging.ts` | `sendMessage()` now accepts `bodyText?`, `mediaAssetId?`, `durationMs?` |
+| Modified | `frontend/lib/api/modules/media.ts` | Added `uploadChatMedia(file, fileName, mimeType, messageType)` method |
+| Modified | `frontend/lib/types/domain.ts` | `Message` type now includes `durationMs?: number \| null` |
+| Modified | `frontend/hooks/messaging/use-websocket-thread.ts` | Added `sendMedia(messageType, mediaAssetId, durationMs, bodyText?)` (WebSocket + HTTP fallback) |
+| Modified | `frontend/hooks/messaging/use-optimistic-thread.ts` | Added `sendMedia(messageType, mediaAssetId, durationMs, bodyText?)` (HTTP-only, optimistic) |
+| Added | `frontend/components/messaging/audio-recorder.tsx` | Mic button → MediaRecorder (`audio/webm`) → preview with duration → upload → onSend |
+| Added | `frontend/components/messaging/video-recorder.tsx` | Camera button → live preview → MediaRecorder (`video/webm`) → preview with playback → upload → onSend |
+| Added | `frontend/components/messaging/media-player.tsx` | VoiceMessagePlayer (`<audio>` + mic icon + duration), VideoMessagePlayer (`<video>` + play badge, 280px), ImageMessageView (`<img>`) |
+| Modified | `frontend/components/messaging/realtime/optimistic-message-composer.tsx` | Conditionally shows AudioRecorder + VideoRecorder when `onSendMedia` prop provided |
+| Modified | `frontend/components/messaging/realtime/live-thread-view.tsx` | Renders VOICE → VoiceMessagePlayer, VIDEO → VideoMessagePlayer, IMAGE → ImageMessageView |
+| Modified | `frontend/components/messaging/realtime/optimistic-thread-view.tsx` | Same media message rendering as live thread view |
+| Added | `frontend/e2e/voice-video-messaging.spec.ts` | 5-step Playwright test: login accounts, upload voice/send, upload video/send, replay as client, client sends voice |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    RECORDER[AudioRecorder / VideoRecorder] -->|MediaRecorder API| BLOB[Blob: audio/webm, video/webm]
+    BLOB -->|btoa + POST| MEDIA_API[POST /api/media/upload-chat-media]
+    MEDIA_API -->|uploadToSharepoint| SPO[SharePoint: ChatMedia/{userId}/]
+    SPO -->|returns webUrl| MEDIA_API
+    MEDIA_API -->|mediaAssetId| COMPOSER[OptimisticMessageComposer]
+    COMPOSER -->|sendMedia| THREAD_HOOK[useWebsocketThread / useOptimisticThread]
+    THREAD_HOOK -->|POST /threads/:id/messages| BACKEND[Message created with messageType + mediaAssetId + durationMs]
+    BACKEND -->|GET /threads/:id/messages| VIEW[LiveThreadView / OptimisticThreadView]
+    VIEW -->|VOICE| VoiceMessagePlayer
+    VIEW -->|VIDEO| VideoMessagePlayer
+    VIEW -->|IMAGE| ImageMessageView
+```
+
+### ADR-021 — MediaRecorder-first for recording (2026-06-01)
+
+- **Context:** Need browser-based audio/video recording without third-party services or paid APIs.
+- **Options considered:** A) MediaRecorder API (chosen — built-in, no deps). B) Daily.co / Twilio Video (SaaS cost, over-engineered). C) getUserMedia + custom WAV encoder (more code for same result).
+- **Decision:** Option A — MediaRecorder with `audio/webm` / `video/webm` codecs.
+- **Why:** MediaRecorder is a well-supported browser API (Chrome, Firefox, Edge, Safari 16.4+). No dependencies, no costs, no server-side processing. The `webm` format is natively playable in `<audio>`/`<video>` elements.
+- **Consequences:** Requires microphone/camera permission via `context.grantPermissions`. iOS Safari requires iOS 16.4+. File sizes are capped by Express JSON body parser (50MB limit via `express.json({ limit: '50mb' })`).
+
+### ADR-022 — SharePoint chat media folder (2026-06-01)
+
+- **Context:** Exercise demo videos go to `ExerciseVideos/`. Chat media needs its own folder to avoid mixing concerns.
+- **Options considered:** A) `ChatMedia/{userId}/` subfolder per user (chosen). B) Single flat `ChatMedia/` folder (name collisions). C) Same folder as ExerciseVideos (messy).
+- **Decision:** Option A — `ChatMedia/{senderUserId}/` subfolder via optional `folder` param on `uploadToSharepoint()`.
+- **Why:** Clean separation from exercise videos. User-based subfolders prevent name collisions and simplify cleanup. The `folder` param defaults to `"ExerciseVideos"` so existing callers are unaffected.
+- **Consequences:** SharePoint folder structure: `ExerciseVideos/` for demo videos, `ChatMedia/{userId}/` for voice/video messages. Both use the same Graph API PUT flow.
+
+### Status: Complete
+- Backend type-check: ✅ `tsc --noEmit` — 0 errors
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors (our files; pre-existing navbar.tsx error unrelated)
+- Railway deploy: ✅ Backend deployed with upload-chat-media route + flexible messageType
+- Production API verified: ✅ upload-chat-media returns SharePoint webUrl, messages created with correct messageType/mediaAssetId/durationMs
+- E2E tests: ✅ 5/5 passing against production Railway backend
+- BLOCKED: Frontend Vercel deploy needs navbar.tsx fix (pre-existing form-feed character)
+
+### Test Accounts (on Railway)
+- **Coach:** `coach-voice-test@levelfitest.com` / `CoachTest123!` (userId: `18c0cf24-...`)
+- **Client:** `client-voice-test@levelfitest.com` / `ClientTest123!` (userId: `e01b850a-...`)
+- **Thread:** `63ed2084-cc67-46ec-b15d-781edc1f5694`
+
 ## 2026-06-01 — Client Dossier System (invite flow, intelligence, premium coach view)
 
 **Goal:** Build a complete client dossier system with two-step invite approval, momentum scoring, plateau detection, churn prediction, smart action engine, and a 7-tab premium coach dossier page.

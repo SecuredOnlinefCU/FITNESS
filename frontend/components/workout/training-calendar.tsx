@@ -121,51 +121,65 @@ export function TrainingCalendar({ clientUserId, onAssignDate, onCardClick, work
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-7 gap-1">
-          {Array.from({ length: weekCount * 7 }).map((_, i) => (
-            <div key={i} className="aspect-[3/4] animate-pulse rounded-xl bg-muted" />
-          ))}
+        <div className="border border-line rounded-lg overflow-hidden">
+          <div className="grid grid-cols-7 bg-ink-900">
+            {Array.from({ length: 7 }).map((_, i) => (
+              <div key={i} className="aspect-square animate-pulse bg-muted border-r border-b border-line" />
+            ))}
+          </div>
+          <div className="grid grid-cols-7">
+            {Array.from({ length: weekCount * 7 }).map((_, i) => (
+              <div key={i} className="aspect-square animate-pulse bg-muted border-r border-b border-line" />
+            ))}
+          </div>
         </div>
       ) : error ? (
-        <div className="flex items-center justify-center rounded-xl border border-pulse/30 bg-pulse/5 p-6">
+        <div className="flex items-center justify-center rounded-lg border border-pulse/30 bg-pulse/5 p-6">
           <p className="text-sm text-pulse">{error}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-7 gap-1">
-          {DAY_LABELS.map(d => (
-            <div key={d} className="py-2 text-center text-xs font-bold uppercase text-muted-foreground">{d}</div>
-          ))}
-          {weeks.flat().map((day, i) => {
-            const dateKey = localDateStr(day);
-            const dayAssignments = grouped[dateKey] ?? [];
-            const isToday = isSameDay(day, today);
-            return (
-              <div
-                key={i}
-                className={`flex flex-col gap-1 rounded-xl border p-2 min-h-[100px] transition ${isToday ? 'border-primary/40 bg-primary/5' : 'border-border'}`}
-              >
-                <div className="flex items-center justify-between">
-                  <span className={`text-xs font-bold ${isToday ? 'text-primary' : 'text-muted-foreground'}`}>
-                    {day.getDate()}
-                  </span>
-                  {dayAssignments.length === 0 && onAssignDate && (
-                    <button
-                      onClick={() => onAssignDate(dateKey)}
-                      className="rounded-md p-0.5 text-muted-foreground opacity-0 hover:opacity-100 hover:bg-muted transition"
-                      title="Assign workout"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </button>
-                  )}
+        <div className="border border-line rounded-lg overflow-hidden bg-ink-950">
+          <div className="grid grid-cols-7 bg-ink-900 border-b border-line">
+            {DAY_LABELS.map(d => (
+              <div key={d} className="px-3 py-3 text-center text-xs font-bold uppercase tracking-wide text-bone-fade border-r border-line last:border-r-0">{d}</div>
+            ))}
+          </div>
+          <div className="grid grid-cols-7 bg-ink-950">
+            {weeks.flat().map((day, i) => {
+              const dateKey = localDateStr(day);
+              const dayAssignments = grouped[dateKey] ?? [];
+              const isToday = isSameDay(day, today);
+              const isLastRow = i >= weeks.flat().length - 7;
+              const isLastCol = (i + 1) % 7 === 0;
+              return (
+                <div
+                  key={i}
+                  className={`min-h-28 flex flex-col border-r border-b border-line p-2 transition ${isToday ? 'bg-primary/10 border-primary/40' : ''} ${isLastCol ? 'border-r-0' : ''} ${isLastRow ? 'border-b-0' : ''} hover:bg-ink-800/50`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`text-sm font-bold px-2 py-1 rounded-md ${isToday ? 'bg-primary text-ink-950 font-black' : 'text-bone'}`}>
+                      {day.getDate()}
+                    </span>
+                    {dayAssignments.length === 0 && onAssignDate && (
+                      <button
+                        onClick={() => onAssignDate(dateKey)}
+                        className="rounded-md p-1 text-bone-fade opacity-0 hover:opacity-100 hover:bg-ink-800 transition"
+                        title="Assign workout"
+                        aria-label={`Assign workout for ${day.toLocaleDateString()}`}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1 overflow-y-auto flex-1">
+                    {dayAssignments.map(a => (
+                      <CalendarWorkoutCard key={a.id} assignment={a} title={workoutTitles?.[a.workoutId]} onClick={onCardClick as ((a: WorkoutAssignment) => void) | undefined} />
+                    ))}
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1 overflow-y-auto max-h-[80px]">
-                  {dayAssignments.map(a => (
-                    <CalendarWorkoutCard key={a.id} assignment={a} title={workoutTitles?.[a.workoutId]} onClick={onCardClick as ((a: WorkoutAssignment) => void) | undefined} />
-                  ))}
-                </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

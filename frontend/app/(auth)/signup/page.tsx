@@ -97,7 +97,7 @@ export default function SignupPage() {
 
         <form onSubmit={handleSubmit} className="mt-5 space-y-4" noValidate>
           {error && (
-            <div role="alert" className="rounded-2xl border border-pulse/20 bg-pulse/10 px-4 py-3 text-sm text-pulse">{error}</div>
+            <div id="signup-error" role="alert" className="rounded-2xl border border-pulse/20 bg-pulse/10 px-4 py-3 text-sm text-pulse">{error}</div>
           )}
 
           <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-3 sm:space-y-0">
@@ -112,7 +112,8 @@ export default function SignupPage() {
                 value={firstName}
                 onChange={(e) => setFirstName(e.target.value)}
                 required
-                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                aria-describedby={error ? 'signup-error' : undefined}
+                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               />
             </div>
             <div>
@@ -126,18 +127,19 @@ export default function SignupPage() {
                 value={lastName}
                 onChange={(e) => setLastName(e.target.value)}
                 required
-                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+                aria-describedby={error ? 'signup-error' : undefined}
+                className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               />
             </div>
           </div>
 
-          <div>
+          <div className="mb-4">
             <div className="mb-1.5 block text-sm font-bold text-foreground" id="signup-role-label">Account type</div>
             <div role="radiogroup" aria-labelledby="signup-role-label" className="grid grid-cols-2 gap-3">
               <button type="button" role="radio" aria-checked={role === 'client'} onClick={() => setRole('client')}
-                className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors ${role === 'client' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Client</button>
+                className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${role === 'client' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Client</button>
               <button type="button" role="radio" aria-checked={role === 'coach'} onClick={() => setRole('coach')}
-                className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors ${role === 'coach' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Coach</button>
+                className={`flex h-12 items-center justify-center rounded-2xl border text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background ${role === 'coach' ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-background text-muted-foreground hover:border-primary/30'}`}>Coach</button>
             </div>
           </div>
 
@@ -152,7 +154,8 @@ export default function SignupPage() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus:border-primary/50 focus:outline-none"
+              aria-describedby={error ? 'signup-error' : undefined}
+              className="h-12 w-full rounded-2xl border border-border bg-background px-4 text-base text-foreground placeholder:text-muted-foreground focus-visible:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             />
           </div>
 

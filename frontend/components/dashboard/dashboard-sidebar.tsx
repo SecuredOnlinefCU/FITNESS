@@ -6,6 +6,7 @@ import { usePathname } from 'next/navigation';
 import { Menu, X, LogOut, LayoutDashboard, Home, Dumbbell, Activity, TrendingUp, Apple, BookOpen, Newspaper, CheckSquare, MessageSquare, CreditCard, Bell, Users, Brain, AlertTriangle, Layers, FileText, Megaphone, Shield, Flag, ClipboardList, ClipboardCheck, Truck, Webhook, BarChart3 } from 'lucide-react';
 import { useAuth } from '@/components/auth/auth-provider';
 import { LevelFitMark } from '@/components/levelfitness/logo';
+import { LogoutConfirmDialog } from './logout-confirm-dialog';
 
 type NavItem = { label: string; href: string; icon: React.ComponentType<{ className?: string }> };
 
@@ -79,6 +80,13 @@ export function DashboardSidebar() {
   const { user, signOut } = useAuth();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [logoutOpen, setLogoutOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    await signOut();
+  };
 
   let links: NavItem[] = [];
   if (user?.role === 'client') links = clientLinks;
@@ -99,8 +107,9 @@ export function DashboardSidebar() {
           {user?.firstName || user?.email}
         </div>
         <button
-          onClick={signOut}
-          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-bone-fade transition-colors hover:bg-ink-800 hover:text-bone"
+          onClick={() => setLogoutOpen(true)}
+          className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-bone transition-colors hover:bg-pulse/10 hover:text-pulse focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pulse focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950"
+          aria-label="Sign out of your account"
         >
           <LogOut className="h-4 w-4 shrink-0" />
           Sign out
@@ -111,6 +120,13 @@ export function DashboardSidebar() {
 
   return (
     <>
+      <LogoutConfirmDialog
+        open={logoutOpen}
+        onOpenChange={setLogoutOpen}
+        onConfirm={handleLogout}
+        isLoading={isLoggingOut}
+      />
+
       <button
         onClick={() => setOpen(true)}
         className="fixed left-4 top-4 z-40 rounded-xl border border-line bg-ink-900 p-2.5 text-bone md:hidden"
