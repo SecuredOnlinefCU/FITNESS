@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-set -e
 
-npx prisma db push
-
-exec node dist/main.js
+node dist/main.js &
+npx prisma db push --accept-data-loss --skip-generate
+wait
