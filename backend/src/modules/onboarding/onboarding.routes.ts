@@ -324,6 +324,38 @@ onboardingRouter.post('/generate-plan', requireAuth, asyncHandler(async (req: Au
     weeks.push({ id: week.id, weekIndex: week.weekIndex, phaseLabel: week.phaseLabel || phaseLabel, workouts: weekWorkouts });
   }
 
+  // Auto-assign week 1 workouts to the client
+  const today = new Date();
+  const week1 = weeks[0];
+  if (week1) {
+    for (let i = 0; i < week1.workouts.length; i++) {
+      const w = week1.workouts[i];
+      const assignDate = new Date(today);
+      assignDate.setDate(today.getDate() + i);
+      await prisma.workoutAssignment.create({
+        data: {
+          workoutId: w.id,
+          clientUserId: userId,
+          assignedByUserId: userId,
+          assignedForDate: assignDate,
+          status: 'assigned',
+        },
+      });
+    }
+  }
+
+  // Create program membership
+  await prisma.programMembership.create({
+    data: { programId: program.id, clientUserId: userId, addedByUserId: userId, status: 'active' },
+  });
+
+  // Set as primary program
+  await prisma.clientPrimaryProgram.upsert({
+    where: { clientUserId: userId },
+    update: { programId: program.id, setByUserId: userId },
+    create: { clientUserId: userId, programId: program.id, setByUserId: userId },
+  });
+
   res.json({
     program: { ...program, weeks },
     summary: {
