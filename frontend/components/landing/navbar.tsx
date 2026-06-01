@@ -42,10 +42,10 @@ export default function Navbar() {
         </nav>
 
         <div className="hidden md:flex items-center gap-4">
-          <Link href="/login" className="text-sm text-bone-mute hover:text-bone transition-colors">Log in</Link>
+          <Link href="/login" className="text-sm text-bone-mute hover:text-bone transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md px-2 py-1">Log in</Link>
           <Link
             href="/signup"
-            className="rounded-lg bg-signal px-4 py-2 text-sm font-medium text-ink-950 hover:brightness-95 transition-all"
+            className="rounded-lg bg-signal px-4 py-2 text-sm font-medium text-ink-950 hover:brightness-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Start free trial
           </Link>
@@ -53,29 +53,30 @@ export default function Navbar() {
 
         <button
           onClick={() => setMobileOpen(!mobileOpen)}
-          className="flex md:hidden items-center justify-center rounded-xl p-2 text-bone-mute hover:text-bone transition-colors"
+          className="flex md:hidden items-center justify-center rounded-xl p-2 text-bone-mute hover:text-bone transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           aria-label={mobileOpen ? 'Close navigation menu' : 'Open navigation menu'}
           aria-expanded={mobileOpen}
+          aria-controls="mobile-nav"
         >
           {mobileOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 top-0 z-40 md:hidden">
+        <div id="mobile-nav" className="fixed inset-0 top-0 z-40 md:hidden">
           <div className="absolute inset-0 bg-ink-950/60 backdrop-blur-sm" onClick={() => setMobileOpen(false)} />
           <div className="relative flex flex-col items-center gap-6 bg-ink-950 px-6 pb-8 pt-20 shadow-xl">
             {navLinks.map(l => (
-              <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="text-lg text-bone-mute hover:text-bone transition-colors">
+              <a key={l.href} href={l.href} onClick={() => setMobileOpen(false)} className="text-lg text-bone-mute hover:text-bone transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md px-2 py-1">
                 {l.label}
               </a>
             ))}
             <hr className="w-24 border-line/50" />
-            <Link href="/login" onClick={() => setMobileOpen(false)} className="text-lg text-bone-mute hover:text-bone transition-colors">Log in</Link>
+            <Link href="/login" onClick={() => setMobileOpen(false)} className="text-lg text-bone-mute hover:text-bone transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-md px-2 py-1">Log in</Link>
             <Link
               href="/signup"
               onClick={() => setMobileOpen(false)}
-              className="rounded-lg bg-signal px-6 py-3 text-base font-medium text-ink-950 hover:brightness-95 transition-all"
+              className="rounded-lg bg-signal px-6 py-3 text-base font-medium text-ink-950 hover:brightness-95 transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Start free trial
             </Link>

@@ -847,10 +847,10 @@ graph TD
 
 ### Invite Dialog Fields
 
-1. **Email address** (required) � client@example.com
-2. **First name** (required) � John
-3. **Last name** (optional) � Doe
-4. **Phone number** (optional) � +1 (555) 000-0000
+1. **Email address** (required) � client@example.com
+2. **First name** (required) � John
+3. **Last name** (optional) � Doe
+4. **Phone number** (optional) � +1 (555) 000-0000
 
 Each field has inline helper text explaining its purpose.
 
@@ -859,3 +859,56 @@ Each field has inline helper text explaining its purpose.
 - Input component: supports icon prop with proper spacing
 - Mobile tests: all passing, selectors aligned with actual DOM
 - TypeScript: 0 errors
+
+---
+
+## 2026-06-01 — Phase 2: Entra ID SSO (Sign in with Microsoft)
+
+**Goal:** Add "Sign in with Microsoft" SSO to auth pages so users can log in with their Microsoft/Entra ID account instead of email+password.
+
+**Approach:** Backend JWKS token validation (`entra-id.ts`) + Graph API app registration update (SPA redirect URIs + optional claims) + MSAL.js frontend popup flow.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `backend/src/lib/entra-id.ts` | JWKS-based Microsoft ID token validator — fetches signing keys from `login.microsoftonline.com`, converts JWK to PEM via `crypto.createPublicKey`, verifies token with `jsonwebtoken`. Caches keys for 1 hour. Validates `iss` (tenant), `aud` (clientId), `alg` (RS256). |
+| Modified | `backend/src/modules/auth/auth.routes.ts` | Added `POST /api/auth/microsoft` — accepts ID token, validates via `entra-id.ts`, finds/creates Account record, creates user if new (passwordHash:"", client role), returns JWT tokens + `isNewUser` flag. Same pattern as Google OAuth. |
+| Added | `frontend/lib/auth/msal-config.ts` | MSAL.js `PublicClientApplication` singleton using existing `MS_GRAPH_TENANT_ID` + `MS_GRAPH_CLIENT_ID` (with fallback defaults matching production). Popup-only (no redirect flow needed). |
+| Modified | `frontend/lib/api/modules/auth.ts` | Added `microsoft(idToken)` method → `POST /api/auth/microsoft` |
+| Modified | `frontend/components/auth/auth-provider.tsx` | Added `microsoftSignIn()` — opens MSAL popup (`openid profile email` scopes), sends ID token to backend, stores JWT, redirects to onboarding (new users) or home (existing). |
+| Modified | `frontend/app/(auth)/login/page.tsx` | Added "Continue with Microsoft" button (below Google) with 4-color Microsoft logo SVG |
+| Modified | `frontend/app/(auth)/signup/page.tsx` | Same Microsoft button |
+| N/A | (Azure Entra ID — via Graph API) | Added SPA redirect URIs (`https://levelfitcoach.com`, `http://localhost:3000`) to `LevelFITness API` app registration via Graph API PATCH — no Azure portal steps needed. |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    LOGIN[Login page] -->|click| MICROSOFT[Microsoft button]
+    SIGNUP[Signup page] -->|click| MICROSOFT
+    MICROSOFT -->|MSAL.js loginPopup| POPUP[Entra ID popup]
+    POPUP -->|idToken| BACKEND[POST /api/auth/microsoft]
+    BACKEND -->|JWKS validation| ENTRA[entra-id.ts]
+    ENTRA -->|fetch keys| JWKS_URI[https://login.microsoftonline.com/{tenant}/discovery/v2.0/keys]
+    BACKEND -->|find or create Account| DB[(PostgreSQL)]
+    BACKEND -->|create user if new| DB
+    BACKEND -->|JWT tokens| FRONTEND[AuthProvider]
+    FRONTEND -->|isNewUser| ONBOARDING[/onboarding]
+    FRONTEND -->|existing user| HOME[/client/home or /coach/home]
+```
+
+### ADR-021 — SPA redirect URIs via Graph API, not portal (2026-06-01)
+
+- **Context:** MSAL.js popup flow requires SPA redirect URIs registered on the Entra ID app. User had no Azure portal access and Azure CLI wasn't installed.
+- **Options considered:** A) Graph API PATCH via existing client credentials (chosen — worked because the app registration's client credentials token includes implicit access to modify its own app registration). B) Ask user to install Azure CLI. C) Use device code flow to get a user token.
+- **Decision:** Option A — `PATCH https://graph.microsoft.com/v1.0/applications(appId='{id}')` with `{ spa: { redirectUris: [...] } }` using the existing client_credentials token.
+- **Why:** The existing `LevelFITness API` app registration's client credentials token has sufficient permission to modify its own app registration properties (SPA redirect URIs, optional claims). This avoided any portal or CLI dependency.
+- **Consequences:** No manual steps for the user. SSO works immediately after deploy. If the app registration permissions change in the future (e.g., stricter tenant policies), portal access might be needed.
+
+### Status: Complete
+- Backend type-check: ✅ `tsc --noEmit` — 0 errors
+- Frontend type-check: ✅ No new errors (pre-existing: navbar.tsx)
+- Deployed: ✅ Pushed to GitHub → Railway auto-deploy
+- App registration: SPA redirect URIs configured via Graph API
+- Auth flow: Login/Signup → Microsoft button → popup → ID token → backend validates → JWT returned → redirected

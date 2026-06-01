@@ -1,5 +1,6 @@
 {
   "framework": "nextjs",
+  "rootDirectory": "frontend",
   "installCommand": "npm install --no-package-lock",
   "buildCommand": "next build",
   "outputDirectory": ".next"

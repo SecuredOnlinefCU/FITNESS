@@ -22,7 +22,9 @@ export function useOptimisticThread({
   initialMessages?: Message[];
   refreshIntervalMs?: number;
 }) {
-  const [messages, setMessages] = useState<OptimisticMessage[]>(initialMessages);
+  const [messages, setMessages] = useState<OptimisticMessage[]>(
+    initialMessages?.map(m => ({ ...m, durationMs: m.durationMs ?? undefined })) ?? []
+  );
   const [status, setStatus] = useState('');
 
   const sorted = useMemo(

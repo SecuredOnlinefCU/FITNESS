@@ -170,7 +170,7 @@ fitness app/
 │       │   ├── admin/               # Admin dashboard
 │       │   └── email/               # Email service
 │       ├── common/                  # Middleware, errors, utils
-│       └── lib/                     # Prisma client, env config, storage, Power Automate
+│       └── lib/                     # Prisma client, env config, entra-id, storage, Power Automate
 ├── archive/                         # Historical files, debug logs
 ├── docs/                            # Documentation
 │   ├── levelfit-product-design.md   # Complete product design document
@@ -222,7 +222,7 @@ fitness app/
 | UI | shadcn/ui primitives, Lucide icons, React Three Fiber |
 | Backend | Express.js, TypeScript, Prisma ORM |
 | Database | PostgreSQL |
-| Auth | JWT + Entra ID (Microsoft SSO - planned Phase 2) |
+| Auth | JWT + Entra ID SSO (MSAL.js popup + JWKS validation) + Google OAuth |
 | Email | Power Automate flows (primary, via HTTP webhook); Microsoft Graph API (fallback, OAuth 2.0) |
 | Identity Provider | Entra ID (Azure AD) - `LevelFITness API` app registration |
 | Storage | Railway S3-compatible buckets (feed/progress photos); SharePoint (exercise demo videos via Graph API) |
@@ -242,19 +242,22 @@ graph LR
         BE --> S3[(S3 Buckets)]
     end
     subgraph "Microsoft 365 (Enterprise)"
+        FE -->|MSAL.js popup| AAD[Entra ID]
+        AAD -->|idToken| FE
+        FE -->|POST /api/auth/microsoft| BE
+        BE -->|JWKS verify| AAD
         BE -->|POST /welcome| PA[Power Automate Flows]
         BE -->|POST /invite| PA
         BE -->|POST /reset| PA
         PA -->|Office 365 connector| EXO[Exchange Online]
         FE -->|POST /upload-sharepoint| BE
         BE -->|PUT /sites/{id}/drive/root| SPO[SharePoint ExerciseVideos]
-        AAD[Entra ID] -->|app-only token| GRAPH[Microsoft Graph]
+        AAD -->|app-only token| GRAPH[Microsoft Graph]
         GRAPH --> EXO
         GRAPH --> SPO
         EXO -->|noreply@levelfitcoach.com| MAIL[Transactional Email]
     end
     subgraph "Platform Roadmap"
-        SSO[Entra ID SSO - Phase 2]
         PBI[Power BI - Phase 5]
     end
 ```
