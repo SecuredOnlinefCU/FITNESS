@@ -452,7 +452,7 @@ export function OnboardingWizard() {
 
         {step !== 'blueprint' && (
           <div className="mt-8">
-            <Button onClick={next} disabled={!canNext} className="w-full h-12 text-base font-bold">Continue <ArrowRight className="h-4 w-4 ml-2" /></Button>
+            <Button type="button" onClick={next} disabled={!canNext} className="w-full h-12 text-base font-bold">Continue <ArrowRight className="h-4 w-4 ml-2" /></Button>
           </div>
         )}
       </div>
