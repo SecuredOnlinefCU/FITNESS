@@ -156,6 +156,8 @@ export function OnboardingWizard() {
         limitations: limitations.filter(l => l !== 'None'),
       });
       setPlan(result);
+      // Auto-redirect to home after plan generation
+      router.push('/client/home');
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate plan.');
     } finally {
@@ -367,11 +369,9 @@ export function OnboardingWizard() {
                   {error && (
                     <div className="space-y-3">
                       <div className="p-3 rounded-xl bg-pulse/10 border border-pulse/20"><p className="text-sm text-pulse">{error}</p></div>
-                      {blueprint && (
-                        <Button onClick={() => router.push('/client/home')} variant="outline" className="w-full h-11 text-sm font-bold">
-                          Skip to home
-                        </Button>
-                      )}
+                      <Button onClick={() => router.push('/client/home')} variant="outline" className="w-full h-11 text-sm font-bold">
+                        Skip to home
+                      </Button>
                     </div>
                   )}
 
@@ -405,7 +405,7 @@ export function OnboardingWizard() {
                         <div className="flex flex-col items-center gap-3 py-8"><Loader className="h-8 w-8 text-primary animate-spin" /><p className="text-sm text-muted-foreground">Building your personalized program...</p></div>
                       )}
 
-{plan && (
+                      {plan && (
                          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
                            <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-5">
                              <div className="flex items-center gap-3 mb-3">
@@ -422,13 +422,15 @@ export function OnboardingWizard() {
                                ))}
                              </div>
                            </div>
+                           <Button onClick={() => router.push('/client/home')} className="w-full h-12 text-base font-bold">Start training</Button>
                          </motion.div>
                        )}
-                    </motion.div>
-                  )}
-                </div>
-              )}
-            </motion.div>
+
+                     </motion.div>
+                   )}
+                 </div>
+               )}
+             </motion.div>
           </AnimatePresence>
         </div>
 
