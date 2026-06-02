@@ -54,16 +54,18 @@ mediaRouter.get("/sharepoint-proxy", asyncHandler(async (req: AuthenticatedReque
   const accessToken = tokenData.access_token;
 
   // Parse SharePoint URL to extract site and file path
-  // Format: https://{tenant}.sharepoint.com/sites/{site-name}/ExerciseVideos/{filename}
+  // Handles root site (/Shared%20Documents/...) and site collection (/sites/{name}/...) URLs
   const urlObj = new URL(url);
   const siteHost = urlObj.host;
 
   const pathSegments = urlObj.pathname.split("/");
-  // pathSegments example: ['', 'sites', 'LevelFITness', 'ExerciseVideos', 'file.mp4']
-  const sitePath = "/" + pathSegments.slice(1, 3).join("/"); // e.g. /sites/LevelFITness
-  const filePath = decodeURIComponent(pathSegments.slice(3).join("/")); // e.g. ExerciseVideos/file.mp4
+  // Root site example:      ['', 'Shared%20Documents', 'ExerciseVideos', 'file.mp4']
+  // Site collection example: ['', 'sites', 'LevelFITness', 'Shared%20Documents', 'ExerciseVideos', 'file.mp4']
 
-  // Resolve SharePoint site ID
+  const isSiteCollection = pathSegments[1] === 'sites' || pathSegments[1] === 'teams';
+  const sitePath = isSiteCollection ? pathSegments.slice(0, 3).join("/") : "/";
+
+  // Build site query — /sites/{host}:/ for root, /sites/{host}:/sites/{name} for site collections
   const siteResp = await fetch(`${GRAPH_BASE}/sites/${siteHost}:${sitePath}`, {
     headers: { Authorization: `Bearer ${accessToken}` },
   });
@@ -75,6 +77,19 @@ mediaRouter.get("/sharepoint-proxy", asyncHandler(async (req: AuthenticatedReque
 
   const siteData = (await siteResp.json()) as { id: string };
   const siteId = siteData.id;
+
+  // The web URL includes the library name (e.g. "Shared%20Documents").
+  // The drive/root:/ path is relative to the library root, so strip the library segment.
+  let libIdx = -1;
+  for (let i = 0; i < pathSegments.length; i++) {
+    if (pathSegments[i] === 'Shared%20Documents' || pathSegments[i] === 'Shared Documents' || pathSegments[i] === 'Documents') {
+      libIdx = i;
+      break;
+    }
+  }
+  const filePath = libIdx >= 0
+    ? pathSegments.slice(libIdx + 1).join("/")
+    : pathSegments.slice(isSiteCollection ? 4 : 2).join("/");
 
   // Fetch the file from SharePoint via Graph API content endpoint
   const fileResp = await fetch(
