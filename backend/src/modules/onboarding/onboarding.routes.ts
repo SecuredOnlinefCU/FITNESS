@@ -242,10 +242,6 @@ onboardingRouter.post('/generate-plan', requireAuth, asyncHandler(async (req: Au
   const { goal, level, equipment, daysPerWeek, limitations } = req.body;
 
   const allExercises = await prisma.exercise.findMany({ take: 200 });
-  if (allExercises.length === 0) {
-    res.status(400).json({ error: 'No exercises in library yet. Create exercises first.' });
-    return;
-  }
 
   const split = getSplit(daysPerWeek || 4);
   const volPreset = VOLUME_PRESETS[goal] || VOLUME_PRESETS.muscle_gain;

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Target, Dumbbell, Zap, Flame, TrendingUp, Home, Building, Smartphone, AlertTriangle, Check, ArrowRight, ArrowLeft, Loader, Trophy, Moon, Brain, Activity, Timer } from 'lucide-react';
@@ -135,6 +135,11 @@ export function OnboardingWizard() {
         squats: squats !== '' ? squats : undefined,
       });
       setBlueprint(result);
+      
+      // If we have a blueprint, automatically generate the plan
+      if (result) {
+        await handleGeneratePlan();
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Failed to generate blueprint.');
     } finally {
@@ -359,7 +364,16 @@ export function OnboardingWizard() {
                   {generating && !blueprint && (
                     <div className="flex flex-col items-center gap-3 py-8"><Loader className="h-8 w-8 text-primary animate-spin" /><p className="text-sm text-muted-foreground">Building your personalized blueprint...</p></div>
                   )}
-                  {error && <div className="p-3 rounded-xl bg-pulse/10 border border-pulse/20"><p className="text-sm text-pulse">{error}</p></div>}
+                  {error && (
+                    <div className="space-y-3">
+                      <div className="p-3 rounded-xl bg-pulse/10 border border-pulse/20"><p className="text-sm text-pulse">{error}</p></div>
+                      {blueprint && (
+                        <Button onClick={() => router.push('/client/home')} variant="outline" className="w-full h-11 text-sm font-bold">
+                          Skip to home
+                        </Button>
+                      )}
+                    </div>
+                  )}
 
                   {blueprint && (
                     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
@@ -380,32 +394,36 @@ export function OnboardingWizard() {
                       </div>
 
                       {!plan && !generating && (
-                        <Button onClick={handleGeneratePlan} className="w-full h-12 text-base font-bold">Generate my program</Button>
+                        <div className="space-y-2">
+                          <Button onClick={handleGeneratePlan} className="w-full h-12 text-base font-bold">Generate my program</Button>
+                          <Button onClick={() => router.push('/client/home')} variant="outline" className="w-full h-11 text-sm font-bold">
+                            Skip to home
+                          </Button>
+                        </div>
                       )}
                       {generating && blueprint && !plan && (
                         <div className="flex flex-col items-center gap-3 py-8"><Loader className="h-8 w-8 text-primary animate-spin" /><p className="text-sm text-muted-foreground">Building your personalized program...</p></div>
                       )}
 
-                      {plan && (
-                        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                          <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-5">
-                            <div className="flex items-center gap-3 mb-3">
-                              <Trophy className="h-6 w-6 text-primary" />
-                              <div><p className="font-black text-lg">{plan.program.name}</p><p className="text-xs text-muted-foreground">{plan.summary.totalWorkouts} workouts across 4 weeks</p></div>
-                            </div>
-                            <div className="space-y-1.5 mt-3">
-                              {plan.program.weeks.map(w => (
-                                <div key={w.id} className="flex items-center gap-2 text-xs">
-                                  <span className="font-bold text-foreground">Week {w.weekIndex}</span>
-                                  <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{w.phaseLabel}</span>
-                                  <span className="text-muted-foreground">&mdash; {w.workouts.length} workouts</span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                          <Button onClick={() => router.push('/client/home')} className="w-full h-12 text-base font-bold">Start training</Button>
-                        </motion.div>
-                      )}
+{plan && (
+                         <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
+                           <div className="rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20 p-5">
+                             <div className="flex items-center gap-3 mb-3">
+                               <Trophy className="h-6 w-6 text-primary" />
+                               <div><p className="font-black text-lg">{plan.program.name}</p><p className="text-xs text-muted-foreground">{plan.summary.totalWorkouts} workouts across 4 weeks</p></div>
+                             </div>
+                             <div className="space-y-1.5 mt-3">
+                               {plan.program.weeks.map(w => (
+                                 <div key={w.id} className="flex items-center gap-2 text-xs">
+                                   <span className="font-bold text-foreground">Week {w.weekIndex}</span>
+                                   <span className="rounded bg-muted px-1.5 py-0.5 text-muted-foreground">{w.phaseLabel}</span>
+                                   <span className="text-muted-foreground">&mdash; {w.workouts.length} workouts</span>
+                                 </div>
+                               ))}
+                             </div>
+                           </div>
+                         </motion.div>
+                       )}
                     </motion.div>
                   )}
                 </div>
