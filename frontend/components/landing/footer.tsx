@@ -24,19 +24,19 @@ export default function Footer() {
           <nav aria-label="Company links">
             <h4 className="text-sm font-semibold mb-4">Company</h4>
             <ul className="space-y-2 text-sm text-bone-fade">
-              <li><span className="text-bone-fade">About</span></li>
-              <li><span className="text-bone-fade">Blog</span></li>
-              <li><span className="text-bone-fade">Careers</span></li>
-              <li><span className="text-bone-fade">Contact</span></li>
+              <li><a href="#about" className="hover:text-bone transition-colors">About</a></li>
+              <li><a href="#blog" className="hover:text-bone transition-colors">Blog</a></li>
+              <li><a href="#careers" className="hover:text-bone transition-colors">Careers</a></li>
+              <li><a href="#contact" className="hover:text-bone transition-colors">Contact</a></li>
             </ul>
           </nav>
 
           <nav aria-label="Legal links">
             <h4 className="text-sm font-semibold mb-4">Legal</h4>
             <ul className="space-y-2 text-sm text-bone-fade">
-              <li><span className="text-bone-fade">Privacy</span></li>
-              <li><span className="text-bone-fade">Terms</span></li>
-              <li><span className="text-bone-fade">Cookies</span></li>
+              <li><Link href="/privacy" className="hover:text-bone transition-colors">Privacy</Link></li>
+              <li><Link href="/terms" className="hover:text-bone transition-colors">Terms</Link></li>
+              <li><a href="#cookies" className="hover:text-bone transition-colors">Cookies</a></li>
             </ul>
           </nav>
         </div>

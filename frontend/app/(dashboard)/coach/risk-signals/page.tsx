@@ -105,7 +105,7 @@ export default function CoachRiskSignalsPage() {
         ) : result.error ? (
           <ErrorState message={result.error} onRetry={result.reload} />
         ) : (
-          <div className="grid gap-4 md:grid-cols-4 mb-6">
+          <div className="grid gap-4 md:grid-cols-3 mb-6">
             <Card>
               <CardContent className="p-4">
                 <div className="flex items-center gap-2"><TrendingDown className="h-4 w-4 text-pulse" /><p className="text-xs text-muted-foreground">Low adherence</p></div>
@@ -122,12 +122,6 @@ export default function CoachRiskSignalsPage() {
               <CardContent className="p-4">
                 <div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-pulse" /><p className="text-xs text-muted-foreground">Payment issues</p></div>
                 <p className="mt-1 text-2xl font-black">{scan?.paymentRisk?.flagsCreated ?? 0}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-energy" /><p className="text-xs text-muted-foreground">Access risks</p></div>
-                <p className="mt-1 text-2xl font-black">0</p>
               </CardContent>
             </Card>
           </div>

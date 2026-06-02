@@ -58,12 +58,23 @@ export default function ClientMessagesPage() {
 
   if (threads.loading) return <div className="space-y-4 p-6"><CardSkeleton /><CardSkeleton /></div>;
   if (threads.error) return <ErrorState message={threads.error} onRetry={() => threads.reload()} />;
-  if (!threads.data?.items?.length) return <EmptyState title="No messages yet" description="Your conversations with your coach will appear here." />;
+  if (!threads.data?.items?.length) return (
+    <div className="p-6">
+      <div className="mb-4 rounded-xl border border-flow/20 bg-flow/5 p-4 text-sm">
+        <p className="font-bold text-flow">Full inbox experience</p>
+        <p className="text-muted-foreground mt-1">Use the <strong>Messages</strong> section in the sidebar for the complete chat experience with voice and video messaging.</p>
+      </div>
+      <EmptyState title="No messages yet" description="Your conversations with your coach will appear here." />
+    </div>
+  );
 
   return (
     <div className="flex h-[calc(100dvh-4rem)] flex-col">
       <div className="border-b border-border px-6 py-3">
         <h1 className="text-lg font-black">Messages</h1>
+      </div>
+      <div className="border-b border-flow/20 bg-flow/5 px-6 py-2 text-xs text-flow">
+        For the full experience with voice and video, use the <strong>Messages</strong> page in the sidebar.
       </div>
 
       <div className="flex flex-1 overflow-hidden">

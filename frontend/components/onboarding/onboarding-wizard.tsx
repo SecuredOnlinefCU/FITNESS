@@ -166,7 +166,7 @@ export function OnboardingWizard() {
   };
 
   return (
-    <div className="min-h-dvh flex flex-col bg-background">
+    <form onSubmit={(e) => { e.preventDefault(); next(); }} className="min-h-dvh flex flex-col bg-background">
       <div className="p-6 max-w-2xl mx-auto w-full flex-1 flex flex-col">
         <div className="mb-8">
           <ProgressBar current={stepIdx} total={STEPS.length} />
@@ -175,7 +175,7 @@ export function OnboardingWizard() {
               {STEP_LABELS[step]} &middot; Step {stepIdx + 1} of {STEPS.length}
             </span>
             {stepIdx > 0 && (
-              <button onClick={prev} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition">
+              <button type="button" onClick={prev} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground transition">
                 <ArrowLeft className="h-3 w-3" /> Back
               </button>
             )}
@@ -191,7 +191,7 @@ export function OnboardingWizard() {
                   <div><h1 className="text-3xl font-black">What&apos;s your goal?</h1><p className="text-muted-foreground mt-2">This shapes every workout in your program.</p></div>
                   <div className="space-y-3">
                     {GOALS.map(g => (
-                      <button key={g.id} onClick={() => setGoal(g.id)} className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${goal === g.id ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}>
+                      <button type="button" key={g.id} onClick={() => setGoal(g.id)} className={`w-full flex items-center gap-4 p-4 rounded-xl border-2 transition-all text-left ${goal === g.id ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}>
                         <div className={`rounded-xl bg-gradient-to-br ${g.color} p-3 text-white`}><g.icon className="h-5 w-5" /></div>
                         <div className="flex-1"><p className="font-bold">{g.label}</p><p className="text-xs text-muted-foreground mt-0.5">{g.desc}</p></div>
                         {goal === g.id && <Check className="h-5 w-5 text-primary shrink-0" />}
@@ -206,7 +206,7 @@ export function OnboardingWizard() {
                   <div><h1 className="text-3xl font-black">What&apos;s your experience?</h1><p className="text-muted-foreground mt-2">Be honest \u2014 this calibrates your training volume.</p></div>
                   <div className="space-y-3">
                     {LEVELS.map(l => (
-                      <button key={l.id} onClick={() => setLevel(l.id)} className={`w-full p-4 rounded-xl border-2 transition-all text-left ${level === l.id ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}>
+                      <button type="button" key={l.id} onClick={() => setLevel(l.id)} className={`w-full p-4 rounded-xl border-2 transition-all text-left ${level === l.id ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}>
                         <div className="flex items-center justify-between"><p className="font-bold text-lg">{l.label}</p>{level === l.id && <Check className="h-5 w-5 text-primary" />}</div>
                         <p className="text-sm text-muted-foreground mt-1">{l.desc}</p>
                         <div className="flex gap-1 mt-2">{[1, 2, 3].map(bar => <div key={bar} className={`h-1.5 flex-1 rounded-full ${bar <= l.bar ? 'bg-primary' : 'bg-muted'}`} />)}</div>
@@ -222,7 +222,7 @@ export function OnboardingWizard() {
                   <div><h1 className="text-3xl font-black">What equipment do you have?</h1><p className="text-muted-foreground mt-2">We&apos;ll only program exercises you can actually do.</p></div>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     {EQUIPMENT.map(e => (
-                      <button key={e.id} onClick={() => setEquipment(e.id)} className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${equipment === e.id ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}>
+                      <button type="button" key={e.id} onClick={() => setEquipment(e.id)} className={`flex flex-col items-center gap-3 p-6 rounded-xl border-2 transition-all ${equipment === e.id ? 'border-primary bg-primary/5 shadow-md' : 'border-border hover:border-primary/40 hover:bg-muted/50'}`}>
                         <div className="rounded-2xl bg-muted p-4"><e.icon className="h-8 w-8 text-primary" /></div>
                         <div className="text-center"><p className="font-bold">{e.label}</p><p className="text-xs text-muted-foreground mt-1">{e.desc}</p></div>
                         {equipment === e.id && <Check className="h-5 w-5 text-primary" />}
@@ -237,7 +237,7 @@ export function OnboardingWizard() {
                   <div><h1 className="text-3xl font-black">How many days per week?</h1><p className="text-muted-foreground mt-2">More isn&apos;t always better. Consistency beats volume.</p></div>
                   <div className="grid grid-cols-7 gap-2">
                     {[1, 2, 3, 4, 5, 6, 7].map(d => (
-                      <button key={d} onClick={() => setDaysPerWeek(d)} className={`aspect-square rounded-xl text-lg font-bold transition-all flex items-center justify-center ${daysPerWeek === d ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>{d}</button>
+                      <button type="button" key={d} onClick={() => setDaysPerWeek(d)} className={`aspect-square rounded-xl text-lg font-bold transition-all flex items-center justify-center ${daysPerWeek === d ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>{d}</button>
                     ))}
                   </div>
                   <p className="text-sm text-muted-foreground text-center">
@@ -249,7 +249,7 @@ export function OnboardingWizard() {
                   <div><h2 className="text-xl font-black">How long per session?</h2><p className="text-muted-foreground mt-1">Include warm-up and cool-down.</p></div>
                   <div className="grid grid-cols-5 gap-2">
                     {SESSION_LENGTHS.map(len => (
-                      <button key={len} onClick={() => setSessionLength(len)} className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center gap-1 ${sessionLength === len ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
+                      <button type="button" key={len} onClick={() => setSessionLength(len)} className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center gap-1 ${sessionLength === len ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
                         <Timer className="h-4 w-4" />{len}min
                       </button>
                     ))}
@@ -262,7 +262,7 @@ export function OnboardingWizard() {
                   <div><h1 className="text-3xl font-black">Any limitations?</h1><p className="text-muted-foreground mt-2">We&apos;ll swap exercises to keep you training safely.</p></div>
                   <div className="flex flex-wrap gap-2">
                     {INJURY_OPTIONS.map(item => (
-                      <button key={item} onClick={() => toggleInjury(item)} className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${limitations.includes(item) ? item === 'None' ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80 text-foreground border border-border'}`}>{item}</button>
+                      <button type="button" key={item} onClick={() => toggleInjury(item)} className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all ${limitations.includes(item) ? item === 'None' ? 'bg-emerald-500 text-white' : 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80 text-foreground border border-border'}`}>{item}</button>
                     ))}
                   </div>
                   {limitations.length > 0 && !limitations.includes('None') && (
@@ -281,7 +281,7 @@ export function OnboardingWizard() {
                     <div className="flex items-center gap-2"><Moon className="h-5 w-5 text-flow" /><p className="font-bold">Average sleep per night</p></div>
                     <div className="grid grid-cols-5 gap-2">
                       {SLEEP_OPTIONS.map(opt => (
-                        <button key={opt.value} onClick={() => setSleepHours(opt.value)} className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center gap-1 ${sleepHours === opt.value ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
+                        <button type="button" key={opt.value} onClick={() => setSleepHours(opt.value)} className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center gap-1 ${sleepHours === opt.value ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
                           <span>{opt.label}</span><span className="text-[10px] font-normal opacity-70">{opt.desc}</span>
                         </button>
                       ))}
@@ -291,7 +291,7 @@ export function OnboardingWizard() {
                     <div className="flex items-center gap-2"><Brain className="h-5 w-5 text-energy" /><p className="font-bold">Stress level (1-5)</p></div>
                     <div className="grid grid-cols-5 gap-2">
                       {STRESS_OPTIONS.map(opt => (
-                        <button key={opt.value} onClick={() => setStressLevel(opt.value)} className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center gap-1 ${stressLevel === opt.value ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
+                        <button type="button" key={opt.value} onClick={() => setStressLevel(opt.value)} className={`py-3 rounded-xl text-sm font-bold transition-all flex flex-col items-center gap-1 ${stressLevel === opt.value ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
                           <span>{opt.label}</span><span className="text-[10px] font-normal opacity-70">{opt.desc}</span>
                         </button>
                       ))}
@@ -301,7 +301,7 @@ export function OnboardingWizard() {
                     <div className="flex items-center gap-2"><Activity className="h-5 w-5 text-pulse" /><p className="font-bold">Activity outside the gym</p></div>
                     <div className="grid grid-cols-2 gap-2">
                       {ACTIVITY_OPTIONS.map(opt => (
-                        <button key={opt.value} onClick={() => setActivityLevel(opt.value)} className={`py-3 px-4 rounded-xl text-sm font-bold transition-all text-left ${activityLevel === opt.value ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
+                        <button type="button" key={opt.value} onClick={() => setActivityLevel(opt.value)} className={`py-3 px-4 rounded-xl text-sm font-bold transition-all text-left ${activityLevel === opt.value ? 'bg-primary text-primary-foreground shadow-lg scale-105' : 'bg-muted hover:bg-muted/80 text-foreground'}`}>
                           <span>{opt.label}</span><span className="block text-[10px] font-normal opacity-70 mt-0.5">{opt.desc}</span>
                         </button>
                       ))}
@@ -361,15 +361,23 @@ export function OnboardingWizard() {
                   )}
 
                   {!blueprint && !generating && (
-                    <Button onClick={handleGenerateBlueprint} className="w-full h-12 text-base font-bold">Generate my blueprint</Button>
+                    <Button type="button" onClick={handleGenerateBlueprint} className="w-full h-12 text-base font-bold">Generate my blueprint</Button>
                   )}
                   {generating && !blueprint && (
-                    <div className="flex flex-col items-center gap-3 py-8"><Loader className="h-8 w-8 text-primary animate-spin" /><p className="text-sm text-muted-foreground">Building your personalized blueprint...</p></div>
+                    <div className="flex flex-col items-center gap-4 py-8">
+                      <Loader className="h-8 w-8 text-primary animate-spin" />
+                      <div className="w-full max-w-xs space-y-2">
+                        <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                          <motion.div className="h-full bg-primary rounded-full" animate={{ width: ['0%', '100%'] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }} />
+                        </div>
+                        <p className="text-sm text-muted-foreground text-center">Building your personalized blueprint...</p>
+                      </div>
+                    </div>
                   )}
                   {error && (
-                    <div className="space-y-3">
+                    <div className="space-y-3" role="alert" aria-live="polite">
                       <div className="p-3 rounded-xl bg-pulse/10 border border-pulse/20"><p className="text-sm text-pulse">{error}</p></div>
-                      <Button onClick={() => { localStorage.setItem('levelfit_onboarding_complete', 'true'); router.push('/client/home'); }} variant="outline" className="w-full h-11 text-sm font-bold">
+                      <Button type="button" onClick={() => { localStorage.setItem('levelfit_onboarding_complete', 'true'); router.push('/client/home'); }} variant="outline" className="w-full h-11 text-sm font-bold">
                         Skip to home
                       </Button>
                     </div>
@@ -395,14 +403,22 @@ export function OnboardingWizard() {
 
                       {!plan && !generating && (
                         <div className="space-y-2">
-                          <Button onClick={handleGeneratePlan} className="w-full h-12 text-base font-bold">Generate my program</Button>
-                          <Button onClick={() => { localStorage.setItem('levelfit_onboarding_complete', 'true'); router.push('/client/home'); }} variant="outline" className="w-full h-11 text-sm font-bold">
+                          <Button type="button" onClick={handleGeneratePlan} className="w-full h-12 text-base font-bold">Generate my program</Button>
+                          <Button type="button" onClick={() => { localStorage.setItem('levelfit_onboarding_complete', 'true'); router.push('/client/home'); }} variant="outline" className="w-full h-11 text-sm font-bold">
                             Skip to home
                           </Button>
                         </div>
                       )}
                       {generating && blueprint && !plan && (
-                        <div className="flex flex-col items-center gap-3 py-8"><Loader className="h-8 w-8 text-primary animate-spin" /><p className="text-sm text-muted-foreground">Building your personalized program...</p></div>
+                        <div className="flex flex-col items-center gap-4 py-8">
+                          <Loader className="h-8 w-8 text-primary animate-spin" />
+                          <div className="w-full max-w-xs space-y-2">
+                            <div className="h-2 w-full rounded-full bg-muted overflow-hidden">
+                              <motion.div className="h-full bg-primary rounded-full" animate={{ width: ['0%', '100%'] }} transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }} />
+                            </div>
+                            <p className="text-sm text-muted-foreground text-center">Building your personalized program...</p>
+                          </div>
+                        </div>
                       )}
 
                       {plan && (
@@ -422,7 +438,7 @@ export function OnboardingWizard() {
                                ))}
                              </div>
                            </div>
-                            <Button onClick={() => { localStorage.setItem('levelfit_onboarding_complete', 'true'); router.push('/client/home'); }} className="w-full h-12 text-base font-bold">Start training</Button>
+                            <Button type="button" onClick={() => { localStorage.setItem('levelfit_onboarding_complete', 'true'); router.push('/client/home'); }} className="w-full h-12 text-base font-bold">Start training</Button>
                          </motion.div>
                        )}
 
@@ -440,7 +456,7 @@ export function OnboardingWizard() {
           </div>
         )}
       </div>
-    </div>
+    </form>
   );
 }
 

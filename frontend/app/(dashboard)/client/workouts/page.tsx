@@ -131,6 +131,14 @@ export default function ClientWorkoutsPage() {
                   </div>
                 )}
 
+                {activeAssignments.length === 0 && inProgress.length === 0 && (
+                  <div className="mt-8 text-center">
+                    <Dumbbell className="mx-auto h-10 w-10 text-muted-foreground" />
+                    <p className="mt-3 font-bold text-muted-foreground">No workouts scheduled yet</p>
+                    <p className="text-sm text-muted-foreground">Your coach will assign workouts to get you started.</p>
+                  </div>
+                )}
+
                 {activeAssignments.length > 0 && (
                   <div className="mt-4 space-y-2">
                     <h3 className="text-sm font-bold text-foreground">Assigned workouts</h3>
@@ -138,7 +146,7 @@ export default function ClientWorkoutsPage() {
                       <Card key={a.id}>
                         <CardContent className="flex items-center justify-between p-4">
                           <div>
-                            <p className="font-bold">Workout #{i + 1}</p>
+                            <p className="font-bold">{a.workout?.title || `Workout #${i + 1}`}</p>
                             <p className="text-sm text-muted-foreground">Assigned {new Date(a.createdAt ?? new Date()).toLocaleDateString()}</p>
                           </div>
                           <button

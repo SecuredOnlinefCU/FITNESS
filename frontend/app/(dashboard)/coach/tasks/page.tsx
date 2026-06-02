@@ -11,7 +11,7 @@ import { useAsyncData } from '@/hooks/data/use-async-data';
 import { tasksApi } from '@/lib/api/modules/tasks';
 import { TaskCreateForm } from '@/components/coach/task-create-form';
 import { TaskAssignDialog } from '@/components/coach/task-assign-dialog';
-import { CheckSquare, Repeat, Clock, Trash2, UserPlus, Eye } from 'lucide-react';
+import { CheckSquare, Repeat, Clock, Trash2, UserPlus, Eye, Plus } from 'lucide-react';
 import Link from 'next/link';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 
@@ -109,12 +109,19 @@ export default function CoachTasksPage() {
           <div className="mt-5 text-center rounded-2xl bg-muted p-6">
             <p className="font-bold text-muted-foreground">No tasks yet</p>
             <p className="mt-1 text-sm text-muted-foreground">Create your first task to assign to clients.</p>
+            <button onClick={() => setShowCreate(true)} className="mt-4 inline-flex items-center gap-1.5 rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition">
+              <Plus className="h-4 w-4" /> New task
+            </button>
           </div>
         ) : (
           <div className="mt-5 space-y-3">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-black">Your tasks</h3>
-              <div className="flex gap-1 rounded-xl bg-muted p-1">
+              <div className="flex items-center justify-between">
+                  <h3 className="text-lg font-black">Your tasks</h3>
+                  <div className="flex items-center gap-2">
+                    <button onClick={() => setShowCreate(true)} className="flex items-center gap-1.5 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground hover:bg-primary/90 transition">
+                      <Plus className="h-4 w-4" /> New task
+                    </button>
+                    <div className="flex gap-1 rounded-xl bg-muted p-1">
                 {TYPE_OPTIONS.map(opt => (
                   <button
                     key={opt}
@@ -126,6 +133,7 @@ export default function CoachTasksPage() {
                     {opt === 'All' ? 'All' : TYPE_LABELS[opt] ?? opt}
                   </button>
                 ))}
+              </div>
               </div>
             </div>
             {filteredTasks.map(t => {

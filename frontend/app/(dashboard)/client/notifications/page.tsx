@@ -6,14 +6,29 @@ import { ClientPageHeader } from '@/components/levelfitness/client-page-header';
 import { Card, CardContent } from '@/components/ui/card';
 import { CardSkeleton } from '@/components/states/skeleton';
 import { ErrorState } from '@/components/states/error-state';
+import { useState } from 'react';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { notificationsApi } from '@/lib/api/modules/notifications';
-import { Bell, MessageSquare, Calendar, Settings } from 'lucide-react';
+import { Bell, MessageSquare, Calendar, Settings, CheckCheck } from 'lucide-react';
+import { toast } from 'sonner';
 
 export default function ClientNotificationsPage() {
   const result = useAsyncData(() => notificationsApi.listNotifications(), []);
   const all = result.data?.items ?? [];
   const unread = all.filter((n: any) => !n.openedAt);
+  const [markingAll, setMarkingAll] = useState(false);
+
+  async function handleMarkAllRead() {
+    setMarkingAll(true);
+    try {
+      await Promise.all(unread.map((n: any) => notificationsApi.markRead(n.id)));
+      await result.reload();
+    } catch {
+      toast.error('Failed to mark all as read');
+    } finally {
+      setMarkingAll(false);
+    }
+  }
 
   return (
     <ProtectedRoute roles={['client', 'super_admin']}>
@@ -26,6 +41,13 @@ export default function ClientNotificationsPage() {
           <ErrorState message={result.error} onRetry={result.reload} />
         ) : (
           <>
+            {unread.length > 0 && (
+              <div className="mb-4 flex justify-end">
+                <button onClick={handleMarkAllRead} disabled={markingAll} className="flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition hover:brightness-95 disabled:opacity-50">
+                  <CheckCheck className="h-4 w-4" /> {markingAll ? 'Marking...' : 'Mark all as read'}
+                </button>
+              </div>
+            )}
             <div className="grid gap-4 md:grid-cols-3">
               <Card>
                 <CardContent className="p-5">

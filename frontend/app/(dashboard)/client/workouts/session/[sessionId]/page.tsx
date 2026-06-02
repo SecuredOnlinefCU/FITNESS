@@ -14,6 +14,7 @@ import { trainingApi } from '@/lib/api/modules/training';
 import { Dumbbell, CheckCircle, Plus, X, Video, Info, Zap, TrendingUp, TrendingDown } from 'lucide-react';
 import { RestTimer } from '@/components/workout/rest-timer';
 import { VideoPlayerModal } from '@/components/exercise/video-player-modal';
+import { PostSessionCelebration } from '@/components/workout/post-session-celebration';
 
 const SET_TYPE_OPTIONS = [
   { value: 'warmup', label: 'Warm-up' },
@@ -36,6 +37,7 @@ export default function WorkoutSessionPage() {
   const [loggingExercise, setLoggingExercise] = useState<string | null>(null);
   const [logForm, setLogForm] = useState({ reps: 10, weight: 0, rpe: 7, setType: 'working', notes: '' });
   const [completing, setCompleting] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [showTimer, setShowTimer] = useState(false);
   const [timerDuration, setTimerDuration] = useState(90);
   const [guidedMode, setGuidedMode] = useState(false);
@@ -94,8 +96,9 @@ export default function WorkoutSessionPage() {
   const handleComplete = useCallback(async () => {
     setCompleting(true);
     await trainingApi.completeSession(sessionId);
-    router.push('/client/workouts');
-  }, [sessionId, router]);
+    setCompleting(false);
+    setShowCelebration(true);
+  }, [sessionId]);
 
   return (
     <ProtectedRoute roles={['client', 'super_admin']}>
@@ -104,6 +107,8 @@ export default function WorkoutSessionPage() {
           <div className="space-y-4"><CardSkeleton /><CardSkeleton /></div>
         ) : error || !session ? (
           <ErrorState message={error || 'Session not found'} onRetry={sessionResult.reload} />
+        ) : showCelebration ? (
+          <PostSessionCelebration session={session} />
         ) : (
           <>
             <div className="flex items-center justify-between">

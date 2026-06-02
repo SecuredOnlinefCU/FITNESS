@@ -1031,3 +1031,90 @@ graph TD
 - All states: video modal handles loading (spinner), error (fallback message), success (video plays); create dialog handles uploading, saving, error states, field validation
 - Files added: 2 (video-player-modal.tsx, create-exercise-dialog.tsx)
 - Files modified: 2 (workout-builder-shell.tsx, workouts/page.tsx) — backend: training.routes.ts, training.ts, domain.ts
+
+## 2026-06-02 — SharePoint proxy fix: root site URL parsing + library name stripping
+
+**Goal:** Fix SharePoint demo video playback — proxy endpoint failed with "Failed to resolve SharePoint site" because the URL parsing assumed `/sites/{name}` prefix format, but `uploadToSharepoint` uploads to the root site, producing URLs like `https://onlinefcu.sharepoint.com/Shared%20Documents/ExerciseVideos/file.mp4` (no `/sites/` prefix). Also, the file path included the library name ("Shared%20Documents") which is incorrect for the Graph API `drive/root:/` path.
+
+**Approach:** Two-tier fix in `media.routes.ts`: (1) Detect root site URLs (no `/sites/` or `/teams/` prefix) and use `siteHost:/` for site resolution. (2) Strip the library name segment ("Shared%20Documents") from the drive-relative file path since `drive/root:/` is already scoped to the default document library.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `backend/src/modules/media/media.routes.ts` | Rewrote URL parsing: detect root vs site collection, use correct site query syntax, strip library name from drive file path |
+
+### ADR-024 — Library name stripping in SharePoint proxy (2026-06-02)
+
+- **Context:** SharePoint web URLs include the library display name (`Shared%20Documents`) in the path. The Graph API `drive/root:/` path is relative to the library root, so including the library name creates an invalid path.
+- **Options considered:** A) Strip library name by scanning for known library segment names (chosen). B) Query the drive API to get the library name dynamically (more robust but adds an API call per request). C) Hard-code last-2-segments extraction (fragile, breaks with nested folders).
+- **Decision:** Option A — scan `pathSegments` for `'Shared%20Documents'`, `'Shared Documents'`, or `'Documents'` at the first occurrence, strip everything up to and including it.
+- **Why:** Covers the standard default document library name without additional API calls. The library name is predictable for the default document library across SharePoint sites. If a different library is used in the future, the string set can be extended.
+- **Consequences:** Proxy now handles both root site and site collection URLs with correct site resolution and drive-relative file paths. Verified with HTTP 200 + `video/mp4` content type.
+
+### Status: Complete
+- Backend type-check: ✅ `tsc --noEmit` — 0 errors
+- Deployed: ✅ Pushed to master (`bfb1f37`), auto-deployed to Railway
+- Verified: `GET /api/media/sharepoint-proxy?url=...&token=...` returns 200 with `video/mp4` content type
+
+## 2026-06-02 — Q1-Q12 quick wins batch
+
+**Goal:** Apply 12 quick-fix UX improvements identified in comprehensive audit — text fixes, empty states, keyboard/a11y, loading states, and link cleanup.
+
+**Approach:** Batch edits across 9 files (frontend only). Each fix is self-contained and tested via type-check.
+
+### Changes
+
+| Q | Action | File | Why |
+|---|--------|------|-----|
+| Q1 | Modified | `components/landing/features-grid.tsx` | "Fifteen powerful features" → "8 powerful features" (grid has exactly 8 feature cards) |
+| Q4 | Modified | `app/(dashboard)/client/workouts/page.tsx` | Added empty state when no workouts are assigned: Dumbbell icon + "No workouts scheduled yet" + info text |
+| Q5 | Modified | `app/(dashboard)/client/workouts/page.tsx` | Render `a.workout?.title` instead of hardcoded "Workout #N" — shows actual workout name when available |
+| Q7 | Modified | `components/states/skeleton.tsx` | Replaced `w-${width}` string interpolation (Tailwind can't JIT dynamic classes) with `WIDTH_MAP` lookup table |
+| Q8 | Modified | `lib/api/modules/notifications.ts` | Added `markRead(id)` API method calling `POST /api/notifications/:id/open` |
+| Q8 | Modified | `app/(dashboard)/client/notifications/page.tsx` | Added "Mark all as read" button that calls `markRead` on all unread in parallel; imported `useState` + `toast` |
+| Q9 | Modified | `app/(dashboard)/client/messages/page.tsx` | Added info banner in header + empty state redirecting users to sidebar Messages page for voice/video |
+| Q10 | Modified | `components/landing/footer.tsx` | Replaced inert `<span>` placeholders with `<a href>` (Company: About/Blog/Careers/Contact, Cookies) and `<Link>` (Privacy, Terms) |
+| Q11 | Modified | `app/(dashboard)/coach/risk-signals/page.tsx` | Removed "Access risks" stat card (API doesn't return access risk data — was hardcoded to 0); changed grid from `md:grid-cols-4` → `md:grid-cols-3` |
+| Q6 | Modified | `components/onboarding/onboarding-wizard.tsx` | Added `role="alert"` and `aria-live="polite"` to blueprint error state div for screen reader announcements |
+| Q12 | Modified | `components/onboarding/onboarding-wizard.tsx` | Enhanced spinner states for blueprint + program generation: added animated indeterminate progress bar (Framer Motion repeating `width`) below the spinner |
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
+- Files modified: 9 (8 existing components/pages + 1 API module)
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
+- Behavior: Enter key on assessment step inputs now advances (form submit → next()), no accidental form submissions from selection buttons
+
+## 2026-06-02 — Q1-Q12: All quick wins verified + E2E regression clean
+
+**Goal:** Confirm all 12 UX fixes are correct and no regressions introduced.
+
+**Verification:**
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
+- Frontend build: ✅ `next build` — 51 pages, 0 errors
+- Existing E2E auth suite: ✅ 7/7 passing
+- Code review confirmed navigation logic untouched at `onboarding-wizard.tsx:113-118`, localStorage flag at line 159 unchanged
+
+### Status: Complete
+- All 12 Qs applied, verified passing tsc + build + existing E2E tests
+- No regressions detected
+
+**Goal:** Fix keyboard submission and prevent accidental form submits in the onboarding wizard.
+
+**Root cause:** The wizard was a bare `<div>` with no `<form>` element — pressing Enter in assessment `<input>` fields did nothing. All selection `<button>` elements defaulted to `type="submit"`, so if someone later wrapped the wizard in a `<form>`, every button click would submit.
+
+**Fix:** Two changes in `onboarding-wizard.tsx`:
+1. Wrapped the entire wizard in `<form onSubmit={(e) => { e.preventDefault(); next(); }}>` — pressing Enter in any input field now advances to the next step. The `next()` function guards against going past the last step.
+2. Added `type="button"` to all non-submit buttons: 10 raw `<button>` selectors (goal/level/equipment/days/session-length/injuries/sleep/stress/activity) + 5 `<Button>` instances (Generate blueprint, 2× Skip to home, Generate program, Start training). Only the Continue button retains default submit type.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `frontend/components/onboarding/onboarding-wizard.tsx` | Changed outer `<div>` → `<form onSubmit>`. Added `type="button"` to 15 non-submit buttons across all wizard steps |
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
+- Behavior: Enter key on assessment step inputs now advances (form submit → next()), no accidental form submissions from selection buttons

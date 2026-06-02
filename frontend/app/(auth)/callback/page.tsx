@@ -1,19 +1,28 @@
 'use client';
 
 import { Suspense, useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { setTokens } from '@/lib/auth/token-storage';
 import { authApi } from '@/lib/api/modules/auth';
 
+function parseHashParams(): Record<string, string> {
+  if (typeof window === 'undefined') return {};
+  const hash = window.location.hash.replace(/^#/, '');
+  const params = new URLSearchParams(hash);
+  const result: Record<string, string> = {};
+  for (const [key, val] of params) result[key] = val;
+  return result;
+}
+
 function CallbackHandler() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [message, setMessage] = useState('Completing sign-in\u2026');
 
   useEffect(() => {
-    const accessToken = searchParams.get('accessToken');
-    const refreshToken = searchParams.get('refreshToken');
-    const error = searchParams.get('error');
+    const params = parseHashParams();
+    const accessToken = params.accessToken;
+    const refreshToken = params.refreshToken;
+    const error = params.error;
 
     if (error) {
       setMessage(error === 'google_not_configured' ? 'Google sign-in is not configured yet.' : 'Sign-in failed. Please try again.');
@@ -48,7 +57,7 @@ function CallbackHandler() {
         router.push(home);
       }).catch(() => router.push('/client/home'));
     }
-  }, [router, searchParams]);
+  }, [router]);
 
   return <p className="text-sm text-muted-foreground">{message}</p>;
 }

@@ -1037,3 +1037,49 @@ graph TD
 - Root cause: SharePoint web URLs are returned by `uploadToSharepoint()` — the `<video>` element loads them anonymously, gets a 401, and shows a blank/black player
 - Fix: proxy endpoint authenticates the request via query-param JWT, acquires a Graph API token, resolves the SharePoint site, and streams the file content
 - Cleaning: removed debug logging, unused zoom controls, and the duplicate `/sharepoint-file/:siteId/:driveItemId` endpoint from the codebase
+
+## 2026-06-02 — Fix C2: Coach tasks page missing "New task" button
+
+**Goal:** Coaches couldn't create tasks — `showCreate` state was initialized to `false` with no UI element to set it to `true`. The `TaskCreateForm` component existed but was unreachable.
+
+**Root cause:** `frontend/app/(dashboard)/coach/tasks/page.tsx:44` — `const [showCreate, setShowCreate] = useState(false)` — nothing in the JSX ever called `setShowCreate(true)`.
+
+**Fix:** Added a "+ New task" button (uses `Plus` icon from lucide-react) that calls `setShowCreate(true)` in two places: the "Your tasks" section header and the empty-state panel. Both match existing UI patterns (coach feed page has a similar "+ New post" button). The `TaskCreateForm` renders above the task list when `showCreate` is true and hides on success via the existing `onCreated` callback.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `frontend/app/(dashboard)/coach/tasks/page.tsx` | Added `Plus` import; added "+ New task" button in "Your tasks" header and empty-state CTA, both calling `setShowCreate(true)`; wrapped header button + type filter in a `gap-2` flex row |
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
+- Scope: 1 file modified, 2 buttons added, 0 regressions
+
+## 2026-06-02 — Fix H1: Post-session celebration
+
+**Goal:** After completing a workout, users were dumped to `/client/workouts` with zero feedback — no "Great work!", no stats, no dopamine hit. This kills retention.
+
+**Root cause:** `frontend/app/(dashboard)/client/workouts/session/[sessionId]/page.tsx:94-98` — `handleComplete` called `router.push('/client/workouts')` immediately after the API call. No summary, no celebration, no metrics shown.
+
+**Fix:** Replaced the dead-end redirect with an in-page celebration overlay. Added `showCelebration` state. After `completeSession()` returns, the page transitions to a `<PostSessionCelebration>` component showing:
+- Animated checkmark (Framer Motion spring)
+- "Workout complete!" headline with workout title
+- 4 stat cards: exercises completed, total volume (kg), total reps, avg RPE, duration
+- Gentle message if no sets were logged (empty session grace)
+- "Back to workouts" button
+
+All stats are computed from the existing `session` object already in memory — zero extra API calls.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Added | `frontend/components/workout/post-session-celebration.tsx` | New celebration component: animated checkmark, stat cards computed from session data, empty-session grace message, back-to-workouts button |
+| Modified | `frontend/app/(dashboard)/client/workouts/session/[sessionId]/page.tsx` | Added `showCelebration` state; replaced `router.push` in `handleComplete` with `setShowCelebration(true)`; imported and conditionally rendered `PostSessionCelebration` |
+
+### Status: Complete
+- Frontend type-check: ✅ `tsc --noEmit` — 0 errors
+- Files: 1 added, 1 modified
+- Data: all stats computed client-side from existing session data — no new API calls
+- Empty-session case handled: shows "No sets were logged this session" with encouragement

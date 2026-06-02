@@ -42,6 +42,8 @@ export function AvatarSkeleton({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   );
 }
 
+const WIDTH_MAP: Record<string, string> = { '1/4': 'w-1/4', '1/3': 'w-1/3', '1/2': 'w-1/2', '2/3': 'w-2/3', '3/4': 'w-3/4', full: 'w-full', '24': 'w-24', '32': 'w-32', '40': 'w-40', '48': 'w-48' };
+
 export function TextLineSkeleton({ width = '1/2' }: { width?: string }) {
-  return <div className={`h-3 w-${width} animate-pulse`} />;
+  return <div className={`h-3 ${WIDTH_MAP[width] ?? 'w-1/2'} animate-pulse rounded-2xl bg-muted`} />;
 }

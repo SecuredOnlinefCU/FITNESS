@@ -26,7 +26,7 @@ export default function FeaturesGrid() {
         >
           <span className="text-xs font-semibold uppercase tracking-widest text-signal">Features</span>
           <h2 className="font-display text-3xl font-bold mt-3 md:text-4xl tracking-tight">Everything you need to coach at scale</h2>
-          <p className="mt-4 text-bone-mute">Fifteen powerful features designed to help you deliver a world-class coaching experience.</p>
+          <p className="mt-4 text-bone-mute">8 powerful features designed to help you deliver a world-class coaching experience.</p>
         </motion.div>
 
         <div className="grid gap-px bg-line overflow-hidden rounded-2xl border border-line md:grid-cols-2 lg:grid-cols-4">
