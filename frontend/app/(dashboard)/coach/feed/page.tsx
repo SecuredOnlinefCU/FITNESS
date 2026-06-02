@@ -2,6 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '@/components/auth/auth-provider';
+import { ProtectedRoute } from '@/components/auth/protected-route';
+import { DashboardShell } from '@/components/layout/dashboard-shell';
+import { CoachPageHeader } from '@/components/coach/coach-page-header';
 import { useAsyncData } from '@/hooks/data/use-async-data';
 import { feedApi } from '@/lib/api/modules/feed';
 import { programsApi } from '@/lib/api/modules/programs';
@@ -100,15 +103,23 @@ export default function CoachFeedPage() {
     if (action.href) window.location.href = action.href;
   }
 
-  if (posts.loading) return <div className="space-y-4"><CardSkeleton /><CardSkeleton /><CardSkeleton /></div>;
-  if (posts.error) return <ErrorState message={posts.error} onRetry={() => posts.reload()} />;
-
   return (
-    <div className="mx-auto max-w-3xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-black">Coach feed</h1>
-        <Button onClick={() => setShowCreate(true)}>New post</Button>
-      </div>
+    <ProtectedRoute roles={['coach', 'assistant_coach', 'super_admin']}>
+      <DashboardShell>
+        <CoachPageHeader title="Feed" subtitle="Create and manage posts for your clients." actionLabel={programId ? 'New post' : undefined} onAction={programId ? () => setShowCreate(true) : undefined} />
+
+        {!programId && programs.loading ? (
+          <CardSkeleton />
+        ) : !programId ? (
+          <div className="mx-auto max-w-lg text-center">
+            <EmptyState title="No program yet" description="Create a program first so you can share posts with your clients." />
+          </div>
+        ) : posts.loading ? (
+          <div className="space-y-4"><CardSkeleton /><CardSkeleton /><CardSkeleton /></div>
+        ) : posts.error ? (
+          <ErrorState message={posts.error} onRetry={() => posts.reload()} />
+        ) : (
+          <div className="mx-auto max-w-3xl space-y-6">
 
       {nudges.data?.items && nudges.data.items.length > 0 && (
         <SmartNudgeList nudges={nudges.data.items} />
@@ -177,6 +188,9 @@ export default function CoachFeedPage() {
           </div>
         </div>
       )}
-    </div>
-  );
-}
+            </div>
+          )}
+        </DashboardShell>
+      </ProtectedRoute>
+    );
+  }

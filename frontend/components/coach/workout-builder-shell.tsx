@@ -380,16 +380,20 @@ export function WorkoutBuilderShell() {
                       <Plus className="h-3.5 w-3.5 text-primary shrink-0" />
                       <span className="truncate font-medium">{ex.name}</span>
                     </button>
-                    {ex.demoVideoUrl && (
-                      <button
-                        type="button"
-                        onClick={(e) => { e.stopPropagation(); setVideoUrl(ex.demoVideoUrl); }}
-                        className="rounded-full p-1.5 text-flow/60 hover:text-flow hover:bg-flow/10 transition shrink-0 opacity-0 group-hover:opacity-100"
-                        aria-label={`Watch ${ex.name} demo`}
-                      >
-                        <Play className="h-3 w-3" />
-                      </button>
-                    )}
+                     {ex.demoVideoUrl && (
+                       <button
+                         type="button"
+                         onClick={(e) => { 
+                           e.stopPropagation(); 
+                           console.log('Setting video URL:', ex.demoVideoUrl);
+                           setVideoUrl(ex.demoVideoUrl); 
+                         }}
+                         className="rounded-full p-1.5 text-flow/60 hover:text-flow hover:bg-flow/10 transition shrink-0 opacity-0 group-hover:opacity-100"
+                         aria-label={`Watch ${ex.name} demo`}
+                       >
+                         <Play className="h-3 w-3" />
+                       </button>
+                     )}
                   </div>
                 ))}
                 {!exerciseSearch && filteredExercises.length === 0 && (

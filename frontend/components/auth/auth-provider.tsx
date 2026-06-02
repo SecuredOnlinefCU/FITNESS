@@ -54,7 +54,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push(getHomePath(session.user.role));
   }
 
-  async function signUp(input: SignUpInput) {
+async function signUp(input: SignUpInput) {
+  try {
     const session = await authApi.signup(input);
     setTokens(session.accessToken, session.refreshToken);
     setUser(session.user);
@@ -63,7 +64,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     } else {
       router.push(getHomePath(session.user.role));
     }
+  } catch (error) {
+    console.error('Signup failed:', error);
+    throw error;
   }
+}
 
   function signOut() {
     clearTokens();

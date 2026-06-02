@@ -11,7 +11,15 @@ type VideoPlayerModalProps = {
 const ZOOM_LEVELS = [0.5, 0.75, 1, 1.5, 2, 3];
 
 export function VideoPlayerModal({ videoUrl, onClose }: VideoPlayerModalProps) {
-  const [zoomIndex, setZoomIndex] = useState(2);
+  const [videoError, setVideoError] = useState<string | null>(null);
+  const [isVideoLoaded, setIsVideoLoaded] = useState(false);
+
+  // Log the URL for debugging
+  useEffect(() => {
+    if (videoUrl) {
+      console.log('VideoPlayerModal received URL:', videoUrl);
+    }
+  }, [videoUrl]);
 
   const handleKeyDown = useCallback((e: KeyboardEvent) => {
     if (e.key === 'Escape') onClose();
@@ -26,11 +34,33 @@ export function VideoPlayerModal({ videoUrl, onClose }: VideoPlayerModalProps) {
     };
   }, [handleKeyDown]);
 
-  const zoomIn = () => setZoomIndex(i => Math.min(i + 1, ZOOM_LEVELS.length - 1));
-  const zoomOut = () => setZoomIndex(i => Math.max(i - 1, 0));
-  const resetZoom = () => setZoomIndex(2);
-
-  const scale = ZOOM_LEVELS[zoomIndex];
+  // Handle empty or invalid videoUrl
+  if (!videoUrl || videoUrl.trim() === '') {
+    return (
+      <div
+        className="fixed inset-0 z-50 flex items-center justify-center bg-ink/80 backdrop-blur-sm"
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Exercise demo video"
+      >
+        <div className="relative max-w-4xl w-full mx-4 p-6">
+          <div className="flex items-center justify-end mb-4">
+            <button
+              onClick={onClose}
+              className="rounded-lg bg-ink/60 backdrop-blur-sm p-1.5 text-bone/70 hover:text-bone transition"
+              aria-label="Close video"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="text-center py-8">
+            <p className="text-bone">No video URL provided</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -40,34 +70,8 @@ export function VideoPlayerModal({ videoUrl, onClose }: VideoPlayerModalProps) {
       aria-modal="true"
       aria-label="Exercise demo video"
     >
-      <div className="relative max-w-4xl w-full mx-4">
-        <div className="flex items-center justify-end gap-2 mb-2">
-          <div className="flex items-center gap-1 rounded-lg bg-ink/60 backdrop-blur-sm px-2 py-1">
-            <button
-              onClick={zoomOut}
-              disabled={zoomIndex === 0}
-              className="rounded p-1 text-bone/70 hover:text-bone transition disabled:opacity-30"
-              aria-label="Zoom out"
-            >
-              <ZoomOut className="h-4 w-4" />
-            </button>
-            <span className="text-xs text-bone/70 min-w-[3rem] text-center tabular-nums">{Math.round(scale * 100)}%</span>
-            <button
-              onClick={zoomIn}
-              disabled={zoomIndex === ZOOM_LEVELS.length - 1}
-              className="rounded p-1 text-bone/70 hover:text-bone transition disabled:opacity-30"
-              aria-label="Zoom in"
-            >
-              <ZoomIn className="h-4 w-4" />
-            </button>
-            <button
-              onClick={resetZoom}
-              className="ml-1 rounded p-1 text-bone/70 hover:text-bone transition"
-              aria-label="Reset zoom"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-            </button>
-          </div>
+      <div className="relative max-w-4xl w-full mx-4 p-4">
+        <div className="flex items-center justify-end mb-3">
           <button
             onClick={onClose}
             className="rounded-lg bg-ink/60 backdrop-blur-sm p-1.5 text-bone/70 hover:text-bone transition"
@@ -76,26 +80,47 @@ export function VideoPlayerModal({ videoUrl, onClose }: VideoPlayerModalProps) {
             <X className="h-5 w-5" />
           </button>
         </div>
-        <div
-          className="overflow-auto rounded-2xl bg-black shadow-2xl"
-          style={{ maxHeight: '80vh' }}
-        >
-          <div
-            style={{
-              transform: `scale(${scale})`,
-              transformOrigin: 'top left',
-              width: scale > 1 ? `${100 / scale}%` : '100%',
-            }}
-          >
+        
+        {videoError ? (
+          <div className="bg-pulse/5 border border-pulse/20 rounded-xl p-6">
+            <p className="text-pulse font-medium">Error loading video</p>
+            <p className="text-xs text-pulse/60 mt-2">{videoError}</p>
+            <p className="text-xs text-pulse/60 mt-1">URL: {videoUrl}</p>
+          </div>
+        ) : (
+          <div className="bg-black/50 rounded-xl overflow-hidden">
             <video
               controls
               autoPlay
-              className="w-full block"
+              playsInline
+              onLoadStart={() => setIsVideoLoaded(true)}
+              onCanPlay={() => setIsVideoLoaded(true)}
+              onError={(e) => {
+                setVideoError('Failed to load video. The file may be missing, corrupted, or in an unsupported format.');
+                console.error('Video error details:', e, 'URL:', videoUrl);
+              }}
+              onWaiting={() => setIsVideoLoaded(false)}
+              onPlaying={() => setIsVideoLoaded(true)}
+              className="w-full"
             >
-              <source src={videoUrl} />
+              <source src={videoUrl} type="video/webm" />
+              <source src={videoUrl} type="video/mp4" />
+              {/* Fallback message if video cannot be loaded */}
+              {!isVideoLoaded && !videoError && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-bone">
+                  Loading video...
+                </div>
+              )}
             </video>
           </div>
-        </div>
+        )}
+        
+        {/* Show loading state when video is loading but no error yet */}
+        {!videoError && !isVideoLoaded && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/80 text-bone">
+            Loading video...
+          </div>
+        )}
       </div>
     </div>
   );
