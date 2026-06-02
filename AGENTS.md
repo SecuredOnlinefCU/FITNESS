@@ -1,5 +1,25 @@
 # LevelFITness — Agent Memory
 
+## 2026-06-02 — Onboarding redirect loop fix
+
+**Goal:** Fix invited client stuck on onboarding step 0 after clicking "Generate my blueprint" — the blueprint and plan APIs both returned 200 but the page reset to step 1 (goal selection) instead of navigating to the dashboard.
+
+**Root cause:** `frontend/components/auth/protected-route.tsx:16-18` — checks for `levelfit_onboarding_complete` localStorage flag. The onboarding wizard called `router.push('/client/home')` after plan generation but never set the flag, causing ProtectedRoute to immediately redirect back to `/onboarding`. The wizard remounted fresh (step 0), creating a redirect loop.
+
+**Fix:** Added `localStorage.setItem('levelfit_onboarding_complete', 'true')` before every `router.push('/client/home')` in the onboarding wizard (4 occurrences: auto-redirect after plan gen, error-state Skip to home, blueprint-section Skip to home, Start training).
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Modified | `frontend/components/onboarding/onboarding-wizard.tsx` | Add `localStorage.setItem('levelfit_onboarding_complete', 'true')` before all 4 `router.push('/client/home')` calls to prevent ProtectedRoute redirect loop |
+
+### Status: Complete
+- Type-check: ✅ `tsc --noEmit` — 0 errors
+- Deployed: ✅ Pushed to master, auto-deployed to Vercel + Railway
+- Verified: Playwright test confirmed user lands on `/client/home` with flag set (6s after clicking Generate my blueprint)
+- Test client: `rebeccap001@outlook.com` / `ZebeNation1@`
+
 ## 2026-06-01 — UI bugfix: Button primitive children
 
 **Goal:** Fix the shared `Button` component so it renders label text and icon children correctly.
@@ -972,3 +992,48 @@ graph TD
 - Power BI push: Backend pushes to configurable URL (non-blocking, fire-and-forget)
 - Deploy guide: `docs/deploy-guide.md` — 3 sections with copy-paste values
 - Next: User creates flows in PA portal, adds DNS records, sets up Power BI workspace
+
+---
+
+## 2026-06-02 — Video playback fix: SharePoint proxy endpoint + frontend token injection
+
+**Goal:** Fix exercise demo videos not playing in workout builder — SharePoint URLs require auth but `<video>` elements can't send custom headers.
+
+**Approach:** Two-file fix. Backend: rewrote `/api/media/sharepoint-proxy` to validate JWT from query param (bypassing `requireAuth` middleware that only reads `Authorization` header), resolve SharePoint site ID from web URL, fetch file content via Graph API, and stream it back with proper Content-Type. Removed duplicate `/sharepoint-file/:siteId/:driveItemId` endpoint. Frontend: `VideoPlayerModal` now detects `.sharepoint.com` URLs, reads JWT from `localStorage` via `getAccessToken()`, and constructs proxy URL with `?url=&token=` query params.
+
+### Changes
+
+| Action | File | Why |
+|--------|------|-----|
+| Rewrote | `backend/src/modules/media/media.routes.ts` | Fixed proxy endpoint: corrected site path parsing (removed trailing `:`), replaced broken `.pipe()` with `ReadableStream` reader pump for native `fetch`, removed duplicate `/sharepoint-file/:siteId/:driveItemId` endpoint |
+| Rewrote | `frontend/components/exercise/video-player-modal.tsx` | Replaced broken `graph.microsoft.com`/`driveItemId` detection with `.sharepoint.com` regex; imports `getAccessToken()` to pass JWT as query param; removed unused zoom controls, debug logging, old proxy path |
+
+### Architecture Impact
+
+```mermaid
+graph TD
+    PLAY[Play button in workout builder] -->|setVideoUrl| MODAL[VideoPlayerModal]
+    MODAL -->|detect .sharepoint.com| PROXY[Construct /api/media/sharepoint-proxy?url=...&token=...]
+    PROXY -->|GET request| BACKEND[media.routes.ts]
+    BACKEND -->|jwt.verify| AUTH{Valid token?}
+    AUTH -->|yes| GRAPH[Fetch Graph access token client_credentials]
+    GRAPH -->|resolve site| SPO[SharePoint /sites/{host}:/sites/{name}]
+    SPO -->|fetch content| FILE[Graph API drive/root:/path:/content]
+    FILE -->|stream with ReadableStream| VIDEO[<video> element plays]
+    AUTH -->|no| 401[401 JSON response]
+```
+
+### ADR-023 — Query-param JWT over signed URLs for SharePoint proxy auth (2026-06-02)
+
+- **Context:** `<video>` elements can't set `Authorization` headers. Backend `requireAuth` only checks `Authorization: Bearer`. Options for authenticating the video source URL.
+- **Options considered:** A) Query-param JWT on proxy URL (chosen — single round-trip, no crypto). B) Pre-signed time-limited URLs via backend endpoint (two round-trips). C) Make SharePoint files publicly accessible (security risk). D) Store files in S3 instead (undoes Phase 3 migration).
+- **Decision:** Option A — pass the existing JWT as a `token` query param to the backend proxy endpoint, which validates it inline with `jwt.verify()` before fetching from SharePoint.
+- **Why:** Simplest approach with zero infra. The JWT is already available in `localStorage`. The proxy endpoint is registered before `requireAuth` middleware so it can read from query params instead of headers. No new crypto, no signing keys, no expiration management.
+- **Consequences:** JWT is visible in browser network tab (already visible in `Authorization` header). All requests are HTTPS so query params are encrypted in transit. Token expiry is handled by existing JWT expiry — expired tokens get a 401.
+
+### Status: Complete
+- Backend type-check: ✅ 0 new errors (95 pre-existing in untouched files)
+- Frontend type-check: ✅ clean
+- Root cause: SharePoint web URLs are returned by `uploadToSharepoint()` — the `<video>` element loads them anonymously, gets a 401, and shows a blank/black player
+- Fix: proxy endpoint authenticates the request via query-param JWT, acquires a Graph API token, resolves the SharePoint site, and streams the file content
+- Cleaning: removed debug logging, unused zoom controls, and the duplicate `/sharepoint-file/:siteId/:driveItemId` endpoint from the codebase
